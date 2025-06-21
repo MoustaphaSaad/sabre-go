@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -8,38 +9,111 @@ import (
 	"github.com/MoustaphaSaad/sabre-go/internal/compiler"
 )
 
-const usageTemplate = `Usage: %s [flags] <file>
+const commandUsageTemplate = `Usage: %s <command> [flags]
 
-Arguments:
-  file	input file path to compile
-
-Flags:
+Commands:
+  scan	scans the given file and prints tokens to stdout
+      	"sabre scan <file>"
 `
 
-func printUsage() {
-	fmt.Fprintf(os.Stderr, usageTemplate, os.Args[0])
-	flag.PrintDefaults()
+type TokenDesc struct {
+	Kind      string `json:"kind"`
+	Value     string `json:"value"`
+	Line      int32  `json:"line"`
+	Column    int32  `json:"column"`
+	ByteBegin int32  `json:"byte_begin"`
+	ByteEnd   int32  `json:"byte_end"`
+}
+
+func helpString() string {
+	return fmt.Sprintf(commandUsageTemplate, os.Args[0])
+}
+
+func help() {
+	fmt.Fprint(os.Stderr, helpString())
+}
+
+func scan(args []string) error {
+	fs := flag.NewFlagSet("scan", flag.ExitOnError)
+	outputFormat := fs.String("format", "text", "output format for scan mode (test, json)")
+	fs.Parse(args)
+
+	if fs.NArg() < 1 {
+		return fmt.Errorf("no file provided\n%v", helpString())
+	}
+
+	file := fs.Arg(0)
+	unit, err := compiler.UnitFromFile(fs.Arg(0))
+	if err != nil {
+		return fmt.Errorf("failed to create unit from file '%s': %v", file, err)
+	}
+
+	scanner := compiler.NewScanner(unit.RootFile())
+	var tokens []TokenDesc
+	for {
+		token := scanner.Scan()
+
+		tokenDesc := TokenDesc{
+			Kind:      token.Kind().String(),
+			Value:     token.Value(),
+			Line:      token.Location().Position.Line,
+			Column:    token.Location().Position.Column,
+			ByteBegin: token.Location().Range.Begin,
+			ByteEnd:   token.Location().Range.End,
+		}
+
+		tokens = append(tokens, tokenDesc)
+		if token.Kind() == compiler.TokenEOF {
+			break
+		}
+	}
+
+	switch *outputFormat {
+	case "json":
+		encoder := json.NewEncoder(os.Stdout)
+		encoder.SetIndent("", "  ")
+		err := encoder.Encode(tokens)
+		if err != nil {
+			return fmt.Errorf("failed to encode tokens: %v", err)
+		}
+	case "text":
+		for _, token := range tokens {
+			fmt.Printf("%-15s %-20s %4d:%-4d [%d-%d]\n",
+				token.Kind,
+				fmt.Sprintf(`"%s"`, token.Value),
+				token.Line,
+				token.Column,
+				token.ByteBegin,
+				token.ByteEnd)
+		}
+	default:
+		return fmt.Errorf("unsupported output format: %s", *outputFormat)
+	}
+	return nil
 }
 
 func main() {
-	flag.Usage = printUsage
+	if len(os.Args) < 2 {
+		fmt.Fprintf(os.Stderr, "Error: no command found\n")
+		help()
+		return
+	}
 
-	flag.Parse()
-
-	if flag.NArg() < 1 {
-		fmt.Fprintf(os.Stderr, "Error: Please provide a file path\n")
-		flag.Usage()
+	subArgs := os.Args[2:]
+	var err error
+	switch os.Args[1] {
+	case "help":
+		help()
+	case "scan":
+		err = scan(subArgs)
+	default:
+		fmt.Fprintf(os.Stderr, "Error: unknown command '%s'\n", os.Args[1])
+		help()
 		os.Exit(1)
 	}
 
-	filePath := flag.Arg(0)
-
-	unit, err := compiler.UnitFromFile(filePath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: Failed to create unit from file '%s': %v\n", filePath, err)
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
-
-	fmt.Printf("Successfully created unit from file: %s\n", filePath)
-	_ = unit
 }
