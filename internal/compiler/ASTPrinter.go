@@ -283,8 +283,10 @@ func (v *ASTPrinter) VisitAssignStmt(n *AssignStmt) {
 		e.Visit(v)
 	}
 
-	v.indentor.NewLine()
-	v.indentor.print(n.Operator)
+	if n.Operator.valid() {
+		v.indentor.NewLine()
+		v.indentor.print(n.Operator)
+	}
 
 	for _, e := range n.RHS {
 		v.indentor.NewLine()
@@ -344,6 +346,81 @@ func (v *ASTPrinter) VisitIfStmt(n *IfStmt) {
 		v.indentor.NewLine()
 
 		n.Else.Visit(v)
+
+		v.indentor.Pop()
+		v.indentor.NewLine()
+		v.indentor.print(")")
+	}
+
+	v.indentor.Pop()
+	v.indentor.NewLine()
+	v.indentor.print(")")
+}
+
+func (v *ASTPrinter) VisitForStmt(n *ForStmt) {
+	v.indentor.print("(ForStmt")
+	v.indentor.Push()
+
+	if n.Range.Init != nil {
+		// Range
+		v.indentor.NewLine()
+		v.indentor.print("(ForStmt-Range-Init")
+		v.indentor.Push()
+		v.indentor.NewLine()
+
+		n.Range.Init.Visit(v)
+
+		v.indentor.Pop()
+		v.indentor.NewLine()
+		v.indentor.print(")")
+	} else {
+		// Clause
+		if n.Clause.Init != nil {
+			v.indentor.NewLine()
+			v.indentor.print("(ForStmt-Clause-Init")
+			v.indentor.Push()
+			v.indentor.NewLine()
+
+			n.Clause.Init.Visit(v)
+
+			v.indentor.Pop()
+			v.indentor.NewLine()
+			v.indentor.print(")")
+		}
+		if n.Clause.Cond != nil {
+			v.indentor.NewLine()
+			v.indentor.print("(ForStmt-Clause-Cond")
+			v.indentor.Push()
+			v.indentor.NewLine()
+
+			n.Clause.Cond.Visit(v)
+
+			v.indentor.Pop()
+			v.indentor.NewLine()
+			v.indentor.print(")")
+		}
+		if n.Clause.Post != nil {
+			v.indentor.NewLine()
+			v.indentor.print("(ForStmt-Clause-Post")
+			v.indentor.Push()
+			v.indentor.NewLine()
+
+			n.Clause.Post.Visit(v)
+
+			v.indentor.Pop()
+			v.indentor.NewLine()
+			v.indentor.print(")")
+		}
+	}
+
+	// Body
+	{
+		v.indentor.NewLine()
+		v.indentor.print("(ForStmt-Body")
+		v.indentor.Push()
+		v.indentor.NewLine()
+
+		n.Body.Visit(v)
 
 		v.indentor.Pop()
 		v.indentor.NewLine()
