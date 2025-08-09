@@ -289,6 +289,8 @@ func (p *Parser) parseAtom() Expr {
 		return p.parseArrayType()
 	case TokenStruct:
 		return p.parseStructType()
+	case TokenFunc:
+		return p.parseFuncType()
 	default:
 		p.file.errorf(p.currentToken().SourceRange(), "expected an expression but found '%v'", p.currentToken())
 	}
@@ -363,24 +365,16 @@ func (p *Parser) parseArrayType() *ArrayType {
 	}
 }
 
-func (p *Parser) parseStructType() *StructType {
-	structToken := p.eatTokenOrError(TokenStruct)
-	if !structToken.valid() {
-		return nil
-	}
-
-	lBraceToken := p.eatTokenOrError(TokenLBrace)
+func (p *Parser) parseFieldList(open, close TokenKind, expectSemicolon bool) FieldList {
+	openToken := p.eatTokenOrError(open)
 
 	var fields []Field
-	for p.currentToken().Kind() != TokenRBrace && p.currentToken().valid() {
-		names := []*IdentifierExpr{p.parseIdentifierExpr()}
-		for p.eatTokenIfKind(TokenComma).valid() {
-			names = append(names, p.parseIdentifierExpr())
-		}
+	for p.currentToken().Kind() != close && p.currentToken().valid() {
+		names := p.parseIdentifierExprList()
 
-		fieldType := p.parseType()
-		if fieldType == nil {
-			return nil
+		var fieldType Type
+		if p.currentToken().Kind() != close {
+			fieldType = p.parseType()
 		}
 
 		var tag Token
@@ -388,16 +382,132 @@ func (p *Parser) parseStructType() *StructType {
 			tag = p.eatToken()
 		}
 
-		p.eatTokenOrError(TokenSemicolon)
+		if expectSemicolon {
+			p.eatTokenOrError(TokenSemicolon)
+		}
 
 		fields = append(fields, Field{Names: names, Type: fieldType, Tag: tag})
+
+		p.eatTokenIfKind(TokenComma)
 	}
 
-	rBraceToken := p.eatTokenOrError(TokenRBrace)
+	closeToken := p.eatTokenOrError(close)
+
+	return FieldList{
+		Open:   openToken,
+		Fields: fields,
+		Close:  closeToken,
+	}
+}
+
+func (p *Parser) parseStructType() *StructType {
+	structToken := p.eatTokenOrError(TokenStruct)
+	if !structToken.valid() {
+		return nil
+	}
 
 	return &StructType{
 		Struct:    structToken,
-		FieldList: FieldList{Open: lBraceToken, Fields: fields, Close: rBraceToken},
+		FieldList: p.parseFieldList(TokenLBrace, TokenRBrace, true),
+	}
+}
+
+func (p *Parser) parseParameterDecl() Field {
+	switch p.currentToken().Kind() {
+	case TokenIdentifier:
+		names := []*IdentifierExpr{p.parseIdentifierExpr()}
+		for p.eatTokenIfKind(TokenComma).valid() {
+			if p.currentToken().Kind() == TokenIdentifier {
+				names = append(names, p.parseIdentifierExpr())
+			}
+		}
+
+		if p.currentToken().Kind() != TokenRParen && p.currentToken().Kind() != TokenSemicolon {
+			return Field{Names: names, Type: p.parseType()}
+		}
+
+		return Field{Names: names}
+	case TokenLBracket:
+		return Field{Type: p.parseArrayType()}
+	case TokenStruct:
+		return Field{Type: p.parseStructType()}
+	case TokenFunc:
+		return Field{Type: p.parseFuncType()}
+	default:
+		p.file.errorf(p.currentToken().SourceRange(), "expected an identifier but found '%v'", p.currentToken())
+		return Field{}
+	}
+}
+
+func (p *Parser) parseParameterList() (list []Field) {
+	if field := p.parseParameterDecl(); field.Type == nil {
+		for _, n := range field.Names {
+			list = append(list, Field{Type: p.convertParsedExprToType(n)})
+		}
+	} else {
+		list = append(list, field)
+	}
+
+	for p.eatTokenIfKind(TokenComma).valid() {
+		if field := p.parseParameterDecl(); field.Type == nil {
+			for _, n := range field.Names {
+				list = append(list, Field{Type: p.convertParsedExprToType(n)})
+			}
+		} else {
+			list = append(list, field)
+		}
+	}
+	return
+}
+
+func (p *Parser) parseParameters(isParenOptional bool) FieldList {
+	var openToken Token
+	if isParenOptional {
+		openToken = p.eatTokenIfKind(TokenLParen)
+	} else {
+		openToken = p.eatTokenOrError(TokenLParen)
+	}
+
+	var fields []Field
+	if p.currentToken().Kind() != TokenComma && p.currentToken().Kind() != TokenRParen && p.currentToken().Kind() != TokenSemicolon {
+		fields = p.parseParameterList()
+		for p.eatTokenIfKind(TokenComma).valid() {
+			fields = append(fields, p.parseParameterList()...)
+		}
+	}
+
+	var closeToken Token
+	if openToken.valid() {
+		closeToken = p.eatTokenOrError(TokenRParen)
+	}
+
+	return FieldList{
+		Open:   openToken,
+		Fields: fields,
+		Close:  closeToken,
+	}
+}
+
+func (p *Parser) parseFuncType() *FuncType {
+	p.pushExprLevel()
+	defer p.popExprLevel()
+
+	funcToken := p.eatTokenOrError(TokenFunc)
+	if !funcToken.valid() {
+		return nil
+	}
+
+	parameters := p.parseParameters(false)
+	results := p.parseParameters(true)
+
+	if p.exprLevel == 1 {
+		p.eatTokenOrError(TokenSemicolon)
+	}
+
+	return &FuncType{
+		Func:       funcToken,
+		Parameters: parameters,
+		Results:    results,
 	}
 }
 
@@ -426,6 +536,8 @@ func (p *Parser) parseType() Type {
 		return p.parseArrayType()
 	case TokenStruct:
 		return p.parseStructType()
+	case TokenFunc:
+		return p.parseFuncType()
 	default:
 		p.file.errorf(p.currentToken().SourceRange(), "expected type but found %v", p.currentToken())
 		return nil
@@ -450,6 +562,8 @@ func (p *Parser) convertParsedExprToType(e Expr) Type {
 	case *ArrayType:
 		return n
 	case *StructType:
+		return n
+	case *FuncType:
 		return n
 	}
 	return nil

@@ -1,0 +1,26 @@
+(FuncType
+  (FuncType-Parameters
+    (FuncType)
+    (FuncType
+      (FuncType-Parameters
+        (NamedType IDENTIFIER(int))
+        (NamedType IDENTIFIER(float32))
+      )
+    )
+  )
+  (FuncType-Results
+    (FuncType)
+    (FuncType
+      (FuncType-Parameters
+        (NamedType IDENTIFIER(int))
+        (NamedType IDENTIFIER(float32))
+      )
+      (FuncType-Results
+        (IdentifierExpr IDENTIFIER(int))
+        (ArrayType
+          (NamedType IDENTIFIER(int))
+        )
+      )
+    )
+  )
+)
