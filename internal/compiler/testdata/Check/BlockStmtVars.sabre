@@ -1,0 +1,18 @@
+package main
+
+func correct() int {
+	a1 := 1
+	{
+		a1 := 1
+	}
+	return a1
+}
+
+func incorrect(a1 int) {
+	a1 := 1
+	a2 := 1
+	{
+		a2 := 1
+		a2 := 1
+	}
+}

@@ -1,0 +1,12 @@
+>> 		a1 := 1
+>> 		^^      
+Error[internal/compiler/testdata/Check/BlockStmtVars.sabre:12:2]: symbol 'a1' redefinition
+>> 	func incorrect(a1 int) {
+>> 	               ^^        
+Note[internal/compiler/testdata/Check/BlockStmtVars.sabre:11:16]: first declared here
+>> 			a2 := 1
+>> 			^^      
+Error[internal/compiler/testdata/Check/BlockStmtVars.sabre:16:3]: symbol 'a2' redefinition
+>> 			a2 := 1
+>> 			^^      
+Note[internal/compiler/testdata/Check/BlockStmtVars.sabre:15:3]: first declared here
