@@ -15,7 +15,3 @@ func incorrect() {
     true++
     false--
 }
-
-func main() {
-    correct()
-}
