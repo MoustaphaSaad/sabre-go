@@ -817,8 +817,8 @@ func (checker *Checker) resolveIncDecStmt(s *IncDecStmt) {
 		return
 	}
 
-	if !t.Type.Properties().Integral && !t.Type.Properties().Floating {
-		checker.error(NewError(s.SourceRange(), "expected integral or floating type, but found '%v'", t.Type))
+	if !t.Type.Properties().HasArithmetic {
+		checker.error(NewError(s.SourceRange(), "type '%v' doesn't support arithmetic operations", t.Type))
 		return
 	}
 }
