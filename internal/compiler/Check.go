@@ -796,6 +796,8 @@ func (checker *Checker) resolveStmt(stmt Stmt) {
 	switch s := stmt.(type) {
 	case *ExprStmt:
 		checker.resolveExpr(s.Expr)
+	case *IncDecStmt:
+		checker.resolveIncDecStmt(s)
 	case *ReturnStmt:
 		checker.resolveReturnStmt(s)
 	case *BlockStmt:
@@ -804,6 +806,20 @@ func (checker *Checker) resolveStmt(stmt Stmt) {
 		checker.resolveAssignStmt(s)
 	default:
 		panic("unexpected stmt type")
+	}
+}
+
+func (checker *Checker) resolveIncDecStmt(s *IncDecStmt) {
+	t := checker.resolveExpr(s.Expr)
+
+	if !t.IsAssignable() {
+		checker.error(NewError(s.SourceRange(), "expression is not assignable"))
+		return
+	}
+
+	if !t.Type.Properties().HasArithmetic {
+		checker.error(NewError(s.SourceRange(), "type '%v' doesn't support arithmetic operations", t.Type))
+		return
 	}
 }
 
@@ -942,7 +958,6 @@ func (checker *Checker) resolveAssignStmt(s *AssignStmt) {
 			lhs := s.LHS[i]
 			lhsType := checker.resolveExpr(lhs)
 			checkIsAssignable(lhs, lhsType)
-
 			checkTypeEqual(lhsType.Type, rhsTypes[i], lhs.SourceRange(), rhsSourceRanges[i])
 		}
 	case TokenAddAssign, TokenSubAssign, TokenMulAssign, TokenDivAssign, TokenModAssign:
