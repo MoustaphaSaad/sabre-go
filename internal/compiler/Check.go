@@ -47,6 +47,12 @@ func (info *SemanticInfo) createScopeFor(n any, parent *Scope, name string) *Sco
 	return scope
 }
 
+type Stmt_Properties struct {
+	acceptsBreak       bool
+	acceptsContinue    bool
+	acceptsFallthrough bool
+}
+
 type AddressMode byte
 
 const (
@@ -238,16 +244,6 @@ func (checker *Checker) currentFunction() *FuncDecl {
 	return checker.functionStack[len(checker.functionStack)-1]
 }
 
-func (checker *Checker) findScopeWithName(name string) *Scope {
-	for i := len(checker.scopeStack) - 1; i >= 0; i-- {
-		scope := checker.scopeStack[i]
-		if scope.Name == name {
-			return scope
-		}
-	}
-	return nil
-}
-
 func (checker *Checker) enterFunction(function *FuncDecl) {
 	if function == nil {
 		panic("entering nil function")
@@ -394,7 +390,7 @@ func (checker *Checker) resolveFuncBody(sym *FuncSymbol) {
 	defer checker.leaveFunction()
 
 	for _, stmt := range funcDecl.Body.Stmts {
-		checker.resolveStmt(stmt)
+		checker.resolveStmt(stmt, Stmt_Properties{})
 	}
 }
 
@@ -802,7 +798,7 @@ func typeFromName(name Token) Type {
 	}
 }
 
-func (checker *Checker) resolveStmt(stmt Stmt) {
+func (checker *Checker) resolveStmt(stmt Stmt, properties Stmt_Properties) {
 	switch s := stmt.(type) {
 	case *ExprStmt:
 		checker.resolveExpr(s.Expr)
@@ -811,17 +807,17 @@ func (checker *Checker) resolveStmt(stmt Stmt) {
 	case *ReturnStmt:
 		checker.resolveReturnStmt(s)
 	case *BreakStmt:
-		checker.resolveBreakStmt(s)
+		checker.resolveBreakStmt(s, properties)
 	case *FallthroughStmt:
-		checker.resolveFallthroughStmt(s)
+		checker.resolveFallthroughStmt(s, properties)
 	case *ContinueStmt:
-		checker.resolveContinueStmt(s)
+		checker.resolveContinueStmt(s, properties)
 	case *BlockStmt:
-		checker.resolveBlockStmt(s)
+		checker.resolveBlockStmt(s, properties)
 	case *AssignStmt:
 		checker.resolveAssignStmt(s)
 	case *IfStmt:
-		checker.resolveIfStmt(s)
+		checker.resolveIfStmt(s, properties)
 	default:
 		panic("unexpected stmt type")
 	}
@@ -866,57 +862,43 @@ func (checker *Checker) resolveReturnStmt(s *ReturnStmt) {
 	}
 }
 
-func (checker *Checker) resolveBreakStmt(s *BreakStmt) {
+func (checker *Checker) resolveBreakStmt(s *BreakStmt, properties Stmt_Properties) {
 	if s.Label.valid() {
 		panic("labeled break not supported yet")
 	}
 
-	switchScope := checker.findScopeWithName("switch")
-	if switchScope != nil {
-		return
+	if !properties.acceptsBreak {
+		checker.error(NewError(s.SourceRange(), "break statement not within loop or switch"))
 	}
-
-	forScope := checker.findScopeWithName("for")
-	if forScope != nil {
-		return
-	}
-
-	checker.error(NewError(s.SourceRange(), "break statement not within loop or switch"))
 }
 
 // TODO:
-// Once we have switch cases and for loops implemented, we need to add the following checks for fallthrough statements:
+// Once we have switch cases implemented, we need to add the following checks for fallthrough statements:
 // Check fallthrough is the last statement in a switch case and that the next case exists.
 // Check fallthrough is not in the default case.
-func (checker *Checker) resolveFallthroughStmt(s *FallthroughStmt) {
-	switchScope := checker.findScopeWithName("switch")
-	if switchScope != nil {
-		return
+func (checker *Checker) resolveFallthroughStmt(s *FallthroughStmt, properties Stmt_Properties) {
+	if !properties.acceptsFallthrough {
+		checker.error(NewError(s.SourceRange(), "fallthrough statement not within switch"))
 	}
-
-	checker.error(NewError(s.SourceRange(), "fallthrough statement not within switch"))
 }
 
-func (checker *Checker) resolveContinueStmt(s *ContinueStmt) {
+func (checker *Checker) resolveContinueStmt(s *ContinueStmt, properties Stmt_Properties) {
 	if s.Label.valid() {
 		panic("labeled continue not supported yet")
 	}
 
-	forScope := checker.findScopeWithName("for")
-	if forScope != nil {
-		return
+	if !properties.acceptsContinue {
+		checker.error(NewError(s.SourceRange(), "continue statement not within for loop"))
 	}
-
-	checker.error(NewError(s.SourceRange(), "continue statement not within for loop"))
 }
 
-func (checker *Checker) resolveBlockStmt(s *BlockStmt) {
+func (checker *Checker) resolveBlockStmt(s *BlockStmt, properties Stmt_Properties) {
 	scope := checker.unit.semanticInfo.createScopeFor(s, checker.currentScope(), "block")
 	checker.enterScope(scope)
 	defer checker.leaveScope()
 
 	for _, stmt := range s.Stmts {
-		checker.resolveStmt(stmt)
+		checker.resolveStmt(stmt, properties)
 	}
 }
 
@@ -1099,13 +1081,13 @@ func (checker *Checker) resolveAssignStmt(s *AssignStmt) {
 	}
 }
 
-func (checker *Checker) resolveIfStmt(s *IfStmt) {
+func (checker *Checker) resolveIfStmt(s *IfStmt, properties Stmt_Properties) {
 	scope := checker.unit.semanticInfo.createScopeFor(s, checker.currentScope(), "if")
 	checker.enterScope(scope)
 	defer checker.leaveScope()
 
 	if s.Init != nil {
-		checker.resolveStmt(s.Init)
+		checker.resolveStmt(s.Init, properties)
 	}
 
 	condType := checker.resolveExpr(s.Cond)
@@ -1118,9 +1100,9 @@ func (checker *Checker) resolveIfStmt(s *IfStmt) {
 		return
 	}
 
-	checker.resolveBlockStmt(s.Body)
+	checker.resolveBlockStmt(s.Body, properties)
 
 	if s.Else != nil {
-		checker.resolveStmt(s.Else)
+		checker.resolveStmt(s.Else, properties)
 	}
 }
