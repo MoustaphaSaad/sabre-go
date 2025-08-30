@@ -806,6 +806,8 @@ func (checker *Checker) resolveStmt(stmt Stmt) {
 	switch s := stmt.(type) {
 	case *ExprStmt:
 		checker.resolveExpr(s.Expr)
+	case *IncDecStmt:
+		checker.resolveIncDecStmt(s)
 	case *ReturnStmt:
 		checker.resolveReturnStmt(s)
 	case *BreakStmt:
@@ -816,8 +818,26 @@ func (checker *Checker) resolveStmt(stmt Stmt) {
 		checker.resolveContinueStmt(s)
 	case *BlockStmt:
 		checker.resolveBlockStmt(s)
+	case *AssignStmt:
+		checker.resolveAssignStmt(s)
+	case *IfStmt:
+		checker.resolveIfStmt(s)
 	default:
 		panic("unexpected stmt type")
+	}
+}
+
+func (checker *Checker) resolveIncDecStmt(s *IncDecStmt) {
+	t := checker.resolveExpr(s.Expr)
+
+	if !t.IsAssignable() {
+		checker.error(NewError(s.SourceRange(), "expression is not assignable"))
+		return
+	}
+
+	if !t.Type.Properties().HasArithmetic {
+		checker.error(NewError(s.SourceRange(), "type '%v' doesn't support arithmetic operations", t.Type))
+		return
 	}
 }
 
@@ -843,16 +863,6 @@ func (checker *Checker) resolveReturnStmt(s *ReturnStmt) {
 				Note(s.SourceRange(), "have %v, want %v", TupleType{Types: returnTypes}, TupleType{Types: expectedReturnTypes}),
 			)
 		}
-	}
-}
-
-func (checker *Checker) resolveBlockStmt(s *BlockStmt) {
-	scope := checker.unit.semanticInfo.createScopeFor(s, checker.currentScope(), "block")
-	checker.enterScope(scope)
-	defer checker.leaveScope()
-
-	for _, stmt := range s.Stmts {
-		checker.resolveStmt(stmt)
 	}
 }
 
@@ -898,4 +908,219 @@ func (checker *Checker) resolveContinueStmt(s *ContinueStmt) {
 	}
 
 	checker.error(NewError(s.SourceRange(), "continue statement not within for loop"))
+}
+
+func (checker *Checker) resolveBlockStmt(s *BlockStmt) {
+	scope := checker.unit.semanticInfo.createScopeFor(s, checker.currentScope(), "block")
+	checker.enterScope(scope)
+	defer checker.leaveScope()
+
+	for _, stmt := range s.Stmts {
+		checker.resolveStmt(stmt)
+	}
+}
+
+func (checker *Checker) resolveAssignStmt(s *AssignStmt) {
+	hasMultiValue := func(s *AssignStmt, lhsValuesLen, rhsValuesLen int) bool {
+		if lhsValuesLen != rhsValuesLen {
+			checker.error(NewError(
+				s.SourceRange(),
+				"assignment mismatch: %v variables but %v values",
+				lhsValuesLen,
+				rhsValuesLen,
+			))
+			return false
+		}
+		return true
+	}
+
+	hasSingleValue := func(s *AssignStmt) bool {
+		if len(s.LHS) != 1 || len(s.RHS) != 1 {
+			checker.error(NewError(
+				s.SourceRange(),
+				"assignment operator %v requires single value expressions",
+				s.Operator.Value(),
+			))
+			return false
+		}
+		return true
+	}
+
+	checkIsAssignable := func(e Expr, eType *TypeAndValue) {
+		if !eType.IsAssignable() {
+			checker.error(NewError(
+				e.SourceRange(),
+				"expression is not assignable",
+			))
+		}
+	}
+
+	checkTypeProperty := func(sourceRange SourceRange, t Type, hasFeature bool, capName string) {
+		if !hasFeature {
+			checker.error(NewError(
+				sourceRange,
+				"type '%v' doesn't support %v",
+				t,
+				capName,
+			))
+		}
+	}
+
+	checkTypeEqual := func(lhsType, rhsType Type, lhsSourceRange, rhsSourceRange SourceRange) {
+		if lhsType != rhsType {
+			checker.error(
+				NewError(
+					s.SourceRange(),
+					"type mistmatch in assignment",
+				).Note(
+					lhsSourceRange,
+					"LHS type is '%v'",
+					lhsType,
+				).Note(
+					rhsSourceRange,
+					"RHS type is '%v'",
+					rhsType,
+				),
+			)
+		}
+	}
+
+	switch s.Operator.Kind() {
+	case TokenColonAssign:
+		rhsTypes, _ := checker.resolveAndUnpackTypesFromExprList(s.RHS)
+		if !hasMultiValue(s, len(s.LHS), len(rhsTypes)) {
+			return
+		}
+
+		for _, varName := range s.LHS {
+			if _, ok := varName.(*IdentifierExpr); !ok {
+				checker.error(NewError(
+					varName.SourceRange(),
+					"expression can not be used as variable name",
+				))
+				return
+			}
+		}
+
+		for i := range s.LHS {
+			lhs := s.LHS[i]
+			name := lhs.(*IdentifierExpr).Token
+			v := NewVarSymbol(name, nil, name.SourceRange())
+			v.SetResolveState(ResolveStateResolved)
+			checker.unit.semanticInfo.SetTypeOf(v, &TypeAndValue{Mode: AddressModeVariable, Type: rhsTypes[i]})
+			checker.addSymbol(v)
+		}
+	case TokenAssign:
+		rhsTypes, rhsSourceRanges := checker.resolveAndUnpackTypesFromExprList(s.RHS)
+		if !hasMultiValue(s, len(s.LHS), len(rhsTypes)) {
+			return
+		}
+
+		for i := range s.LHS {
+			lhs := s.LHS[i]
+			lhsType := checker.resolveExpr(lhs)
+			checkIsAssignable(lhs, lhsType)
+			checkTypeEqual(lhsType.Type, rhsTypes[i], lhs.SourceRange(), rhsSourceRanges[i])
+		}
+	case TokenAddAssign, TokenSubAssign, TokenMulAssign, TokenDivAssign, TokenModAssign:
+		if !hasSingleValue(s) {
+			return
+		}
+		lhs := s.LHS[0]
+		lhsType := checker.resolveExpr(lhs)
+		checkIsAssignable(lhs, lhsType)
+		checkTypeProperty(
+			lhs.SourceRange(),
+			lhsType.Type,
+			lhsType.Type.Properties().HasArithmetic,
+			"arithmetic operations",
+		)
+		rhs := s.RHS[0]
+		rhsType := checker.resolveExpr(rhs)
+		checkTypeProperty(
+			rhs.SourceRange(),
+			rhsType.Type,
+			rhsType.Type.Properties().HasArithmetic,
+			"arithmetic operations",
+		)
+		checkTypeEqual(lhsType.Type, rhsType.Type, lhs.SourceRange(), rhs.SourceRange())
+	case TokenAndAssign, TokenAndNotAssign, TokenOrAssign, TokenXorAssign:
+		if !hasSingleValue(s) {
+			return
+		}
+		lhs := s.LHS[0]
+		lhsType := checker.resolveExpr(lhs)
+		checkIsAssignable(lhs, lhsType)
+		checkTypeProperty(
+			lhs.SourceRange(),
+			lhsType.Type,
+			lhsType.Type.Properties().HasBitOps,
+			"bitwise operations",
+		)
+		rhs := s.RHS[0]
+		rhsType := checker.resolveExpr(rhs)
+		checkTypeProperty(
+			rhs.SourceRange(),
+			rhsType.Type,
+			rhsType.Type.Properties().HasBitOps,
+			"bitwise operations",
+		)
+		checkTypeEqual(lhsType.Type, rhsType.Type, lhs.SourceRange(), rhs.SourceRange())
+	case TokenShlAssign, TokenShrAssign:
+		if !hasSingleValue(s) {
+			return
+		}
+		lhs := s.LHS[0]
+		lhsType := checker.resolveExpr(lhs)
+		checkIsAssignable(lhs, lhsType)
+		checkTypeProperty(
+			lhs.SourceRange(),
+			lhsType.Type,
+			lhsType.Type.Properties().HasBitOps,
+			"bitwise operations",
+		)
+		rhs := s.RHS[0]
+		rhsType := checker.resolveExpr(rhs)
+		if !rhsType.Type.Properties().Integral {
+			checker.error(NewError(
+				rhs.SourceRange(),
+				"shift operator should be integral type instead of '%v'",
+				rhsType.Type,
+			))
+		} else {
+			if rhsType.Mode == AddressModeConstant && constant.Compare(rhsType.Value, token.LSS, constant.MakeInt64(0)) {
+				checker.error(NewError(
+					rhs.SourceRange(),
+					"shift operator should not be negative, but it has value '%v'",
+					rhsType.Value,
+				))
+			}
+		}
+	}
+}
+
+func (checker *Checker) resolveIfStmt(s *IfStmt) {
+	scope := checker.unit.semanticInfo.createScopeFor(s, checker.currentScope(), "if")
+	checker.enterScope(scope)
+	defer checker.leaveScope()
+
+	if s.Init != nil {
+		checker.resolveStmt(s.Init)
+	}
+
+	condType := checker.resolveExpr(s.Cond)
+	if condType.Type != BuiltinBoolType {
+		checker.error(NewError(
+			s.Cond.SourceRange(),
+			"if condition should be boolean, but found '%v'",
+			condType.Type,
+		))
+		return
+	}
+
+	checker.resolveBlockStmt(s.Body)
+
+	if s.Else != nil {
+		checker.resolveStmt(s.Else)
+	}
 }
