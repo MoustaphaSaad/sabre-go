@@ -1,0 +1,62 @@
+package main
+
+func correct() {
+	for {}
+
+	for i := 0; i < 10; i++ {
+
+	}
+
+	j := 0
+	for ; j < 10; j++ {
+
+	}
+
+	k := 0
+	for ; ; k++ {
+
+	}
+
+	for ;true; {
+
+	}
+
+	for k = 0; true; {
+
+	}
+
+	for k = 0; ; {
+
+	}
+
+	for k < 5 {
+
+	}
+
+	for k < 10 {
+		if k % 2 == 0 {
+			break
+		}
+	}
+
+	x := 10
+	for x < 100 {
+		x++
+		if x == 50 {
+			break
+		} else {
+			continue
+		}
+	}
+}
+
+func incorrect() {
+	for i := 0; i; i++ {
+
+	}
+
+	x := 10
+	for x {
+
+	}
+}
