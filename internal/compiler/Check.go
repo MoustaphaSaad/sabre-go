@@ -47,7 +47,7 @@ func (info *SemanticInfo) createScopeFor(n any, parent *Scope, name string) *Sco
 	return scope
 }
 
-type Stmt_Properties struct {
+type ResolveStmtProperties struct {
 	acceptsBreak       bool
 	acceptsContinue    bool
 	acceptsFallthrough bool
@@ -390,7 +390,7 @@ func (checker *Checker) resolveFuncBody(sym *FuncSymbol) {
 	defer checker.leaveFunction()
 
 	for _, stmt := range funcDecl.Body.Stmts {
-		checker.resolveStmt(stmt, Stmt_Properties{})
+		checker.resolveStmt(stmt, ResolveStmtProperties{})
 	}
 }
 
@@ -798,7 +798,7 @@ func typeFromName(name Token) Type {
 	}
 }
 
-func (checker *Checker) resolveStmt(stmt Stmt, properties Stmt_Properties) {
+func (checker *Checker) resolveStmt(stmt Stmt, properties ResolveStmtProperties) {
 	switch s := stmt.(type) {
 	case *ExprStmt:
 		checker.resolveExpr(s.Expr)
@@ -862,7 +862,7 @@ func (checker *Checker) resolveReturnStmt(s *ReturnStmt) {
 	}
 }
 
-func (checker *Checker) resolveBreakStmt(s *BreakStmt, properties Stmt_Properties) {
+func (checker *Checker) resolveBreakStmt(s *BreakStmt, properties ResolveStmtProperties) {
 	if s.Label.valid() {
 		panic("labeled break not supported yet")
 	}
@@ -876,13 +876,13 @@ func (checker *Checker) resolveBreakStmt(s *BreakStmt, properties Stmt_Propertie
 // Once we have switch cases implemented, we need to add the following checks for fallthrough statements:
 // Check fallthrough is the last statement in a switch case and that the next case exists.
 // Check fallthrough is not in the default case.
-func (checker *Checker) resolveFallthroughStmt(s *FallthroughStmt, properties Stmt_Properties) {
+func (checker *Checker) resolveFallthroughStmt(s *FallthroughStmt, properties ResolveStmtProperties) {
 	if !properties.acceptsFallthrough {
 		checker.error(NewError(s.SourceRange(), "fallthrough statement not within switch"))
 	}
 }
 
-func (checker *Checker) resolveContinueStmt(s *ContinueStmt, properties Stmt_Properties) {
+func (checker *Checker) resolveContinueStmt(s *ContinueStmt, properties ResolveStmtProperties) {
 	if s.Label.valid() {
 		panic("labeled continue not supported yet")
 	}
@@ -892,7 +892,7 @@ func (checker *Checker) resolveContinueStmt(s *ContinueStmt, properties Stmt_Pro
 	}
 }
 
-func (checker *Checker) resolveBlockStmt(s *BlockStmt, properties Stmt_Properties) {
+func (checker *Checker) resolveBlockStmt(s *BlockStmt, properties ResolveStmtProperties) {
 	scope := checker.unit.semanticInfo.createScopeFor(s, checker.currentScope(), "block")
 	checker.enterScope(scope)
 	defer checker.leaveScope()
@@ -1081,7 +1081,7 @@ func (checker *Checker) resolveAssignStmt(s *AssignStmt) {
 	}
 }
 
-func (checker *Checker) resolveIfStmt(s *IfStmt, properties Stmt_Properties) {
+func (checker *Checker) resolveIfStmt(s *IfStmt, properties ResolveStmtProperties) {
 	scope := checker.unit.semanticInfo.createScopeFor(s, checker.currentScope(), "if")
 	checker.enterScope(scope)
 	defer checker.leaveScope()
