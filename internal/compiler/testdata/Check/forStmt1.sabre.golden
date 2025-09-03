@@ -1,0 +1,6 @@
+>> 		for i := 0; i; i++ {
+>> 		            ^        
+Error[internal/compiler/testdata/Check/forStmt1.sabre:54:14]: for condition should be boolean, but found 'int'
+>> 		for x {
+>> 		    ^   
+Error[internal/compiler/testdata/Check/forStmt1.sabre:59:6]: for condition should be boolean, but found 'int'

@@ -818,6 +818,8 @@ func (checker *Checker) resolveStmt(stmt Stmt, properties ResolveStmtProperties)
 		checker.resolveAssignStmt(s)
 	case *IfStmt:
 		checker.resolveIfStmt(s, properties)
+	case *ForStmt:
+		checker.resolveForStmt(s, properties)
 	default:
 		panic("unexpected stmt type")
 	}
@@ -1105,4 +1107,35 @@ func (checker *Checker) resolveIfStmt(s *IfStmt, properties ResolveStmtPropertie
 	if s.Else != nil {
 		checker.resolveStmt(s.Else, properties)
 	}
+}
+
+func (checker *Checker) resolveForStmt(s *ForStmt, properties ResolveStmtProperties) {
+	scope := checker.unit.semanticInfo.createScopeFor(s, checker.currentScope(), "for")
+	checker.enterScope(scope)
+	defer checker.leaveScope()
+
+	if s.Init != nil {
+		checker.resolveStmt(s.Init, properties)
+	}
+
+	if s.Cond != nil {
+		condType := checker.resolveExpr(s.Cond)
+		if condType.Type != BuiltinBoolType {
+			checker.error(NewError(
+				s.Cond.SourceRange(),
+				"for condition should be boolean, but found '%v'",
+				condType.Type,
+			))
+			return
+		}
+	}
+
+	if s.Post != nil {
+		checker.resolveStmt(s.Post, properties)
+	}
+
+	properties.acceptsBreak = true
+	properties.acceptsContinue = true
+
+	checker.resolveBlockStmt(s.Body, properties)
 }
