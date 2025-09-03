@@ -1114,9 +1114,6 @@ func (checker *Checker) resolveForStmt(s *ForStmt, properties ResolveStmtPropert
 	checker.enterScope(scope)
 	defer checker.leaveScope()
 
-	properties.acceptsBreak = true
-	properties.acceptsContinue = true
-
 	if s.Init != nil {
 		checker.resolveStmt(s.Init, properties)
 	}
@@ -1136,6 +1133,9 @@ func (checker *Checker) resolveForStmt(s *ForStmt, properties ResolveStmtPropert
 	if s.Post != nil {
 		checker.resolveStmt(s.Post, properties)
 	}
+
+	properties.acceptsBreak = true
+	properties.acceptsContinue = true
 
 	checker.resolveBlockStmt(s.Body, properties)
 }
