@@ -1,0 +1,63 @@
+package main
+
+
+func correct() {
+    x := 1
+    switch x {
+        case 1:
+           break
+        case 2:
+            break
+        default:
+            break
+    }
+
+    switch y := 1; y {
+        case 1:
+            fallthrough
+        case 2:
+            fallthrough
+        case 3, 4, 5:
+            break
+    }
+
+    switch z := 1; {
+        case z < 1:
+            break
+    }
+
+    switch {
+        case x < 2:
+            break
+        case x == 1:
+            fallthrough
+        default:
+    }
+}
+
+func incorrect() {
+    switch x := 1; x {
+        case 1:
+            break
+        case 1:
+            break
+    }
+
+    switch x := 1; x {
+        default:
+            fallthrough
+    }
+
+    switch x := 1; x {
+        case 1:
+            fallthrough
+            y := 1
+        case 2:
+            break
+    }
+
+    switch x := 1.5; x {
+        case 1:
+            break
+    }
+}
