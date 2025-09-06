@@ -33,6 +33,18 @@ func correct() {
             fallthrough
         default:
     }
+
+    switch x := 1.5; x {
+        case 1.5:
+            break
+    }
+
+    switch x := true; x {
+        case true:
+            break
+        case false:
+            break
+    }
 }
 
 func incorrect() {
@@ -53,11 +65,6 @@ func incorrect() {
             fallthrough
             y := 1
         case 2:
-            break
-    }
-
-    switch x := 1.5; x {
-        case 1:
             break
     }
 }

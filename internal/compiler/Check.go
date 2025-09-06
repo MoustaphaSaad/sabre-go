@@ -1155,10 +1155,10 @@ func (checker *Checker) resolveSwitchStmt(s *SwitchStmt, properties ResolveStmtP
 	var tag *TypeAndValue
 	if s.Tag != nil {
 		tag = checker.resolveExpr(s.Tag)
-		if !tag.Type.Properties().Integral {
+		if !tag.Type.Properties().Integral && !tag.Type.Properties().Floating && tag.Type != BuiltinBoolType {
 			checker.error(NewError(
 				s.Tag.SourceRange(),
-				"switch tag should be of integral type, but found '%v'",
+				"invalid switch tag type '%v'",
 				tag.Type,
 			))
 		}
@@ -1170,7 +1170,7 @@ func (checker *Checker) resolveSwitchStmt(s *SwitchStmt, properties ResolveStmtP
 		}
 	}
 
-	caseValueMap := make(map[any]SourceRange)
+	caseValueMap := make(map[constant.Value]SourceRange)
 	for i, stmt := range s.Body.Stmts {
 		caseStmt, ok := stmt.(*SwitchCaseStmt)
 		if !ok {
@@ -1179,15 +1179,17 @@ func (checker *Checker) resolveSwitchStmt(s *SwitchStmt, properties ResolveStmtP
 
 		properties.acceptsBreak = true
 		properties.acceptsFallthrough = true
-		properties.isFinalCaseStmt = false
-		if i == len(s.Body.Stmts)-1 {
-			properties.isFinalCaseStmt = true
-		}
+		properties.isFinalCaseStmt = i+1 == len(s.Body.Stmts)
 		checker.resolveSwitchCaseStmt(caseStmt, caseValueMap, tag.Type, properties)
 	}
 }
 
-func (checker *Checker) resolveSwitchCaseStmt(s *SwitchCaseStmt, caseValueMap map[any]SourceRange, tagType Type, properties ResolveStmtProperties) {
+func (checker *Checker) resolveSwitchCaseStmt(
+	s *SwitchCaseStmt,
+	caseValueMap map[constant.Value]SourceRange,
+	tagType Type,
+	properties ResolveStmtProperties,
+) {
 	scope := checker.unit.semanticInfo.createScopeFor(s, checker.currentScope(), "case")
 	checker.enterScope(scope)
 	defer checker.leaveScope()
@@ -1203,7 +1205,7 @@ func (checker *Checker) resolveSwitchCaseStmt(s *SwitchCaseStmt, caseValueMap ma
 		}
 
 		if t.Mode == AddressModeConstant && t.Value != nil {
-			key := constant.Value(t.Value)
+			key := t.Value
 			if prev, exists := caseValueMap[key]; exists {
 				checker.error(NewError(expr.SourceRange(), "duplicate case value '%v'", key).
 					Note(prev, "first case value declared here"))

@@ -1,18 +1,12 @@
 >> 	        case 1:
 >> 	             ^  
-Error[internal/compiler/testdata/Check/switchStmt.sabre:42:14]: duplicate case value '1'
+Error[internal/compiler/testdata/Check/switchStmt.sabre:54:14]: duplicate case value '1'
 >> 	        case 1:
 >> 	             ^  
-Note[internal/compiler/testdata/Check/switchStmt.sabre:40:14]: first case value declared here
+Note[internal/compiler/testdata/Check/switchStmt.sabre:52:14]: first case value declared here
 >> 	            fallthrough
 >> 	            ^^^^^^^^^^^ 
-Error[internal/compiler/testdata/Check/switchStmt.sabre:48:13]: cannot fallthrough from the final case in a switch
+Error[internal/compiler/testdata/Check/switchStmt.sabre:60:13]: cannot fallthrough from the final case in a switch
 >> 	            fallthrough
 >> 	            ^^^^^^^^^^^ 
-Error[internal/compiler/testdata/Check/switchStmt.sabre:53:13]: fallthrough statement must be the last statement in a case
->> 	    switch x := 1.5; x {
->> 	                     ^   
-Error[internal/compiler/testdata/Check/switchStmt.sabre:59:22]: switch tag should be of integral type, but found 'float32'
->> 	        case 1:
->> 	             ^  
-Error[internal/compiler/testdata/Check/switchStmt.sabre:60:14]: case value type 'int' is not comparable to switch tag type 'float32'
+Error[internal/compiler/testdata/Check/switchStmt.sabre:65:13]: fallthrough statement must be the last statement in a case
