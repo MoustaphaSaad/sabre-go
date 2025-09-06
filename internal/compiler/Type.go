@@ -251,6 +251,101 @@ func (t TupleType) HashKey() string {
 	return b.String()
 }
 
+type StructTypeField struct {
+	Identifer *IdentifierExpr
+	Type      Type
+}
+
+type StructType struct {
+	Fields       []StructTypeField
+	FieldsByName map[string]int
+}
+
+func (StructType) aType() {}
+func (t StructType) Properties() TypeProperties {
+	size, align := 0, 0
+	for _, field := range t.Fields {
+		fieldProperties := field.Type.Properties()
+		size += fieldProperties.Size
+		if align < fieldProperties.Align {
+			align = fieldProperties.Align
+		}
+	}
+	return TypeProperties{
+		Size:  size,
+		Align: align,
+	}
+}
+func (t StructType) String() string {
+	var b strings.Builder
+	b.WriteString("struct{")
+	for i, field := range t.Fields {
+		if i > 0 {
+			b.WriteRune(',')
+		}
+		b.WriteString(field.Type.String())
+	}
+	b.WriteRune('}')
+	return b.String()
+}
+func (t StructType) HashKey() string {
+	var b strings.Builder
+	b.WriteString("struct{")
+	for i, field := range t.Fields {
+		if i > 0 {
+			b.WriteRune(',')
+		}
+		b.WriteString(field.Type.HashKey())
+	}
+	b.WriteRune('}')
+	return b.String()
+}
+func (t StructType) FindField(name string) *StructTypeField {
+	if index, ok := t.FieldsByName[name]; ok {
+		return &t.Fields[index]
+	}
+	for _, field := range t.Fields {
+		if field.Identifer != nil {
+			continue
+		}
+
+		strongAlias, ok := field.Type.(*StrongAliasType)
+		if !ok {
+			continue
+		}
+
+		underlyingType := strongAlias.Resolve()
+		structType, ok := underlyingType.(*StructType)
+		if !ok {
+			continue
+		}
+
+		if field := structType.FindField(name); field != nil {
+			return field
+		}
+	}
+	return nil
+}
+
+type StrongAliasType struct {
+	Name           string
+	UnderlyingType Type
+}
+
+func (StrongAliasType) aType() {}
+func (t StrongAliasType) Properties() TypeProperties {
+	return t.UnderlyingType.Properties()
+}
+func (t StrongAliasType) String() string  { return t.Name }
+func (t StrongAliasType) HashKey() string { return t.String() }
+func (t StrongAliasType) Resolve() Type {
+	if alias, ok := t.UnderlyingType.(*StrongAliasType); ok {
+		return alias.Resolve()
+	} else {
+		return t.UnderlyingType
+	}
+}
+
 type TypeInterner struct {
 	types map[string]Type
 }
@@ -303,4 +398,23 @@ func (t *TypeInterner) InternTupleType(types []Type) Type {
 
 	t.types[key] = &tupleType
 	return &tupleType
+}
+
+func (t *TypeInterner) InternStructType(names []string, types []StructTypeField) Type {
+	structType := StructType{
+		Fields:       types,
+		FieldsByName: make(map[string]int),
+	}
+	structType.Fields = types
+	for i := 0; i < len(names); i++ {
+		structType.FieldsByName[names[i]] = i
+	}
+	return &structType
+}
+
+func (t *TypeInterner) InternStrongTypeAlias(name string, underlyingType Type) Type {
+	return &StrongAliasType{
+		Name:           name,
+		UnderlyingType: underlyingType,
+	}
 }

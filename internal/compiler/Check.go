@@ -264,7 +264,7 @@ func (checker *Checker) Check() bool {
 
 	checker.shallowWalk()
 
-	for _, sym := range globalScope.Table {
+	for _, sym := range globalScope.Symbols {
 		checker.resolveSymbol(sym)
 	}
 
@@ -303,7 +303,11 @@ func (checker *Checker) shallowWalkGenericDecl(d *GenericDecl) {
 			}
 		}
 	case TokenType:
-		// do nothing for now
+		for _, s := range d.Specs {
+			spec := s.(*TypeSpec)
+			sym := NewTypeSymbol(spec.Name.Token, d, spec.Name.SourceRange(), spec.Type, !spec.Assign.valid())
+			checker.addSymbol(sym)
+		}
 	default:
 		panic("unexpected GenericDecl kind")
 	}
@@ -339,6 +343,10 @@ func (checker *Checker) resolveSymbol(sym Symbol) *TypeAndValue {
 		checker.error(
 			NewError(sym.SourceRange(), "symbol %v has a cyclic dependency", sym.Name()),
 		)
+		return &TypeAndValue{
+			Mode: AddressModeInvalid,
+			Type: BuiltinVoidType,
+		}
 	}
 
 	var symType *TypeAndValue
@@ -346,6 +354,8 @@ func (checker *Checker) resolveSymbol(sym Symbol) *TypeAndValue {
 	switch symbol := sym.(type) {
 	case *FuncSymbol:
 		symType = checker.resolveFuncSymbol(symbol)
+	case *TypeSymbol:
+		symType = checker.resolveTypeSymbol(symbol)
 	default:
 		panic("unexpected symbol type")
 	}
@@ -356,6 +366,8 @@ func (checker *Checker) resolveSymbol(sym Symbol) *TypeAndValue {
 	switch symbol := sym.(type) {
 	case *FuncSymbol:
 		checker.resolveFuncBody(symbol)
+	case *TypeSymbol:
+		// nothing to do here
 	default:
 		panic("unexpected symbol type")
 	}
@@ -378,6 +390,15 @@ func (checker *Checker) resolveFuncSymbol(sym *FuncSymbol) *TypeAndValue {
 
 	checker.unit.semanticInfo.SetTypeOf(sym.SymDecl, funcType)
 	return funcType
+}
+
+func (checker *Checker) resolveTypeSymbol(sym *TypeSymbol) *TypeAndValue {
+	t := checker.resolveExpr(sym.TypeExpr)
+	if sym.IsStrong {
+		t.Type = checker.unit.semanticInfo.TypeInterner.InternStrongTypeAlias(sym.Name(), t.Type)
+	}
+	checker.unit.semanticInfo.SetTypeOf(sym.SymDecl, t)
+	return t
 }
 
 func (checker *Checker) resolveFuncBody(sym *FuncSymbol) {
@@ -418,6 +439,8 @@ func (checker *Checker) resolveExpr(expr Expr) (t *TypeAndValue) {
 		t = checker.resolveArrayTypeExpr(e)
 	case *FuncTypeExpr:
 		t = checker.resolveFuncTypeExpr(e)
+	case *StructTypeExpr:
+		t = checker.resolveStructTypeExpr(e)
 	default:
 		panic("unexpected expr type")
 	}
@@ -624,6 +647,10 @@ func (checker *Checker) resolveNamedTypeExpr(e *NamedTypeExpr) *TypeAndValue {
 	if e.Package.valid() {
 		panic("we don't support packages yet")
 	}
+	scope := checker.currentScope()
+	if typeSym := scope.Find(e.TypeName.Value()); typeSym != nil {
+		return checker.resolveSymbol(typeSym)
+	}
 	return &TypeAndValue{
 		Mode:  AddressModeType,
 		Type:  typeFromName(e.TypeName),
@@ -778,6 +805,85 @@ func (checker *Checker) resolveFuncTypeExpr(e *FuncTypeExpr) *TypeAndValue {
 		Mode:  AddressModeType,
 		Type:  checker.unit.semanticInfo.TypeInterner.InternFuncType(parameterTypes, returnTypes),
 		Value: nil,
+	}
+}
+
+func (checker *Checker) resolveStructTypeExpr(e *StructTypeExpr) *TypeAndValue {
+	var names []string
+	var types []StructTypeField
+
+	type fieldInfo struct {
+		name        string
+		sourceRange SourceRange
+	}
+	fieldsMap := make(map[string]fieldInfo)
+
+	checkExistingFields := func(name string, sourceRange SourceRange) bool {
+		if existing, ok := fieldsMap[name]; ok {
+			checker.error(
+				NewError(
+					sourceRange,
+					"field '%v' redefinition",
+					name,
+				).Note(
+					existing.sourceRange,
+					"first declared here",
+				),
+			)
+			return true
+		}
+		fieldsMap[name] = fieldInfo{name: name, sourceRange: sourceRange}
+		return false
+	}
+
+	invalidType := &TypeAndValue{
+		Mode:  AddressModeType,
+		Type:  BuiltinVoidType,
+		Value: nil,
+	}
+
+	for _, field := range e.FieldList.Fields {
+		if len(field.Names) > 0 {
+			for _, id := range field.Names {
+				if checkExistingFields(id.Token.Value(), id.SourceRange()) {
+					return invalidType
+				}
+				names = append(names, id.Token.Value())
+				types = append(types, StructTypeField{
+					Identifer: id,
+					Type:      checker.resolveExpr(field.Type).Type,
+				})
+			}
+		} else {
+			fieldType := checker.resolveExpr(field.Type)
+			if strongAlias, ok := fieldType.Type.(*StrongAliasType); ok {
+				if checkExistingFields(strongAlias.Name, field.Type.SourceRange()) {
+					return invalidType
+				}
+				names = append(names, strongAlias.Name)
+				types = append(types, StructTypeField{
+					Identifer: nil,
+					Type:      fieldType.Type,
+				})
+			} else {
+				checker.error(NewError(field.Type.SourceRange(), "Cannot embed type '%v'", field.Type))
+			}
+		}
+	}
+
+	return &TypeAndValue{
+		Mode:  AddressModeType,
+		Type:  checker.unit.semanticInfo.TypeInterner.InternStructType(names, types),
+		Value: nil,
+	}
+}
+
+func getUnderlyingType(inputType Type) Type {
+	switch t := inputType.(type) {
+	case *StrongAliasType:
+		return getUnderlyingType(t.UnderlyingType)
+	default:
+		return t
 	}
 }
 

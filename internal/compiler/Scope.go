@@ -97,23 +97,45 @@ func NewConstSymbol(name Token, decl Decl, sourceRange SourceRange) *ConstSymbol
 	}
 }
 
+type TypeSymbol struct {
+	SymbolBase
+	TypeExpr TypeExpr
+	IsStrong bool
+}
+
+func (TypeSymbol) aSymbol() {}
+func NewTypeSymbol(name Token, decl Decl, sourceRange SourceRange, typeExpr TypeExpr, isStrong bool) *TypeSymbol {
+	return &TypeSymbol{
+		SymbolBase: SymbolBase{
+			SymScope:       nil,
+			SymName:        name.Value(),
+			SymDecl:        decl,
+			SymSourceRange: sourceRange,
+		},
+		TypeExpr: typeExpr,
+		IsStrong: isStrong,
+	}
+}
+
 type Scope struct {
-	Parent *Scope
-	Name   string
-	Table  map[string]Symbol
+	Parent  *Scope
+	Name    string
+	Symbols []Symbol
+	Table   map[string]int
 }
 
 func NewScope(parent *Scope, name string) *Scope {
 	return &Scope{
-		Parent: parent,
-		Name:   name,
-		Table:  make(map[string]Symbol),
+		Parent:  parent,
+		Name:    name,
+		Symbols: make([]Symbol, 0),
+		Table:   make(map[string]int),
 	}
 }
 
 func (s Scope) ShallowFind(name string) Symbol {
-	if symbol, ok := s.Table[name]; ok {
-		return symbol
+	if index, ok := s.Table[name]; ok {
+		return s.Symbols[index]
 	}
 	return nil
 }
@@ -123,7 +145,8 @@ func (s *Scope) Add(sym Symbol) bool {
 		return false
 	}
 
-	s.Table[sym.Name()] = sym
+	s.Table[sym.Name()] = len(s.Symbols)
+	s.Symbols = append(s.Symbols, sym)
 	return true
 }
 
