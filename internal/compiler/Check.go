@@ -878,15 +878,6 @@ func (checker *Checker) resolveStructTypeExpr(e *StructTypeExpr) *TypeAndValue {
 	}
 }
 
-func getUnderlyingType(inputType Type) Type {
-	switch t := inputType.(type) {
-	case *StrongAliasType:
-		return getUnderlyingType(t.UnderlyingType)
-	default:
-		return t
-	}
-}
-
 func typeFromName(name Token) Type {
 	switch name.Value() {
 	case "bool":
