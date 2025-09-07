@@ -13,3 +13,6 @@ Note[internal/compiler/testdata/Check/StructType.sabre:35:2]: first declared her
 >> 	type Recursive struct {
 >> 	     ^^^^^^^^^          
 Error[internal/compiler/testdata/Check/StructType.sabre:42:6]: symbol Recursive has a cyclic dependency
+>> 		bareStruct(b)
+>> 		           ^  
+Error[internal/compiler/testdata/Check/StructType.sabre:50:13]: incorrect argument type 'struct{float32}', expected 'struct{int}'
