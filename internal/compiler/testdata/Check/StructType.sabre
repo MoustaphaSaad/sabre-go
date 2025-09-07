@@ -1,0 +1,52 @@
+package main
+
+type Foo struct {
+	x int
+}
+
+func useFoo(x Foo) Foo { return x }
+
+type StrongInt int
+
+func useStrongInt(x StrongInt) StrongInt { return x }
+func useStrongIntWithInt(x StrongInt) int { return x }
+
+type WeakInt = int
+
+func useWeakInt(x WeakInt) WeakInt { return x }
+func useWeakIntWithInt(x WeakInt) int { return x }
+func useWeakIntWithFloat32(x WeakInt) float32 { return x }
+
+type Bar struct {
+	Foo
+	y int
+}
+
+func useBar(x Bar) Bar { return x }
+
+type BarWithSubFieldCollision struct {
+	Foo
+	x int
+}
+
+func useBarWithSubFieldCollision(x BarWithSubFieldCollision) BarWithSubFieldCollision { return x }
+
+type BarWithEmbeddedFieldCollision struct {
+	Foo
+	x int
+	Foo float32
+}
+
+func useBarWithEmbeddedFieldCollision(x BarWithEmbeddedFieldCollision) BarWithEmbeddedFieldCollision { return x }
+
+type Recursive struct {
+	x Recursive
+}
+
+func bareStruct(x struct { x int }) {}
+
+func useBareStruct(a struct {x int}, b struct {x float32}) {
+	bareStruct(a)
+	bareStruct(b)
+}
+

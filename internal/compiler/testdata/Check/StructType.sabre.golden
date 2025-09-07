@@ -1,0 +1,18 @@
+>> 	func useStrongIntWithInt(x StrongInt) int { return x }
+>> 	                                                   ^   
+Error[internal/compiler/testdata/Check/StructType.sabre:12:52]: incorrect return type 'StrongInt', expected 'int'
+>> 	func useWeakIntWithFloat32(x WeakInt) float32 { return x }
+>> 	                                                       ^   
+Error[internal/compiler/testdata/Check/StructType.sabre:18:56]: incorrect return type 'int', expected 'float32'
+>> 		Foo float32
+>> 		^^^         
+Error[internal/compiler/testdata/Check/StructType.sabre:37:2]: field 'Foo' redefinition
+>> 		Foo
+>> 		^^^ 
+Note[internal/compiler/testdata/Check/StructType.sabre:35:2]: first declared here
+>> 	type Recursive struct {
+>> 	     ^^^^^^^^^          
+Error[internal/compiler/testdata/Check/StructType.sabre:42:6]: symbol Recursive has a cyclic dependency
+>> 		bareStruct(b)
+>> 		           ^  
+Error[internal/compiler/testdata/Check/StructType.sabre:50:13]: incorrect argument type 'struct{float32}', expected 'struct{int}'
