@@ -405,7 +405,6 @@ func (t *TypeInterner) InternStructType(names []string, types []StructTypeField)
 		Fields:       types,
 		FieldsByName: make(map[string]int),
 	}
-	structType.Fields = types
 	for i := 0; i < len(names); i++ {
 		structType.FieldsByName[names[i]] = i
 	}
