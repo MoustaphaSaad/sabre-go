@@ -1056,19 +1056,24 @@ func (p *Parser) parseForStmt() Stmt {
 
 	// for {}
 	if p.currentToken().Kind() == TokenLBrace {
+		body := p.parseBlockStmt()
+		p.eatSemicolonOrError()
 		return &ForStmt{
 			For:  forToken,
-			Body: p.parseBlockStmt(),
+			Body: body,
 		}
 	}
 
 	// for range list {}
 	if rangeToken := p.eatTokenIfKind(TokenRange); rangeToken.valid() {
+		expr := p.ParseExpr()
+		body := p.parseBlockStmt()
+		p.eatSemicolonOrError()
 		return &ForRangeStmt{
 			For:   forToken,
 			Range: rangeToken,
-			Expr:  p.ParseExpr(),
-			Body:  p.parseBlockStmt(),
+			Expr:  expr,
+			Body:  body,
 		}
 	}
 
@@ -1078,10 +1083,12 @@ func (p *Parser) parseForStmt() Stmt {
 		if cond != nil {
 			// for cond {}
 			if exprStmt, ok := cond.(*ExprStmt); ok {
+				body := p.parseBlockStmt()
+				p.eatSemicolonOrError()
 				return &ForStmt{
 					For:  forToken,
 					Cond: exprStmt.Expr,
-					Body: p.parseBlockStmt(),
+					Body: body,
 				}
 				// for i, [_] := range 10 {}
 			} else if assignStmt, ok := cond.(*AssignStmt); ok && isRange {
@@ -1098,13 +1105,15 @@ func (p *Parser) parseForStmt() Stmt {
 				}
 
 				rangeExpr := assignStmt.RHS[0].(*UnaryExpr)
+				body := p.parseBlockStmt()
+				p.eatSemicolonOrError()
 
 				return &ForRangeStmt{
 					For:   forToken,
 					Init:  assignStmt,
 					Range: rangeExpr.Operator,
 					Expr:  rangeExpr.Base,
-					Body:  p.parseBlockStmt(),
+					Body:  body,
 				}
 			}
 
@@ -1128,12 +1137,16 @@ func (p *Parser) parseForStmt() Stmt {
 		post = postStmt
 	}
 
+	body := p.parseBlockStmt()
+
+	p.eatSemicolonOrError()
+
 	return &ForStmt{
 		For:  forToken,
 		Init: init,
 		Cond: cond,
 		Post: post,
-		Body: p.parseBlockStmt(),
+		Body: body,
 	}
 }
 

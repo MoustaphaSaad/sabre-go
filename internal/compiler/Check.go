@@ -51,6 +51,7 @@ type ResolveStmtProperties struct {
 	acceptsBreak       bool
 	acceptsContinue    bool
 	acceptsFallthrough bool
+	isFinalCaseStmt    bool
 }
 
 type AddressMode byte
@@ -915,6 +916,10 @@ func (checker *Checker) resolveStmt(stmt Stmt, properties ResolveStmtProperties)
 		checker.resolveAssignStmt(s)
 	case *IfStmt:
 		checker.resolveIfStmt(s, properties)
+	case *ForStmt:
+		checker.resolveForStmt(s, properties)
+	case *SwitchStmt:
+		checker.resolveSwitchStmt(s, properties)
 	default:
 		panic("unexpected stmt type")
 	}
@@ -969,11 +974,11 @@ func (checker *Checker) resolveBreakStmt(s *BreakStmt, properties ResolveStmtPro
 	}
 }
 
-// TODO:
-// Once we have switch cases implemented, we need to add the following checks for fallthrough statements:
-// Check fallthrough is the last statement in a switch case and that the next case exists.
-// Check fallthrough is not in the default case.
 func (checker *Checker) resolveFallthroughStmt(s *FallthroughStmt, properties ResolveStmtProperties) {
+	if properties.isFinalCaseStmt {
+		checker.error(NewError(s.SourceRange(), "cannot fallthrough from the final case in a switch"))
+	}
+
 	if !properties.acceptsFallthrough {
 		checker.error(NewError(s.SourceRange(), "fallthrough statement not within switch"))
 	}
@@ -1201,5 +1206,117 @@ func (checker *Checker) resolveIfStmt(s *IfStmt, properties ResolveStmtPropertie
 
 	if s.Else != nil {
 		checker.resolveStmt(s.Else, properties)
+	}
+}
+
+func (checker *Checker) resolveForStmt(s *ForStmt, properties ResolveStmtProperties) {
+	scope := checker.unit.semanticInfo.createScopeFor(s, checker.currentScope(), "for")
+	checker.enterScope(scope)
+	defer checker.leaveScope()
+
+	if s.Init != nil {
+		checker.resolveStmt(s.Init, properties)
+	}
+
+	if s.Cond != nil {
+		condType := checker.resolveExpr(s.Cond)
+		if condType.Type != BuiltinBoolType {
+			checker.error(NewError(
+				s.Cond.SourceRange(),
+				"for condition should be boolean, but found '%v'",
+				condType.Type,
+			))
+			return
+		}
+	}
+
+	if s.Post != nil {
+		checker.resolveStmt(s.Post, properties)
+	}
+
+	properties.acceptsBreak = true
+	properties.acceptsContinue = true
+
+	checker.resolveBlockStmt(s.Body, properties)
+}
+
+func (checker *Checker) resolveSwitchStmt(s *SwitchStmt, properties ResolveStmtProperties) {
+	scope := checker.unit.semanticInfo.createScopeFor(s, checker.currentScope(), "switch")
+	checker.enterScope(scope)
+	defer checker.leaveScope()
+
+	if s.Init != nil {
+		checker.resolveStmt(s.Init, properties)
+	}
+
+	var tag *TypeAndValue
+	if s.Tag != nil {
+		tag = checker.resolveExpr(s.Tag)
+		if !tag.Type.Properties().Integral && !tag.Type.Properties().Floating && tag.Type != BuiltinBoolType {
+			checker.error(NewError(
+				s.Tag.SourceRange(),
+				"invalid switch tag type '%v'",
+				tag.Type,
+			))
+		}
+	} else {
+		tag = &TypeAndValue{
+			Mode:  AddressModeConstant,
+			Type:  BuiltinBoolType,
+			Value: constant.MakeBool(true),
+		}
+	}
+
+	caseValueMap := make(map[constant.Value]SourceRange)
+	for i, stmt := range s.Body.Stmts {
+		caseStmt, ok := stmt.(*SwitchCaseStmt)
+		if !ok {
+			checker.error(NewError(caseStmt.SourceRange(), "only switch case statements are allowed in switch body"))
+		}
+
+		properties.acceptsBreak = true
+		properties.acceptsFallthrough = true
+		properties.isFinalCaseStmt = i+1 == len(s.Body.Stmts)
+		checker.resolveSwitchCaseStmt(caseStmt, caseValueMap, tag.Type, properties)
+	}
+}
+
+func (checker *Checker) resolveSwitchCaseStmt(
+	s *SwitchCaseStmt,
+	caseValueMap map[constant.Value]SourceRange,
+	tagType Type,
+	properties ResolveStmtProperties,
+) {
+	scope := checker.unit.semanticInfo.createScopeFor(s, checker.currentScope(), "case")
+	checker.enterScope(scope)
+	defer checker.leaveScope()
+
+	for _, expr := range s.LHS {
+		t := checker.resolveExpr(expr)
+
+		if t.Type != tagType {
+			checker.error(NewError(expr.SourceRange(),
+				"case value type '%v' is not comparable to switch tag type '%v'",
+				t.Type, tagType,
+			))
+		}
+
+		if t.Mode == AddressModeConstant && t.Value != nil {
+			key := t.Value
+			if prev, exists := caseValueMap[key]; exists {
+				checker.error(NewError(expr.SourceRange(), "duplicate case value '%v'", key).
+					Note(prev, "first case value declared here"))
+			} else {
+				caseValueMap[key] = expr.SourceRange()
+			}
+		}
+	}
+
+	for i, stmt := range s.RHS {
+		fs, ok := stmt.(*FallthroughStmt)
+		if ok && i != len(s.RHS)-1 {
+			checker.error(NewError(fs.SourceRange(), "fallthrough statement must be the last statement in a case"))
+		}
+		checker.resolveStmt(stmt, properties)
 	}
 }

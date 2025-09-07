@@ -379,7 +379,7 @@ type SwitchStmt struct {
 	Switch Token
 	Init   Stmt
 	Tag    Expr
-	Body   Stmt
+	Body   *BlockStmt
 }
 
 func (e *SwitchStmt) stmtNode() {}
