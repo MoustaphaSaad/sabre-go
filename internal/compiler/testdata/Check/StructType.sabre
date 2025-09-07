@@ -43,3 +43,10 @@ type Recursive struct {
 	x Recursive
 }
 
+func bareStruct(x struct { x int }) {}
+
+func useBareStruct(a struct {x int}, b struct {x float32}) {
+	bareStruct(a)
+	bareStruct(b)
+}
+

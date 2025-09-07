@@ -409,6 +409,13 @@ func (t *TypeInterner) InternStructType(names []string, types []StructTypeField)
 	for i := 0; i < len(names); i++ {
 		structType.FieldsByName[names[i]] = i
 	}
+	key := structType.HashKey()
+
+	if v, ok := t.types[key]; ok {
+		return v
+	}
+
+	t.types[key] = &structType
 	return &structType
 }
 
