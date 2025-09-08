@@ -1,4 +1,3 @@
-[func IDENTIFIER(foo) ( IDENTIFIER(x) IDENTIFIER(int) ) { IDENTIFIER(x) := LITERAL_INT(1) ;(\n) } ;(\n) EOF]
 (FuncDecl foo
   (FuncType
     (FuncType-Parameters
