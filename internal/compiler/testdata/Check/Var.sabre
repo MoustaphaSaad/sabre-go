@@ -1,0 +1,26 @@
+package main
+
+var (
+	x int
+	y int = 1
+	z = 1
+)
+
+func correct() {
+	var x = 1
+	var y int
+	var z int = 1
+
+	var i, j, k int
+	var l, m, n int = 1, 2, 3
+	var u, v, w = 1, 2, 3
+
+	r, s, t := i, j, k
+}
+
+func incorrect() {
+	var x float32 = 1.5
+	var y int = x
+	var z int = 1.5
+	var l, m, n int = 1, 2
+}

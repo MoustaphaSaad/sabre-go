@@ -442,6 +442,18 @@ func (e *ForRangeStmt) Visit(v NodeVisitor) {
 	v.VisitForRangeStmt(e)
 }
 
+type DeclStmt struct {
+	Decl Decl
+}
+
+func (e *DeclStmt) stmtNode() {}
+func (e *DeclStmt) SourceRange() SourceRange {
+	return e.Decl.SourceRange()
+}
+func (e *DeclStmt) Visit(v NodeVisitor) {
+	e.Decl.Visit(v)
+}
+
 // Specs
 type Spec interface {
 	Node

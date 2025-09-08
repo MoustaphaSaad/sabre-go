@@ -920,6 +920,8 @@ func (checker *Checker) resolveStmt(stmt Stmt, properties ResolveStmtProperties)
 		checker.resolveForStmt(s, properties)
 	case *SwitchStmt:
 		checker.resolveSwitchStmt(s, properties)
+	case *DeclStmt:
+		checker.resolveDeclStmt(s)
 	default:
 		panic("unexpected stmt type")
 	}
@@ -1318,5 +1320,64 @@ func (checker *Checker) resolveSwitchCaseStmt(
 			checker.error(NewError(fs.SourceRange(), "fallthrough statement must be the last statement in a case"))
 		}
 		checker.resolveStmt(stmt, properties)
+	}
+}
+
+func (checker *Checker) resolveDeclStmt(s *DeclStmt) {
+	unpackAndGetExprList := func(exprs []Expr) (unpacked []Expr) {
+		if len(exprs) == 1 {
+			e := exprs[0]
+			switch t := checker.resolveExpr(e).Type.(type) {
+			case *TupleType:
+				for range t.Types {
+					unpacked = append(unpacked, e)
+				}
+			default:
+				unpacked = append(unpacked, e)
+			}
+		} else {
+			unpacked = exprs
+		}
+		return
+	}
+
+	hasMultiValue := func(s *DeclStmt, lhsValuesLen, rhsValuesLen int) bool {
+		if lhsValuesLen != rhsValuesLen {
+			checker.error(NewError(
+				s.SourceRange(),
+				"assignment mismatch: %v variables but %v values",
+				lhsValuesLen,
+				rhsValuesLen,
+			))
+			return false
+		}
+		return true
+	}
+
+	switch d := s.Decl.(*GenericDecl); d.DeclToken.Kind() {
+	case TokenVar:
+		for _, spec := range d.Specs {
+			spec := spec.(*ValueSpec)
+			rhsExprs := unpackAndGetExprList(spec.RHS)
+			if spec.Assign.valid() {
+				if !hasMultiValue(s, len(spec.LHS), len(rhsExprs)) {
+					return
+				}
+			}
+
+			var initExpr Expr
+			for i, name := range spec.LHS {
+				if i < len(rhsExprs) {
+					initExpr = rhsExprs[i]
+				}
+				sym := NewVarSymbol(name.Token, d, d.SourceRange(), spec.Type, initExpr)
+				checker.addSymbol(sym)
+				checker.resolveVarSymbol(sym)
+			}
+		}
+	case TokenType:
+	case TokenConst:
+	default:
+		panic("unexpected decl type")
 	}
 }
