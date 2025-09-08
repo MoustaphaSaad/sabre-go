@@ -298,8 +298,12 @@ func (checker *Checker) shallowWalkGenericDecl(d *GenericDecl) {
 	case TokenVar:
 		for _, s := range d.Specs {
 			spec := s.(*ValueSpec)
-			for _, name := range spec.LHS {
-				sym := NewVarSymbol(name.Token, d, d.SourceRange())
+			for i, name := range spec.LHS {
+				var initExpr Expr
+				if i < len(spec.RHS) {
+					initExpr = spec.RHS[i]
+				}
+				sym := NewVarSymbol(name.Token, d, d.SourceRange(), spec.Type, initExpr)
 				checker.addSymbol(sym)
 			}
 		}
@@ -357,6 +361,8 @@ func (checker *Checker) resolveSymbol(sym Symbol) *TypeAndValue {
 		symType = checker.resolveFuncSymbol(symbol)
 	case *TypeSymbol:
 		symType = checker.resolveTypeSymbol(symbol)
+	case *VarSymbol:
+		symType = checker.resolveVarSymbol(symbol)
 	default:
 		panic("unexpected symbol type")
 	}
@@ -369,6 +375,8 @@ func (checker *Checker) resolveSymbol(sym Symbol) *TypeAndValue {
 		checker.resolveFuncBody(symbol)
 	case *TypeSymbol:
 		// nothing to do here
+	case *VarSymbol:
+		// nothing to do
 	default:
 		panic("unexpected symbol type")
 	}
@@ -413,6 +421,41 @@ func (checker *Checker) resolveFuncBody(sym *FuncSymbol) {
 
 	for _, stmt := range funcDecl.Body.Stmts {
 		checker.resolveStmt(stmt, ResolveStmtProperties{})
+	}
+}
+
+func (checker *Checker) resolveVarSymbol(sym *VarSymbol) *TypeAndValue {
+	invalidType := &TypeAndValue{
+		Mode:  AddressModeInvalid,
+		Type:  BuiltinVoidType,
+		Value: nil,
+	}
+
+	var varType *TypeAndValue
+	if sym.TypeExpr != nil {
+		varType = checker.resolveExpr(sym.TypeExpr)
+	}
+
+	var initType *TypeAndValue
+	if sym.InitExpr != nil {
+		initType = checker.resolveExpr(sym.InitExpr)
+		if varType != nil && initType.Type != varType.Type {
+			checker.error(NewError(
+				sym.InitExpr.SourceRange(), "type mismatch in variable initializer, expected '%v' but got '%v'", varType.Type, initType.Type))
+			return invalidType
+		} else {
+			return &TypeAndValue{
+				Mode:  AddressModeVariable,
+				Type:  initType.Type,
+				Value: initType.Value,
+			}
+		}
+	}
+
+	return &TypeAndValue{
+		Mode:  AddressModeVariable,
+		Type:  varType.Type,
+		Value: nil,
 	}
 }
 
@@ -783,7 +826,7 @@ func (checker *Checker) resolveFuncTypeExpr(e *FuncTypeExpr) *TypeAndValue {
 			fieldType := checker.resolveExpr(field.Type)
 			if len(field.Names) > 0 {
 				for _, name := range field.Names {
-					v := NewVarSymbol(name.Token, nil, name.SourceRange())
+					v := NewVarSymbol(name.Token, nil, name.SourceRange(), field.Type, nil)
 					v.SetResolveState(ResolveStateResolved)
 					checker.unit.semanticInfo.SetTypeOf(v, fieldType)
 					checker.addSymbol(v)
@@ -1089,7 +1132,7 @@ func (checker *Checker) resolveAssignStmt(s *AssignStmt) {
 		for i := range s.LHS {
 			lhs := s.LHS[i]
 			name := lhs.(*IdentifierExpr).Token
-			v := NewVarSymbol(name, nil, name.SourceRange())
+			v := NewVarSymbol(name, nil, name.SourceRange(), nil, nil)
 			v.SetResolveState(ResolveStateResolved)
 			checker.unit.semanticInfo.SetTypeOf(v, &TypeAndValue{Mode: AddressModeVariable, Type: rhsTypes[i]})
 			checker.addSymbol(v)
