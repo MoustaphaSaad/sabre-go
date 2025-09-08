@@ -1,1 +1,9 @@
-
+>> 		var y int = x
+>> 		            ^ 
+Error[internal/compiler/testdata/Check/Var.sabre:23:14]: type mismatch in variable initializer, expected 'int' but got 'float32'
+>> 		var z int = 1.5
+>> 		            ^^^ 
+Error[internal/compiler/testdata/Check/Var.sabre:24:14]: type mismatch in variable initializer, expected 'int' but got 'float32'
+>> 		var l, m, n int = 1, 2
+>> 		^^^^^^^^^^^^^^^^^^^^^^ 
+Error[internal/compiler/testdata/Check/Var.sabre:25:2]: assignment mismatch: 3 variables but 2 values
