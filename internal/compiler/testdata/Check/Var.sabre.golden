@@ -1,1 +1,6 @@
-
+>> 		u int = 1.5
+>> 		        ^^^ 
+Error[internal/compiler/testdata/Check/Var.sabre:10:10]: type mismatch in variable initializer, expected 'int' but got 'float32'
+>> 		w int = v
+>> 		        ^ 
+Error[internal/compiler/testdata/Check/Var.sabre:12:10]: type mismatch in variable initializer, expected 'int' but got 'float32'

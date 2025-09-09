@@ -5,3 +5,9 @@ var (
 	y int = 1
 	z = 1
 )
+
+var (
+	u int = 1.5
+	v float32 = 1.5
+	w int = v
+)
