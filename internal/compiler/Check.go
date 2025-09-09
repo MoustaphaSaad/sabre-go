@@ -1131,10 +1131,14 @@ func (checker *Checker) resolveAssignStmt(s *AssignStmt) {
 			}
 		}
 
+		initExpr := s.RHS[0]
 		for i := range s.LHS {
 			lhs := s.LHS[i]
 			name := lhs.(*IdentifierExpr).Token
-			v := NewVarSymbol(name, nil, name.SourceRange(), nil, nil)
+			if i < len(s.RHS) {
+				initExpr = s.RHS[i]
+			}
+			v := NewVarSymbol(name, nil, name.SourceRange(), nil, initExpr)
 			v.SetResolveState(ResolveStateResolved)
 			checker.unit.semanticInfo.SetTypeOf(v, &TypeAndValue{Mode: AddressModeVariable, Type: rhsTypes[i]})
 			checker.addSymbol(v)
