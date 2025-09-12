@@ -397,6 +397,8 @@ func (checker *Checker) resolveTypeSymbol(sym *TypeSymbol) *TypeAndValue {
 	t := checker.resolveExpr(sym.TypeExpr)
 	if sym.IsStrong {
 		t.Type = checker.unit.semanticInfo.TypeInterner.InternStrongTypeAlias(sym.Name(), t.Type)
+	} else {
+		t.Type = checker.unit.semanticInfo.TypeInterner.InternWeakTypeAlias(sym.Name(), t.Type)
 	}
 	checker.unit.semanticInfo.SetTypeOf(sym.SymDecl, t)
 	return t
@@ -555,7 +557,7 @@ func (checker *Checker) resolveBinaryExpr(e *BinaryExpr) *TypeAndValue {
 	rhsType := checker.resolveExpr(e.RHS)
 
 	equalTypes := func(e Expr, lhsType, rhsType Type) bool {
-		if lhsType != rhsType {
+		if !lhsType.Equal(rhsType) {
 			checker.error(NewError(
 				e.SourceRange(),
 				"type mismatch in binary expression, lhs is '%v' and rhs is '%v'",
@@ -728,7 +730,7 @@ func (checker *Checker) resolveCallExpr(e *CallExpr) *TypeAndValue {
 
 	for i, a := range arguments {
 		parameterType := funcType.ParameterTypes[i]
-		if a != parameterType {
+		if !a.Equal(parameterType) {
 			checker.error(NewError(sourceRanges[i], "incorrect argument type '%v', expected '%v'", a, parameterType))
 			return res
 		}
@@ -866,6 +868,15 @@ func (checker *Checker) resolveStructTypeExpr(e *StructTypeExpr) *TypeAndValue {
 					Identifer: nil,
 					Type:      fieldType.Type,
 				})
+			} else if weakAlias, ok := fieldType.Type.(*WeakAliasType); ok {
+				if checkExistingFields(weakAlias.Name, field.Type.SourceRange()) {
+					return invalidType
+				}
+				names = append(names, weakAlias.Name)
+				types = append(types, StructTypeField{
+					Identifer: nil,
+					Type:      fieldType.Type,
+				})
 			} else {
 				checker.error(NewError(field.Type.SourceRange(), "Cannot embed type '%v'", field.Type))
 			}
@@ -950,7 +961,7 @@ func (checker *Checker) resolveReturnStmt(s *ReturnStmt) {
 	expectedReturnTypes := checker.unit.semanticInfo.TypeOf(funcDecl).Type.(*FuncType).ReturnTypes
 	if len(returnTypes) == len(expectedReturnTypes) {
 		for i, et := range expectedReturnTypes {
-			if t := returnTypes[i]; t != et {
+			if t := returnTypes[i]; !t.Equal(et) {
 				checker.error(NewError(sourceRanges[i], "incorrect return type '%v', expected '%v'", t, et))
 			}
 		}
@@ -1051,7 +1062,7 @@ func (checker *Checker) resolveAssignStmt(s *AssignStmt) {
 	}
 
 	checkTypeEqual := func(lhsType, rhsType Type, lhsSourceRange, rhsSourceRange SourceRange) {
-		if lhsType != rhsType {
+		if !lhsType.Equal(rhsType) {
 			checker.error(
 				NewError(
 					s.SourceRange(),
@@ -1193,7 +1204,7 @@ func (checker *Checker) resolveIfStmt(s *IfStmt, properties ResolveStmtPropertie
 	}
 
 	condType := checker.resolveExpr(s.Cond)
-	if condType.Type != BuiltinBoolType {
+	if !condType.Type.Equal(BuiltinBoolType) {
 		checker.error(NewError(
 			s.Cond.SourceRange(),
 			"if condition should be boolean, but found '%v'",
@@ -1220,7 +1231,7 @@ func (checker *Checker) resolveForStmt(s *ForStmt, properties ResolveStmtPropert
 
 	if s.Cond != nil {
 		condType := checker.resolveExpr(s.Cond)
-		if condType.Type != BuiltinBoolType {
+		if !condType.Type.Equal(BuiltinBoolType) {
 			checker.error(NewError(
 				s.Cond.SourceRange(),
 				"for condition should be boolean, but found '%v'",
@@ -1252,7 +1263,7 @@ func (checker *Checker) resolveSwitchStmt(s *SwitchStmt, properties ResolveStmtP
 	var tag *TypeAndValue
 	if s.Tag != nil {
 		tag = checker.resolveExpr(s.Tag)
-		if !tag.Type.Properties().Integral && !tag.Type.Properties().Floating && tag.Type != BuiltinBoolType {
+		if !tag.Type.Properties().Integral && !tag.Type.Properties().Floating && !tag.Type.Equal(BuiltinBoolType) {
 			checker.error(NewError(
 				s.Tag.SourceRange(),
 				"invalid switch tag type '%v'",
@@ -1294,7 +1305,7 @@ func (checker *Checker) resolveSwitchCaseStmt(
 	for _, expr := range s.LHS {
 		t := checker.resolveExpr(expr)
 
-		if t.Type != tagType {
+		if !t.Type.Equal(tagType) {
 			checker.error(NewError(expr.SourceRange(),
 				"case value type '%v' is not comparable to switch tag type '%v'",
 				t.Type, tagType,
