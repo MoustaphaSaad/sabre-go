@@ -50,3 +50,15 @@ func useBareStruct(a struct {x int}, b struct {x float32}) {
 	bareStruct(b)
 }
 
+type WeakAlias = struct {
+	x int
+}
+
+type EmbeddedWeakAlias struct {
+	WeakAlias
+}
+
+type EmbeddedWeakAliasCollision struct {
+	WeakAlias
+	WeakAlias int
+}
