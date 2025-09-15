@@ -1,0 +1,15 @@
+>> 	func useFooIntField2(f Foo) int { return f.floatField }
+>> 	                                         ^^^^^^^^^^^^   
+Error[internal/compiler/testdata/Check/SelectorExpr.sabre:15:42]: incorrect return type 'float32', expected 'int'
+>> 	func useEmbeddedIntField2(f Foo) int { return f.f32 }
+>> 	                                              ^^^^^   
+Error[internal/compiler/testdata/Check/SelectorExpr.sabre:18:47]: incorrect return type 'float32', expected 'int'
+>> 	func useQualifiedEmbeddedIntField2(f Foo) int { return f.EmbeddedStruct.f32 }
+>> 	                                                       ^^^^^^^^^^^^^^^^^^^^   
+Error[internal/compiler/testdata/Check/SelectorExpr.sabre:21:56]: incorrect return type 'float32', expected 'int'
+>> 	func selectorOnInt(x int) int { return x.i }
+>> 	                                       ^^^   
+Error[internal/compiler/testdata/Check/SelectorExpr.sabre:23:40]: type 'int' does not support selector expr
+>> 	func selectorOnInt(x int) int { return x.i }
+>> 	                                       ^^^   
+Error[internal/compiler/testdata/Check/SelectorExpr.sabre:23:40]: incorrect return type 'void', expected 'int'
