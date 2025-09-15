@@ -20,4 +20,6 @@ func useEmbeddedIntField2(f Foo) int { return f.f32 }
 func useQualifiedEmbeddedIntField(f Foo) int { return f.EmbeddedStruct.i }
 func useQualifiedEmbeddedIntField2(f Foo) int { return f.EmbeddedStruct.f32 }
 
+func useNonExistentField(f Foo) int { return f.nonExistentField }
+
 func selectorOnInt(x int) int { return x.i }
