@@ -1,0 +1,25 @@
+package main
+
+type EmbeddedStruct struct {
+	i int
+	f32 float32
+}
+
+type Foo struct {
+	EmbeddedStruct
+	intField int
+	floatField float32
+}
+
+func useFooIntField(f Foo) int { return f.intField }
+func useFooIntField2(f Foo) int { return f.floatField }
+
+func useEmbeddedIntField(f Foo) int { return f.i }
+func useEmbeddedIntField2(f Foo) int { return f.f32 }
+
+func useQualifiedEmbeddedIntField(f Foo) int { return f.EmbeddedStruct.i }
+func useQualifiedEmbeddedIntField2(f Foo) int { return f.EmbeddedStruct.f32 }
+
+func useNonExistentField(f Foo) int { return f.nonExistentField }
+
+func selectorOnInt(x int) int { return x.i }

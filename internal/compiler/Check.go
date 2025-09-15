@@ -430,6 +430,8 @@ func (checker *Checker) resolveExpr(expr Expr) (t *TypeAndValue) {
 		t = checker.resolveIdentifierExpr(e)
 	case *ParenExpr:
 		t = checker.resolveParenExpr(e)
+	case *SelectorExpr:
+		t = checker.resolveSelectorExpr(e)
 	case *UnaryExpr:
 		t = checker.resolveUnaryExpr(e)
 	case *BinaryExpr:
@@ -550,6 +552,35 @@ func (checker *Checker) resolveIdentifierExpr(e *IdentifierExpr) *TypeAndValue {
 
 func (checker *Checker) resolveParenExpr(e *ParenExpr) *TypeAndValue {
 	return checker.resolveExpr(e.Base)
+}
+
+func (checker *Checker) resolveSelectorExpr(e *SelectorExpr) *TypeAndValue {
+	baseType := checker.resolveExpr(e.Base)
+
+	invalidResult := &TypeAndValue{
+		Mode: AddressModeInvalid,
+		Type: BuiltinVoidType,
+	}
+
+	switch t := baseType.Type.Resolve(true).(type) {
+	case *StructType:
+		if structField := t.FindField(e.Selector.Token.Value()); structField != nil {
+			return &TypeAndValue{
+				Mode: baseType.Mode,
+				Type: structField.Type,
+			}
+		} else {
+			checker.error(NewError(
+				e.Selector.SourceRange(),
+				"field '%v' cannot be found in struct '%v'",
+				e.Selector.Token.Value(),
+				baseType.Type,
+			))
+		}
+	default:
+		checker.error(NewError(e.SourceRange(), "type '%v' does not support selector expr", baseType.Type))
+	}
+	return invalidResult
 }
 
 func (checker *Checker) resolveBinaryExpr(e *BinaryExpr) *TypeAndValue {
