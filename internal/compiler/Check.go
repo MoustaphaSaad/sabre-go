@@ -933,6 +933,36 @@ func typeFromName(name Token) Type {
 		return BuiltinFloat32Type
 	case "float64":
 		return BuiltinFloat64Type
+	case BuiltinF32x2Type.name:
+		return BuiltinF32x2Type
+	case BuiltinF32x3Type.name:
+		return BuiltinF32x3Type
+	case BuiltinF32x4Type.name:
+		return BuiltinF32x4Type
+	case BuiltinF64x2Type.name:
+		return BuiltinF64x2Type
+	case BuiltinF64x3Type.name:
+		return BuiltinF64x3Type
+	case BuiltinF64x4Type.name:
+		return BuiltinF64x4Type
+	case BuiltinI32x2Type.name:
+		return BuiltinI32x2Type
+	case BuiltinI32x3Type.name:
+		return BuiltinI32x3Type
+	case BuiltinI32x4Type.name:
+		return BuiltinI32x4Type
+	case BuiltinU32x2Type.name:
+		return BuiltinU32x2Type
+	case BuiltinU32x3Type.name:
+		return BuiltinU32x3Type
+	case BuiltinU32x4Type.name:
+		return BuiltinU32x4Type
+	case BuiltinB32x2Type.name:
+		return BuiltinB32x2Type
+	case BuiltinB32x3Type.name:
+		return BuiltinB32x3Type
+	case BuiltinB32x4Type.name:
+		return BuiltinB32x4Type
 	default:
 		return BuiltinVoidType
 	}

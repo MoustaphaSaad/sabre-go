@@ -178,6 +178,237 @@ func (lhs *StringType) Equal(rhs Type) bool {
 	return lhs == rhs.Resolve(false)
 }
 
+type VectorType struct {
+	UnderlyingType Type
+	Width          int
+	properties     TypeProperties
+	name           string
+}
+
+var (
+	BuiltinF32x2Type = &VectorType{
+		UnderlyingType: BuiltinFloat32Type,
+		Width:          2,
+		properties: TypeProperties{
+			Size:          8,
+			Align:         8,
+			Signed:        true,
+			Floating:      true,
+			HasArithmetic: true,
+			HasCompare:    true,
+			HasEquality:   true,
+		},
+		name: "f32x2",
+	}
+	BuiltinF32x3Type = &VectorType{
+		UnderlyingType: BuiltinFloat32Type,
+		Width:          3,
+		properties: TypeProperties{
+			Size:          12,
+			Align:         16,
+			Signed:        true,
+			Floating:      true,
+			HasArithmetic: true,
+			HasCompare:    true,
+			HasEquality:   true,
+		},
+		name: "f32x3",
+	}
+	BuiltinF32x4Type = &VectorType{
+		UnderlyingType: BuiltinFloat32Type,
+		Width:          4,
+		properties: TypeProperties{
+			Size:          16,
+			Align:         16,
+			Signed:        true,
+			Floating:      true,
+			HasArithmetic: true,
+			HasCompare:    true,
+			HasEquality:   true,
+		},
+		name: "f32x4",
+	}
+
+	BuiltinF64x2Type = &VectorType{
+		UnderlyingType: BuiltinFloat32Type,
+		Width:          2,
+		properties: TypeProperties{
+			Size:          16,
+			Align:         16,
+			Signed:        true,
+			Floating:      true,
+			HasArithmetic: true,
+			HasCompare:    true,
+			HasEquality:   true,
+		},
+		name: "f64x2",
+	}
+	BuiltinF64x3Type = &VectorType{
+		UnderlyingType: BuiltinFloat32Type,
+		Width:          3,
+		properties: TypeProperties{
+			Size:          24,
+			Align:         16,
+			Signed:        true,
+			Floating:      true,
+			HasArithmetic: true,
+			HasCompare:    true,
+			HasEquality:   true,
+		},
+		name: "f64x3",
+	}
+	BuiltinF64x4Type = &VectorType{
+		UnderlyingType: BuiltinFloat32Type,
+		Width:          4,
+		properties: TypeProperties{
+			Size:          32,
+			Align:         16,
+			Signed:        true,
+			Floating:      true,
+			HasArithmetic: true,
+			HasCompare:    true,
+			HasEquality:   true,
+		},
+		name: "f64x4",
+	}
+
+	BuiltinI32x2Type = &VectorType{
+		UnderlyingType: BuiltinIntType,
+		Width:          2,
+		properties: TypeProperties{
+			Size:          8,
+			Align:         8,
+			Signed:        true,
+			Integral:      true,
+			HasBitOps:     true,
+			HasArithmetic: true,
+			HasCompare:    true,
+			HasEquality:   true,
+		},
+		name: "i32x2",
+	}
+	BuiltinI32x3Type = &VectorType{
+		UnderlyingType: BuiltinIntType,
+		Width:          3,
+		properties: TypeProperties{
+			Size:          12,
+			Align:         16,
+			Signed:        true,
+			Integral:      true,
+			HasBitOps:     true,
+			HasArithmetic: true,
+			HasCompare:    true,
+			HasEquality:   true,
+		},
+		name: "i32x3",
+	}
+	BuiltinI32x4Type = &VectorType{
+		UnderlyingType: BuiltinIntType,
+		Width:          4,
+		properties: TypeProperties{
+			Size:          16,
+			Align:         16,
+			Signed:        true,
+			Integral:      true,
+			HasBitOps:     true,
+			HasArithmetic: true,
+			HasCompare:    true,
+			HasEquality:   true,
+		},
+		name: "i32x4",
+	}
+
+	BuiltinU32x2Type = &VectorType{
+		UnderlyingType: BuiltinUintType,
+		Width:          2,
+		properties: TypeProperties{
+			Size:          8,
+			Align:         8,
+			Integral:      true,
+			HasBitOps:     true,
+			HasArithmetic: true,
+			HasCompare:    true,
+			HasEquality:   true,
+		},
+		name: "u32x2",
+	}
+	BuiltinU32x3Type = &VectorType{
+		UnderlyingType: BuiltinUintType,
+		Width:          3,
+		properties: TypeProperties{
+			Size:          12,
+			Align:         16,
+			Integral:      true,
+			HasBitOps:     true,
+			HasArithmetic: true,
+			HasCompare:    true,
+			HasEquality:   true,
+		},
+		name: "u32x3",
+	}
+	BuiltinU32x4Type = &VectorType{
+		UnderlyingType: BuiltinUintType,
+		Width:          4,
+		properties: TypeProperties{
+			Size:          16,
+			Align:         16,
+			Integral:      true,
+			HasBitOps:     true,
+			HasArithmetic: true,
+			HasCompare:    true,
+			HasEquality:   true,
+		},
+		name: "u32x4",
+	}
+
+	BuiltinB32x2Type = &VectorType{
+		UnderlyingType: BuiltinFloat32Type,
+		Width:          2,
+		properties: TypeProperties{
+			Size:        8,
+			Align:       8,
+			HasCompare:  true,
+			HasEquality: true,
+		},
+		name: "b32x2",
+	}
+	BuiltinB32x3Type = &VectorType{
+		UnderlyingType: BuiltinFloat32Type,
+		Width:          3,
+		properties: TypeProperties{
+			Size:        12,
+			Align:       16,
+			HasCompare:  true,
+			HasEquality: true,
+		},
+		name: "b32x3",
+	}
+	BuiltinB32x4Type = &VectorType{
+		UnderlyingType: BuiltinFloat32Type,
+		Width:          4,
+		properties: TypeProperties{
+			Size:        16,
+			Align:       16,
+			HasCompare:  true,
+			HasEquality: true,
+		},
+		name: "b32x4",
+	}
+)
+
+func (VectorType) aType() {}
+func (t VectorType) Properties() TypeProperties {
+	return t.properties
+}
+func (t VectorType) String() string  { return t.name }
+func (t VectorType) HashKey() string { return t.String() }
+func (t *VectorType) Resolve(bool) Type {
+	return t
+}
+func (lhs *VectorType) Equal(rhs Type) bool {
+	return lhs == rhs.Resolve(false)
+}
+
 type FuncType struct {
 	ParameterTypes []Type
 	ReturnTypes    []Type
