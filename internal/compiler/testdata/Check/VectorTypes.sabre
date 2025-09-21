@@ -1,0 +1,21 @@
+package main
+
+func test1(a f32x2, b f32x3, c f32x4) (f32x2, f32x3, f32x4) {
+	return a, b, c
+}
+
+func test2(a f64x2, b f64x3, c f64x4) (f64x2, f64x3, f64x4) {
+	return a, b, c
+}
+
+func test3(a i32x2, b i32x3, c i32x4) (i32x2, i32x3, i32x4) {
+	return a, b, c
+}
+
+func test4(a u32x2, b u32x3, c u32x4) (u32x2, u32x3, u32x4) {
+	return a, b, c
+}
+
+func test5(a b32x2, b b32x3, c b32x4) (b32x2, b32x3, b32x4) {
+	return a, b, c
+}

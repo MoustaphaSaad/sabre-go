@@ -1,0 +1,15 @@
+(FuncDecl foo
+  (FuncType
+    (FuncType-Parameters
+      (IdentifierExpr IDENTIFIER(x))
+      (NamedType IDENTIFIER(int))
+    )
+  )
+  (Block 1
+    (AssignStmt
+      (IdentifierExpr IDENTIFIER(x))
+      :=
+      (LiteralExpr LITERAL_INT(1))
+    )
+  )
+)

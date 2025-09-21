@@ -296,14 +296,10 @@ func (checker *Checker) shallowWalkGenericDecl(d *GenericDecl) {
 			}
 		}
 	case TokenVar:
-		for _, s := range d.Specs {
+		for si, s := range d.Specs {
 			spec := s.(*ValueSpec)
-			for i, name := range spec.LHS {
-				var initExpr Expr
-				if i < len(spec.RHS) {
-					initExpr = spec.RHS[i]
-				}
-				sym := NewVarSymbol(name.Token, d, d.SourceRange(), spec.Type, initExpr)
+			for ei, name := range spec.LHS {
+				sym := NewVarSymbol(name.Token, d, d.SourceRange(), si, ei)
 				checker.addSymbol(sym)
 			}
 		}
@@ -405,6 +401,8 @@ func (checker *Checker) resolveTypeSymbol(sym *TypeSymbol) *TypeAndValue {
 	t := checker.resolveExpr(sym.TypeExpr)
 	if sym.IsStrong {
 		t.Type = checker.unit.semanticInfo.TypeInterner.InternStrongTypeAlias(sym.Name(), t.Type)
+	} else {
+		t.Type = checker.unit.semanticInfo.TypeInterner.InternWeakTypeAlias(sym.Name(), t.Type)
 	}
 	checker.unit.semanticInfo.SetTypeOf(sym.SymDecl, t)
 	return t
@@ -431,30 +429,43 @@ func (checker *Checker) resolveVarSymbol(sym *VarSymbol) *TypeAndValue {
 		Value: nil,
 	}
 
-	var varType *TypeAndValue
-	if sym.TypeExpr != nil {
-		varType = checker.resolveExpr(sym.TypeExpr)
+	spec := sym.SymDecl.(*GenericDecl).Specs[sym.SpecIndex].(*ValueSpec)
+
+	var varType Type
+	if spec.Type != nil {
+		varType = checker.resolveExpr(spec.Type).Type
 	}
 
-	var initType *TypeAndValue
-	if sym.InitExpr != nil {
-		initType = checker.resolveExpr(sym.InitExpr)
-		if varType != nil && initType.Type != varType.Type {
-			checker.error(NewError(
-				sym.InitExpr.SourceRange(), "type mismatch in variable initializer, expected '%v' but got '%v'", varType.Type, initType.Type))
+	rhsTypes, sourceRanges := checker.resolveAndUnpackTypesFromExprList(spec.RHS)
+	if varType == nil {
+		if len(rhsTypes) == 0 {
+			checker.error(NewError(sym.SourceRange(), "variable declaration requires type or an initializer"))
 			return invalidType
-		} else {
-			return &TypeAndValue{
-				Mode:  AddressModeVariable,
-				Type:  initType.Type,
-				Value: initType.Value,
+		}
+
+		if sym.ExprIndex >= len(rhsTypes) {
+			checker.error(NewError(sym.SourceRange(), "assignment mismatch: %v variables but %v values", sym.ExprIndex+1, len(rhsTypes)))
+			return invalidType
+		}
+
+		varType = rhsTypes[sym.ExprIndex]
+	} else {
+		if len(rhsTypes) > 0 {
+			if sym.ExprIndex >= len(rhsTypes) {
+				checker.error(NewError(sym.SourceRange(), "assignment mismatch: %v variables but %v values", sym.ExprIndex+1, len(rhsTypes)))
+				return invalidType
+			}
+
+			if !rhsTypes[sym.ExprIndex].Equal(varType) {
+				checker.error(NewError(sourceRanges[sym.ExprIndex], "type mismatch in variable declaration expected '%v', got '%v'", varType, rhsTypes[sym.ExprIndex]))
+				return invalidType
 			}
 		}
 	}
 
 	return &TypeAndValue{
 		Mode:  AddressModeVariable,
-		Type:  varType.Type,
+		Type:  varType,
 		Value: nil,
 	}
 }
@@ -471,6 +482,8 @@ func (checker *Checker) resolveExpr(expr Expr) (t *TypeAndValue) {
 		t = checker.resolveIdentifierExpr(e)
 	case *ParenExpr:
 		t = checker.resolveParenExpr(e)
+	case *SelectorExpr:
+		t = checker.resolveSelectorExpr(e)
 	case *UnaryExpr:
 		t = checker.resolveUnaryExpr(e)
 	case *BinaryExpr:
@@ -593,12 +606,41 @@ func (checker *Checker) resolveParenExpr(e *ParenExpr) *TypeAndValue {
 	return checker.resolveExpr(e.Base)
 }
 
+func (checker *Checker) resolveSelectorExpr(e *SelectorExpr) *TypeAndValue {
+	baseType := checker.resolveExpr(e.Base)
+
+	invalidResult := &TypeAndValue{
+		Mode: AddressModeInvalid,
+		Type: BuiltinVoidType,
+	}
+
+	switch t := baseType.Type.Resolve(true).(type) {
+	case *StructType:
+		if structField := t.FindField(e.Selector.Token.Value()); structField != nil {
+			return &TypeAndValue{
+				Mode: baseType.Mode,
+				Type: structField.Type,
+			}
+		} else {
+			checker.error(NewError(
+				e.Selector.SourceRange(),
+				"field '%v' cannot be found in struct '%v'",
+				e.Selector.Token.Value(),
+				baseType.Type,
+			))
+		}
+	default:
+		checker.error(NewError(e.SourceRange(), "type '%v' does not support selector expr", baseType.Type))
+	}
+	return invalidResult
+}
+
 func (checker *Checker) resolveBinaryExpr(e *BinaryExpr) *TypeAndValue {
 	lhsType := checker.resolveExpr(e.LHS)
 	rhsType := checker.resolveExpr(e.RHS)
 
 	equalTypes := func(e Expr, lhsType, rhsType Type) bool {
-		if lhsType != rhsType {
+		if !lhsType.Equal(rhsType) {
 			checker.error(NewError(
 				e.SourceRange(),
 				"type mismatch in binary expression, lhs is '%v' and rhs is '%v'",
@@ -771,7 +813,7 @@ func (checker *Checker) resolveCallExpr(e *CallExpr) *TypeAndValue {
 
 	for i, a := range arguments {
 		parameterType := funcType.ParameterTypes[i]
-		if a != parameterType {
+		if !a.Equal(parameterType) {
 			checker.error(NewError(sourceRanges[i], "incorrect argument type '%v', expected '%v'", a, parameterType))
 			return res
 		}
@@ -826,7 +868,7 @@ func (checker *Checker) resolveFuncTypeExpr(e *FuncTypeExpr) *TypeAndValue {
 			fieldType := checker.resolveExpr(field.Type)
 			if len(field.Names) > 0 {
 				for _, name := range field.Names {
-					v := NewVarSymbol(name.Token, nil, name.SourceRange(), field.Type, nil)
+					v := NewVarSymbol(name.Token, nil, name.SourceRange(), 0, 0)
 					v.SetResolveState(ResolveStateResolved)
 					checker.unit.semanticInfo.SetTypeOf(v, fieldType)
 					checker.addSymbol(v)
@@ -909,6 +951,15 @@ func (checker *Checker) resolveStructTypeExpr(e *StructTypeExpr) *TypeAndValue {
 					Identifer: nil,
 					Type:      fieldType.Type,
 				})
+			} else if weakAlias, ok := fieldType.Type.(*WeakAliasType); ok {
+				if checkExistingFields(weakAlias.Name, field.Type.SourceRange()) {
+					return invalidType
+				}
+				names = append(names, weakAlias.Name)
+				types = append(types, StructTypeField{
+					Identifer: nil,
+					Type:      fieldType.Type,
+				})
 			} else {
 				checker.error(NewError(field.Type.SourceRange(), "Cannot embed type '%v'", field.Type))
 			}
@@ -934,6 +985,36 @@ func typeFromName(name Token) Type {
 		return BuiltinFloat32Type
 	case "float64":
 		return BuiltinFloat64Type
+	case BuiltinF32x2Type.name:
+		return BuiltinF32x2Type
+	case BuiltinF32x3Type.name:
+		return BuiltinF32x3Type
+	case BuiltinF32x4Type.name:
+		return BuiltinF32x4Type
+	case BuiltinF64x2Type.name:
+		return BuiltinF64x2Type
+	case BuiltinF64x3Type.name:
+		return BuiltinF64x3Type
+	case BuiltinF64x4Type.name:
+		return BuiltinF64x4Type
+	case BuiltinI32x2Type.name:
+		return BuiltinI32x2Type
+	case BuiltinI32x3Type.name:
+		return BuiltinI32x3Type
+	case BuiltinI32x4Type.name:
+		return BuiltinI32x4Type
+	case BuiltinU32x2Type.name:
+		return BuiltinU32x2Type
+	case BuiltinU32x3Type.name:
+		return BuiltinU32x3Type
+	case BuiltinU32x4Type.name:
+		return BuiltinU32x4Type
+	case BuiltinB32x2Type.name:
+		return BuiltinB32x2Type
+	case BuiltinB32x3Type.name:
+		return BuiltinB32x3Type
+	case BuiltinB32x4Type.name:
+		return BuiltinB32x4Type
 	default:
 		return BuiltinVoidType
 	}
@@ -995,7 +1076,7 @@ func (checker *Checker) resolveReturnStmt(s *ReturnStmt) {
 	expectedReturnTypes := checker.unit.semanticInfo.TypeOf(funcDecl).Type.(*FuncType).ReturnTypes
 	if len(returnTypes) == len(expectedReturnTypes) {
 		for i, et := range expectedReturnTypes {
-			if t := returnTypes[i]; t != et {
+			if t := returnTypes[i]; !t.Equal(et) {
 				checker.error(NewError(sourceRanges[i], "incorrect return type '%v', expected '%v'", t, et))
 			}
 		}
@@ -1096,7 +1177,7 @@ func (checker *Checker) resolveAssignStmt(s *AssignStmt) {
 	}
 
 	checkTypeEqual := func(lhsType, rhsType Type, lhsSourceRange, rhsSourceRange SourceRange) {
-		if lhsType != rhsType {
+		if !lhsType.Equal(rhsType) {
 			checker.error(
 				NewError(
 					s.SourceRange(),
@@ -1131,14 +1212,10 @@ func (checker *Checker) resolveAssignStmt(s *AssignStmt) {
 			}
 		}
 
-		initExpr := s.RHS[0]
 		for i := range s.LHS {
 			lhs := s.LHS[i]
 			name := lhs.(*IdentifierExpr).Token
-			if i < len(s.RHS) {
-				initExpr = s.RHS[i]
-			}
-			v := NewVarSymbol(name, nil, name.SourceRange(), nil, initExpr)
+			v := NewVarSymbol(name, nil, name.SourceRange(), 0, 0)
 			v.SetResolveState(ResolveStateResolved)
 			checker.unit.semanticInfo.SetTypeOf(v, &TypeAndValue{Mode: AddressModeVariable, Type: rhsTypes[i]})
 			checker.addSymbol(v)
@@ -1242,7 +1319,7 @@ func (checker *Checker) resolveIfStmt(s *IfStmt, properties ResolveStmtPropertie
 	}
 
 	condType := checker.resolveExpr(s.Cond)
-	if condType.Type != BuiltinBoolType {
+	if !condType.Type.Equal(BuiltinBoolType) {
 		checker.error(NewError(
 			s.Cond.SourceRange(),
 			"if condition should be boolean, but found '%v'",
@@ -1269,7 +1346,7 @@ func (checker *Checker) resolveForStmt(s *ForStmt, properties ResolveStmtPropert
 
 	if s.Cond != nil {
 		condType := checker.resolveExpr(s.Cond)
-		if condType.Type != BuiltinBoolType {
+		if !condType.Type.Equal(BuiltinBoolType) {
 			checker.error(NewError(
 				s.Cond.SourceRange(),
 				"for condition should be boolean, but found '%v'",
@@ -1301,7 +1378,7 @@ func (checker *Checker) resolveSwitchStmt(s *SwitchStmt, properties ResolveStmtP
 	var tag *TypeAndValue
 	if s.Tag != nil {
 		tag = checker.resolveExpr(s.Tag)
-		if !tag.Type.Properties().Integral && !tag.Type.Properties().Floating && tag.Type != BuiltinBoolType {
+		if !tag.Type.Properties().Integral && !tag.Type.Properties().Floating && !tag.Type.Equal(BuiltinBoolType) {
 			checker.error(NewError(
 				s.Tag.SourceRange(),
 				"invalid switch tag type '%v'",
@@ -1343,7 +1420,7 @@ func (checker *Checker) resolveSwitchCaseStmt(
 	for _, expr := range s.LHS {
 		t := checker.resolveExpr(expr)
 
-		if t.Type != tagType {
+		if !t.Type.Equal(tagType) {
 			checker.error(NewError(expr.SourceRange(),
 				"case value type '%v' is not comparable to switch tag type '%v'",
 				t.Type, tagType,
@@ -1403,7 +1480,7 @@ func (checker *Checker) resolveDeclStmt(s *DeclStmt) {
 
 	switch d := s.Decl.(*GenericDecl); d.DeclToken.Kind() {
 	case TokenVar:
-		for _, spec := range d.Specs {
+		for si, spec := range d.Specs {
 			spec := spec.(*ValueSpec)
 			rhsExprs := unpackAndGetExprList(spec.RHS)
 			if spec.Assign.valid() {
@@ -1412,12 +1489,8 @@ func (checker *Checker) resolveDeclStmt(s *DeclStmt) {
 				}
 			}
 
-			var initExpr Expr
-			for i, name := range spec.LHS {
-				if i < len(rhsExprs) {
-					initExpr = rhsExprs[i]
-				}
-				sym := NewVarSymbol(name.Token, d, d.SourceRange(), spec.Type, initExpr)
+			for ei, name := range spec.LHS {
+				sym := NewVarSymbol(name.Token, d, d.SourceRange(), si, ei)
 				checker.addSymbol(sym)
 				checker.resolveVarSymbol(sym)
 			}

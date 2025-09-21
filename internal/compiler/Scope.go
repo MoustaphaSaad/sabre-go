@@ -67,12 +67,12 @@ func NewFuncSymbol(name Token, decl Decl, sourceRange SourceRange) *FuncSymbol {
 
 type VarSymbol struct {
 	SymbolBase
-	TypeExpr Expr
-	InitExpr Expr
+	SpecIndex int
+	ExprIndex int
 }
 
 func (VarSymbol) aSymbol() {}
-func NewVarSymbol(name Token, decl Decl, sourceRange SourceRange, TypeExpr Expr, InitExpr Expr) *VarSymbol {
+func NewVarSymbol(name Token, decl Decl, sourceRange SourceRange, specIndex, exprIndex int) *VarSymbol {
 	return &VarSymbol{
 		SymbolBase: SymbolBase{
 			SymScope:       nil,
@@ -80,8 +80,8 @@ func NewVarSymbol(name Token, decl Decl, sourceRange SourceRange, TypeExpr Expr,
 			SymDecl:        decl,
 			SymSourceRange: sourceRange,
 		},
-		TypeExpr: TypeExpr,
-		InitExpr: InitExpr,
+		SpecIndex: specIndex,
+		ExprIndex: exprIndex,
 	}
 }
 
