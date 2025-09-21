@@ -13,12 +13,32 @@ type Parser struct {
 
 func NewParser(file *UnitFile) *Parser {
 	parser := &Parser{
-		file: file,
-		tokens: slices.DeleteFunc(slices.Clone(file.tokens), func(t Token) bool {
-			return t.Kind() == TokenComment || t.Kind() == TokenEOF || t.Kind() == TokenInvalid
-		}),
+		file:              file,
+		tokens:            make([]Token, 0, len(file.tokens)),
 		currentTokenIndex: 0,
 		exprLevel:         0,
+	}
+
+	// Note: we could just disable the semicolon insertion after the comments, but eventually we might need to parse
+	// the comments to use them as tags, just like what go does now with things like //export comments in cgo for
+	// example.
+	// That's why I prefer to keep the current solution which is removing comments for now, and just fix the cases where
+	// we have extra semicolon left after comments
+	for i := 0; i < len(file.tokens); i++ {
+		t := file.tokens[i]
+		if t.Kind() == TokenComment {
+			// if the comment is on new line
+			if i > 0 && t.SourceRange().BeginPosition.Line > file.tokens[i-1].SourceRange().BeginPosition.Line {
+				// if it has a semicolon after it, then consume the ; as well
+				if i < len(file.tokens) && file.tokens[i+1].Kind() == TokenSemicolon {
+					i++
+				}
+			}
+			continue
+		} else if t.Kind() == TokenInvalid || t.Kind() == TokenEOF {
+			continue
+		}
+		parser.tokens = append(parser.tokens, t)
 	}
 
 	return parser

@@ -1,0 +1,21 @@
+>> 	func useFooIntField2(f Foo) int { return f.floatField }
+>> 	                                         ^^^^^^^^^^^^   
+Error[internal/compiler/testdata/Check/SelectorExpr.sabre:15:42]: incorrect return type 'float32', expected 'int'
+>> 	func useEmbeddedIntField2(f Foo) int { return f.f32 }
+>> 	                                              ^^^^^   
+Error[internal/compiler/testdata/Check/SelectorExpr.sabre:18:47]: incorrect return type 'float32', expected 'int'
+>> 	func useQualifiedEmbeddedIntField2(f Foo) int { return f.EmbeddedStruct.f32 }
+>> 	                                                       ^^^^^^^^^^^^^^^^^^^^   
+Error[internal/compiler/testdata/Check/SelectorExpr.sabre:21:56]: incorrect return type 'float32', expected 'int'
+>> 	func useNonExistentField(f Foo) int { return f.nonExistentField }
+>> 	                                               ^^^^^^^^^^^^^^^^   
+Error[internal/compiler/testdata/Check/SelectorExpr.sabre:23:48]: field 'nonExistentField' cannot be found in struct 'Foo'
+>> 	func useNonExistentField(f Foo) int { return f.nonExistentField }
+>> 	                                             ^^^^^^^^^^^^^^^^^^   
+Error[internal/compiler/testdata/Check/SelectorExpr.sabre:23:46]: incorrect return type 'void', expected 'int'
+>> 	func selectorOnInt(x int) int { return x.i }
+>> 	                                       ^^^   
+Error[internal/compiler/testdata/Check/SelectorExpr.sabre:25:40]: type 'int' does not support selector expr
+>> 	func selectorOnInt(x int) int { return x.i }
+>> 	                                       ^^^   
+Error[internal/compiler/testdata/Check/SelectorExpr.sabre:25:40]: incorrect return type 'void', expected 'int'

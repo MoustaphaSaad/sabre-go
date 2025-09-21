@@ -17,6 +17,8 @@ type Type interface {
 	Properties() TypeProperties
 	String() string
 	HashKey() string
+	Resolve(resolveStrongAlias bool) Type
+	Equal(rhs Type) bool
 }
 
 type VoidType struct{}
@@ -29,6 +31,12 @@ func (VoidType) Properties() TypeProperties {
 }
 func (VoidType) String() string    { return "void" }
 func (t VoidType) HashKey() string { return t.String() }
+func (t *VoidType) Resolve(bool) Type {
+	return t
+}
+func (lhs *VoidType) Equal(rhs Type) bool {
+	return lhs == rhs.Resolve(false)
+}
 
 type BoolType struct{}
 
@@ -45,6 +53,12 @@ func (BoolType) Properties() TypeProperties {
 }
 func (BoolType) String() string    { return "bool" }
 func (t BoolType) HashKey() string { return t.String() }
+func (t *BoolType) Resolve(bool) Type {
+	return t
+}
+func (lhs *BoolType) Equal(rhs Type) bool {
+	return lhs == rhs.Resolve(false)
+}
 
 type IntType struct{}
 
@@ -65,6 +79,12 @@ func (IntType) Properties() TypeProperties {
 }
 func (IntType) String() string    { return "int" }
 func (t IntType) HashKey() string { return t.String() }
+func (t *IntType) Resolve(bool) Type {
+	return t
+}
+func (lhs *IntType) Equal(rhs Type) bool {
+	return lhs == rhs.Resolve(false)
+}
 
 type UintType struct{}
 
@@ -84,6 +104,12 @@ func (UintType) Properties() TypeProperties {
 }
 func (UintType) String() string    { return "uint" }
 func (t UintType) HashKey() string { return t.String() }
+func (t *UintType) Resolve(bool) Type {
+	return t
+}
+func (lhs *UintType) Equal(rhs Type) bool {
+	return lhs == rhs.Resolve(false)
+}
 
 type Float32Type struct{}
 
@@ -103,6 +129,12 @@ func (Float32Type) Properties() TypeProperties {
 }
 func (Float32Type) String() string    { return "float32" }
 func (t Float32Type) HashKey() string { return t.String() }
+func (t *Float32Type) Resolve(bool) Type {
+	return t
+}
+func (lhs *Float32Type) Equal(rhs Type) bool {
+	return lhs == rhs.Resolve(false)
+}
 
 type Float64Type struct{}
 
@@ -122,6 +154,12 @@ func (Float64Type) Properties() TypeProperties {
 }
 func (Float64Type) String() string    { return "float64" }
 func (t Float64Type) HashKey() string { return t.String() }
+func (t *Float64Type) Resolve(bool) Type {
+	return t
+}
+func (lhs *Float64Type) Equal(rhs Type) bool {
+	return lhs == rhs.Resolve(false)
+}
 
 type StringType struct{}
 
@@ -133,6 +171,243 @@ func (StringType) Properties() TypeProperties {
 }
 func (StringType) String() string    { return "string" }
 func (t StringType) HashKey() string { return t.String() }
+func (t *StringType) Resolve(bool) Type {
+	return t
+}
+func (lhs *StringType) Equal(rhs Type) bool {
+	return lhs == rhs.Resolve(false)
+}
+
+type VectorType struct {
+	UnderlyingType Type
+	Width          int
+	properties     TypeProperties
+	name           string
+}
+
+var (
+	BuiltinF32x2Type = &VectorType{
+		UnderlyingType: BuiltinFloat32Type,
+		Width:          2,
+		properties: TypeProperties{
+			Size:          8,
+			Align:         8,
+			Signed:        true,
+			Floating:      true,
+			HasArithmetic: true,
+			HasCompare:    true,
+			HasEquality:   true,
+		},
+		name: "f32x2",
+	}
+	BuiltinF32x3Type = &VectorType{
+		UnderlyingType: BuiltinFloat32Type,
+		Width:          3,
+		properties: TypeProperties{
+			Size:          12,
+			Align:         16,
+			Signed:        true,
+			Floating:      true,
+			HasArithmetic: true,
+			HasCompare:    true,
+			HasEquality:   true,
+		},
+		name: "f32x3",
+	}
+	BuiltinF32x4Type = &VectorType{
+		UnderlyingType: BuiltinFloat32Type,
+		Width:          4,
+		properties: TypeProperties{
+			Size:          16,
+			Align:         16,
+			Signed:        true,
+			Floating:      true,
+			HasArithmetic: true,
+			HasCompare:    true,
+			HasEquality:   true,
+		},
+		name: "f32x4",
+	}
+
+	BuiltinF64x2Type = &VectorType{
+		UnderlyingType: BuiltinFloat32Type,
+		Width:          2,
+		properties: TypeProperties{
+			Size:          16,
+			Align:         16,
+			Signed:        true,
+			Floating:      true,
+			HasArithmetic: true,
+			HasCompare:    true,
+			HasEquality:   true,
+		},
+		name: "f64x2",
+	}
+	BuiltinF64x3Type = &VectorType{
+		UnderlyingType: BuiltinFloat32Type,
+		Width:          3,
+		properties: TypeProperties{
+			Size:          24,
+			Align:         16,
+			Signed:        true,
+			Floating:      true,
+			HasArithmetic: true,
+			HasCompare:    true,
+			HasEquality:   true,
+		},
+		name: "f64x3",
+	}
+	BuiltinF64x4Type = &VectorType{
+		UnderlyingType: BuiltinFloat32Type,
+		Width:          4,
+		properties: TypeProperties{
+			Size:          32,
+			Align:         16,
+			Signed:        true,
+			Floating:      true,
+			HasArithmetic: true,
+			HasCompare:    true,
+			HasEquality:   true,
+		},
+		name: "f64x4",
+	}
+
+	BuiltinI32x2Type = &VectorType{
+		UnderlyingType: BuiltinIntType,
+		Width:          2,
+		properties: TypeProperties{
+			Size:          8,
+			Align:         8,
+			Signed:        true,
+			Integral:      true,
+			HasBitOps:     true,
+			HasArithmetic: true,
+			HasCompare:    true,
+			HasEquality:   true,
+		},
+		name: "i32x2",
+	}
+	BuiltinI32x3Type = &VectorType{
+		UnderlyingType: BuiltinIntType,
+		Width:          3,
+		properties: TypeProperties{
+			Size:          12,
+			Align:         16,
+			Signed:        true,
+			Integral:      true,
+			HasBitOps:     true,
+			HasArithmetic: true,
+			HasCompare:    true,
+			HasEquality:   true,
+		},
+		name: "i32x3",
+	}
+	BuiltinI32x4Type = &VectorType{
+		UnderlyingType: BuiltinIntType,
+		Width:          4,
+		properties: TypeProperties{
+			Size:          16,
+			Align:         16,
+			Signed:        true,
+			Integral:      true,
+			HasBitOps:     true,
+			HasArithmetic: true,
+			HasCompare:    true,
+			HasEquality:   true,
+		},
+		name: "i32x4",
+	}
+
+	BuiltinU32x2Type = &VectorType{
+		UnderlyingType: BuiltinUintType,
+		Width:          2,
+		properties: TypeProperties{
+			Size:          8,
+			Align:         8,
+			Integral:      true,
+			HasBitOps:     true,
+			HasArithmetic: true,
+			HasCompare:    true,
+			HasEquality:   true,
+		},
+		name: "u32x2",
+	}
+	BuiltinU32x3Type = &VectorType{
+		UnderlyingType: BuiltinUintType,
+		Width:          3,
+		properties: TypeProperties{
+			Size:          12,
+			Align:         16,
+			Integral:      true,
+			HasBitOps:     true,
+			HasArithmetic: true,
+			HasCompare:    true,
+			HasEquality:   true,
+		},
+		name: "u32x3",
+	}
+	BuiltinU32x4Type = &VectorType{
+		UnderlyingType: BuiltinUintType,
+		Width:          4,
+		properties: TypeProperties{
+			Size:          16,
+			Align:         16,
+			Integral:      true,
+			HasBitOps:     true,
+			HasArithmetic: true,
+			HasCompare:    true,
+			HasEquality:   true,
+		},
+		name: "u32x4",
+	}
+
+	BuiltinB32x2Type = &VectorType{
+		UnderlyingType: BuiltinFloat32Type,
+		Width:          2,
+		properties: TypeProperties{
+			Size:        8,
+			Align:       8,
+			HasCompare:  true,
+			HasEquality: true,
+		},
+		name: "b32x2",
+	}
+	BuiltinB32x3Type = &VectorType{
+		UnderlyingType: BuiltinFloat32Type,
+		Width:          3,
+		properties: TypeProperties{
+			Size:        12,
+			Align:       16,
+			HasCompare:  true,
+			HasEquality: true,
+		},
+		name: "b32x3",
+	}
+	BuiltinB32x4Type = &VectorType{
+		UnderlyingType: BuiltinFloat32Type,
+		Width:          4,
+		properties: TypeProperties{
+			Size:        16,
+			Align:       16,
+			HasCompare:  true,
+			HasEquality: true,
+		},
+		name: "b32x4",
+	}
+)
+
+func (VectorType) aType() {}
+func (t VectorType) Properties() TypeProperties {
+	return t.properties
+}
+func (t VectorType) String() string  { return t.name }
+func (t VectorType) HashKey() string { return t.String() }
+func (t *VectorType) Resolve(bool) Type {
+	return t
+}
+func (lhs *VectorType) Equal(rhs Type) bool {
+	return lhs == rhs.Resolve(false)
+}
 
 type FuncType struct {
 	ParameterTypes []Type
@@ -187,6 +462,12 @@ func (t FuncType) HashKey() string {
 	}
 	return b.String()
 }
+func (t *FuncType) Resolve(bool) Type {
+	return t
+}
+func (lhs *FuncType) Equal(rhs Type) bool {
+	return lhs == rhs.Resolve(false)
+}
 
 type ArrayType struct {
 	Length      int
@@ -205,6 +486,12 @@ func (t ArrayType) String() string {
 }
 func (t ArrayType) HashKey() string {
 	return fmt.Sprintf("[%v]%v", t.Length, t.ElementType.HashKey())
+}
+func (t *ArrayType) Resolve(bool) Type {
+	return t
+}
+func (lhs *ArrayType) Equal(rhs Type) bool {
+	return lhs == rhs.Resolve(false)
 }
 
 type TupleType struct {
@@ -249,6 +536,12 @@ func (t TupleType) HashKey() string {
 	}
 	b.WriteRune(')')
 	return b.String()
+}
+func (t *TupleType) Resolve(bool) Type {
+	return t
+}
+func (lhs *TupleType) Equal(rhs Type) bool {
+	return lhs == rhs.Resolve(false)
 }
 
 type StructTypeField struct {
@@ -314,7 +607,7 @@ func (t StructType) FindField(name string) *StructTypeField {
 			continue
 		}
 
-		underlyingType := strongAlias.Resolve()
+		underlyingType := strongAlias.Resolve(true)
 		structType, ok := underlyingType.(*StructType)
 		if !ok {
 			continue
@@ -325,6 +618,12 @@ func (t StructType) FindField(name string) *StructTypeField {
 		}
 	}
 	return nil
+}
+func (t *StructType) Resolve(bool) Type {
+	return t
+}
+func (lhs *StructType) Equal(rhs Type) bool {
+	return lhs == rhs.Resolve(false)
 }
 
 type StrongAliasType struct {
@@ -338,11 +637,43 @@ func (t StrongAliasType) Properties() TypeProperties {
 }
 func (t StrongAliasType) String() string  { return t.Name }
 func (t StrongAliasType) HashKey() string { return t.String() }
-func (t StrongAliasType) Resolve() Type {
-	if alias, ok := t.UnderlyingType.(*StrongAliasType); ok {
-		return alias.Resolve()
-	} else {
-		return t.UnderlyingType
+func (t *StrongAliasType) Resolve(resolveStrongAlias bool) Type {
+	return resolveAlias(t, resolveStrongAlias)
+}
+func (lhs *StrongAliasType) Equal(rhs Type) bool {
+	return lhs == rhs.Resolve(false)
+}
+
+type WeakAliasType struct {
+	Name           string
+	UnderlyingType Type
+}
+
+func (WeakAliasType) aType() {}
+func (t WeakAliasType) Properties() TypeProperties {
+	return t.UnderlyingType.Properties()
+}
+func (t WeakAliasType) String() string  { return fmt.Sprintf("%v=%v", t.Name, t.UnderlyingType) }
+func (t WeakAliasType) HashKey() string { return t.String() }
+func (t *WeakAliasType) Resolve(resolveStrongAlias bool) Type {
+	return resolveAlias(t, resolveStrongAlias)
+}
+func (lhs *WeakAliasType) Equal(rhs Type) bool {
+	return lhs.Resolve(false) == rhs.Resolve(false)
+}
+
+func resolveAlias(alias Type, resolveStrongAlias bool) Type {
+	switch t := alias.(type) {
+	case *StrongAliasType:
+		if resolveStrongAlias {
+			return resolveAlias(t.UnderlyingType, resolveStrongAlias)
+		} else {
+			return t
+		}
+	case *WeakAliasType:
+		return resolveAlias(t.UnderlyingType, resolveStrongAlias)
+	default:
+		return t
 	}
 }
 
@@ -418,8 +749,15 @@ func (t *TypeInterner) InternStructType(names []string, types []StructTypeField)
 	return &structType
 }
 
-func (t *TypeInterner) InternStrongTypeAlias(name string, underlyingType Type) Type {
+func (t *TypeInterner) InternStrongTypeAlias(name string, underlyingType Type) *StrongAliasType {
 	return &StrongAliasType{
+		Name:           name,
+		UnderlyingType: underlyingType,
+	}
+}
+
+func (t *TypeInterner) InternWeakTypeAlias(name string, underlyingType Type) *WeakAliasType {
+	return &WeakAliasType{
 		Name:           name,
 		UnderlyingType: underlyingType,
 	}

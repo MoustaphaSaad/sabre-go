@@ -1,0 +1,5 @@
+func foo(x int) {
+	// comment
+	// another comment
+	x := 1 // same line comment
+}
