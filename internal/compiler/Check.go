@@ -456,8 +456,7 @@ func (checker *Checker) resolveVarSymbol(sym *VarSymbol) *TypeAndValue {
 				return invalidType
 			}
 
-			// TODO: Use equals.
-			if rhsTypes[sym.ExprIndex] != varType {
+			if !rhsTypes[sym.ExprIndex].Equal(varType) {
 				checker.error(NewError(sourceRanges[sym.ExprIndex], "type mismatch in variable declaration expected '%v', got '%v'", varType, rhsTypes[sym.ExprIndex]))
 				return invalidType
 			}

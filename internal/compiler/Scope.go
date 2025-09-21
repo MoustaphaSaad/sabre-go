@@ -72,7 +72,7 @@ type VarSymbol struct {
 }
 
 func (VarSymbol) aSymbol() {}
-func NewVarSymbol(name Token, decl Decl, sourceRange SourceRange, specIndex int, exprIndex int) *VarSymbol {
+func NewVarSymbol(name Token, decl Decl, sourceRange SourceRange, specIndex, exprIndex int) *VarSymbol {
 	return &VarSymbol{
 		SymbolBase: SymbolBase{
 			SymScope:       nil,
