@@ -1,0 +1,29 @@
+package main
+
+var (
+	x int
+	y int = 1
+	z     = 1
+)
+
+var (
+	u int     = 1.5
+	v float32 = 1.5
+	w int     = v
+)
+
+func foo() (int, int) {
+	return 1, 2
+}
+
+func foo2() (int, float32) {
+	return 1, 1.5
+}
+
+var s, t int = foo()
+
+var k, l, m = foo()
+
+var o, p = foo()
+
+var a, d int = foo2()

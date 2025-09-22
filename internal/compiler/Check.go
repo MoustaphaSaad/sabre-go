@@ -296,10 +296,10 @@ func (checker *Checker) shallowWalkGenericDecl(d *GenericDecl) {
 			}
 		}
 	case TokenVar:
-		for _, s := range d.Specs {
+		for si, s := range d.Specs {
 			spec := s.(*ValueSpec)
-			for _, name := range spec.LHS {
-				sym := NewVarSymbol(name.Token, d, d.SourceRange())
+			for ei, name := range spec.LHS {
+				sym := NewVarSymbol(name.Token, d, d.SourceRange(), si, ei)
 				checker.addSymbol(sym)
 			}
 		}
@@ -357,6 +357,8 @@ func (checker *Checker) resolveSymbol(sym Symbol) *TypeAndValue {
 		symType = checker.resolveFuncSymbol(symbol)
 	case *TypeSymbol:
 		symType = checker.resolveTypeSymbol(symbol)
+	case *VarSymbol:
+		symType = checker.resolveVarSymbol(symbol)
 	default:
 		panic("unexpected symbol type")
 	}
@@ -369,6 +371,8 @@ func (checker *Checker) resolveSymbol(sym Symbol) *TypeAndValue {
 		checker.resolveFuncBody(symbol)
 	case *TypeSymbol:
 		// nothing to do here
+	case *VarSymbol:
+		// nothing to do
 	default:
 		panic("unexpected symbol type")
 	}
@@ -415,6 +419,54 @@ func (checker *Checker) resolveFuncBody(sym *FuncSymbol) {
 
 	for _, stmt := range funcDecl.Body.Stmts {
 		checker.resolveStmt(stmt, ResolveStmtProperties{})
+	}
+}
+
+func (checker *Checker) resolveVarSymbol(sym *VarSymbol) *TypeAndValue {
+	invalidType := &TypeAndValue{
+		Mode:  AddressModeInvalid,
+		Type:  BuiltinVoidType,
+		Value: nil,
+	}
+
+	spec := sym.SymDecl.(*GenericDecl).Specs[sym.SpecIndex].(*ValueSpec)
+
+	var varType Type
+	if spec.Type != nil {
+		varType = checker.resolveExpr(spec.Type).Type
+	}
+
+	rhsTypes, sourceRanges := checker.resolveAndUnpackTypesFromExprList(spec.RHS)
+	if varType == nil {
+		if len(rhsTypes) == 0 {
+			checker.error(NewError(sym.SourceRange(), "variable declaration requires type or an initializer"))
+			return invalidType
+		}
+
+		if sym.ExprIndex >= len(rhsTypes) {
+			checker.error(NewError(sym.SourceRange(), "assignment mismatch: %v variables but %v values", sym.ExprIndex+1, len(rhsTypes)))
+			return invalidType
+		}
+
+		varType = rhsTypes[sym.ExprIndex]
+	} else {
+		if len(rhsTypes) > 0 {
+			if sym.ExprIndex >= len(rhsTypes) {
+				checker.error(NewError(sym.SourceRange(), "assignment mismatch: %v variables but %v values", sym.ExprIndex+1, len(rhsTypes)))
+				return invalidType
+			}
+
+			if !rhsTypes[sym.ExprIndex].Equal(varType) {
+				checker.error(NewError(sourceRanges[sym.ExprIndex], "type mismatch in variable declaration expected '%v', got '%v'", varType, rhsTypes[sym.ExprIndex]))
+				return invalidType
+			}
+		}
+	}
+
+	return &TypeAndValue{
+		Mode:  AddressModeVariable,
+		Type:  varType,
+		Value: nil,
 	}
 }
 
@@ -816,7 +868,7 @@ func (checker *Checker) resolveFuncTypeExpr(e *FuncTypeExpr) *TypeAndValue {
 			fieldType := checker.resolveExpr(field.Type)
 			if len(field.Names) > 0 {
 				for _, name := range field.Names {
-					v := NewVarSymbol(name.Token, nil, name.SourceRange())
+					v := NewVarSymbol(name.Token, nil, name.SourceRange(), 0, 0)
 					v.SetResolveState(ResolveStateResolved)
 					checker.unit.semanticInfo.SetTypeOf(v, fieldType)
 					checker.addSymbol(v)
@@ -1161,7 +1213,7 @@ func (checker *Checker) resolveAssignStmt(s *AssignStmt) {
 		for i := range s.LHS {
 			lhs := s.LHS[i]
 			name := lhs.(*IdentifierExpr).Token
-			v := NewVarSymbol(name, nil, name.SourceRange())
+			v := NewVarSymbol(name, nil, name.SourceRange(), 0, 0)
 			v.SetResolveState(ResolveStateResolved)
 			checker.unit.semanticInfo.SetTypeOf(v, &TypeAndValue{Mode: AddressModeVariable, Type: rhsTypes[i]})
 			checker.addSymbol(v)

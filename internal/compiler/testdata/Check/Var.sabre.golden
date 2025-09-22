@@ -1,0 +1,12 @@
+>> 		u int     = 1.5
+>> 		            ^^^ 
+Error[internal/compiler/testdata/Check/Var.sabre:10:14]: type mismatch in variable declaration expected 'int', got 'float32'
+>> 		w int     = v
+>> 		            ^ 
+Error[internal/compiler/testdata/Check/Var.sabre:12:14]: type mismatch in variable declaration expected 'int', got 'float32'
+>> 	var k, l, m = foo()
+>> 	^^^^^^^^^^^^^^^^^^^ 
+Error[internal/compiler/testdata/Check/Var.sabre:25:1]: assignment mismatch: 3 variables but 2 values
+>> 	var a, d int = foo2()
+>> 	               ^^^^^^ 
+Error[internal/compiler/testdata/Check/Var.sabre:29:16]: type mismatch in variable declaration expected 'int', got 'float32'
