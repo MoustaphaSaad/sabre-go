@@ -513,7 +513,7 @@ func (checker *Checker) resolveConstSymbol(sym *ConstSymbol) *TypeAndValue {
 	rhsValues, sourceRanges := resolveAndUnpackExprList(spec.RHS)
 
 	if sym.ExprIndex >= len(rhsValues) {
-		checker.error(NewError(sym.SourceRange(), "assignment mismatch: %v variables but %v values", sym.ExprIndex+1, len(rhsValues)))
+		checker.error(NewError(sym.SourceRange(), "assignment mismatch: %v constants but %v values", sym.ExprIndex+1, len(rhsValues)))
 		return invalidType
 	}
 
