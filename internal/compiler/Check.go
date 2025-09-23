@@ -1519,23 +1519,6 @@ func (checker *Checker) resolveSwitchCaseStmt(
 }
 
 func (checker *Checker) resolveDeclStmt(s *DeclStmt) {
-	unpackAndGetExprList := func(exprs []Expr) (unpacked []Expr) {
-		if len(exprs) == 1 {
-			e := exprs[0]
-			switch t := checker.resolveExpr(e).Type.(type) {
-			case *TupleType:
-				for range t.Types {
-					unpacked = append(unpacked, e)
-				}
-			default:
-				unpacked = append(unpacked, e)
-			}
-		} else {
-			unpacked = exprs
-		}
-		return
-	}
-
 	hasMultiValue := func(s *DeclStmt, lhsValuesLen, rhsValuesLen int) bool {
 		if lhsValuesLen != rhsValuesLen {
 			checker.error(NewError(
@@ -1553,9 +1536,9 @@ func (checker *Checker) resolveDeclStmt(s *DeclStmt) {
 	case TokenVar:
 		for si, spec := range d.Specs {
 			spec := spec.(*ValueSpec)
-			rhsExprs := unpackAndGetExprList(spec.RHS)
+			rhs, _ := checker.resolveAndUnpackTypesFromExprList(spec.RHS)
 			if spec.Assign.valid() {
-				if !hasMultiValue(s, len(spec.LHS), len(rhsExprs)) {
+				if !hasMultiValue(s, len(spec.LHS), len(rhs)) {
 					return
 				}
 			}
