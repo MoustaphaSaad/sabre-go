@@ -1553,9 +1553,9 @@ func (checker *Checker) resolveDeclStmt(s *DeclStmt) {
 	case TokenConst:
 		for si, spec := range d.Specs {
 			spec := spec.(*ValueSpec)
-			rhsExprs := unpackAndGetExprList(spec.RHS)
+			rhs, _ := checker.resolveAndUnpackTypesFromExprList(spec.RHS)
 			if spec.Assign.valid() {
-				if !hasMultiValue(s, len(spec.LHS), len(rhsExprs)) {
+				if !hasMultiValue(s, len(spec.LHS), len(rhs)) {
 					return
 				}
 			}
