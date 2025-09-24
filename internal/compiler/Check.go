@@ -1532,7 +1532,7 @@ func (checker *Checker) resolveDeclStmt(s *DeclStmt) {
 		return true
 	}
 
-	resolveValueSymbol := func(d *GenericDecl, symbolFunc func(name Token, decl Decl, sourceRange SourceRange, specIndex, exprIndex int) Symbol) {
+	resolveValueSymbol := func(d *GenericDecl, symbolFunc func(name Token, decl Decl, sourceRange SourceRange, specIndex, exprIndex int)) {
 		for si, spec := range d.Specs {
 			spec := spec.(*ValueSpec)
 			rhs, _ := checker.resolveAndUnpackTypesFromExprList(spec.RHS)
@@ -1543,21 +1543,23 @@ func (checker *Checker) resolveDeclStmt(s *DeclStmt) {
 			}
 
 			for ei, name := range spec.LHS {
-				sym := symbolFunc(name.Token, d, d.SourceRange(), si, ei)
-				checker.addSymbol(sym)
-				checker.resolveSymbol(sym)
+				symbolFunc(name.Token, d, d.SourceRange(), si, ei)
 			}
 		}
 	}
 
 	switch d := s.Decl.(*GenericDecl); d.DeclToken.Kind() {
 	case TokenVar:
-		resolveValueSymbol(d, func(name Token, decl Decl, sourceRange SourceRange, specIndex, exprIndex int) Symbol {
-			return NewVarSymbol(name, decl, sourceRange, specIndex, exprIndex)
+		resolveValueSymbol(d, func(name Token, decl Decl, sourceRange SourceRange, specIndex, exprIndex int) {
+			sym := NewVarSymbol(name, decl, sourceRange, specIndex, exprIndex)
+			checker.addSymbol(sym)
+			checker.resolveVarSymbol(sym)
 		})
 	case TokenConst:
-		resolveValueSymbol(d, func(name Token, decl Decl, sourceRange SourceRange, specIndex, exprIndex int) Symbol {
-			return NewConstSymbol(name, decl, sourceRange, specIndex, exprIndex)
+		resolveValueSymbol(d, func(name Token, decl Decl, sourceRange SourceRange, specIndex, exprIndex int) {
+			sym := NewConstSymbol(name, decl, sourceRange, specIndex, exprIndex)
+			checker.addSymbol(sym)
+			checker.resolveConstSymbol(sym)
 		})
 	case TokenType:
 		for _, s := range d.Specs {
