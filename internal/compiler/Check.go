@@ -1550,6 +1550,11 @@ func (checker *Checker) resolveDeclStmt(s *DeclStmt) {
 			}
 		}
 	case TokenType:
+		for _, s := range d.Specs {
+			spec := s.(*TypeSpec)
+			sym := NewTypeSymbol(spec.Name.Token, d, spec.Name.SourceRange(), spec.Type, !spec.Assign.valid())
+			checker.addSymbol(sym)
+		}
 	case TokenConst:
 		for si, spec := range d.Specs {
 			spec := spec.(*ValueSpec)
