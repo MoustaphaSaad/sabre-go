@@ -3,7 +3,5 @@ package main
 func correct() {
 	type StrongInt int
 	type WeakInt = int
-	type Foo struct {
-		
-	}
+	type Foo struct {}
 }
