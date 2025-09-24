@@ -1566,6 +1566,7 @@ func (checker *Checker) resolveDeclStmt(s *DeclStmt) {
 			spec := s.(*TypeSpec)
 			sym := NewTypeSymbol(spec.Name.Token, d, spec.Name.SourceRange(), spec.Type, !spec.Assign.valid())
 			checker.addSymbol(sym)
+			checker.resolveTypeSymbol(sym)
 		}
 	default:
 		panic("unexpected decl type")
