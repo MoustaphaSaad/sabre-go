@@ -288,10 +288,10 @@ func (checker *Checker) shallowWalk() {
 func (checker *Checker) shallowWalkGenericDecl(d *GenericDecl) {
 	switch d.DeclToken.Kind() {
 	case TokenConst:
-		for _, s := range d.Specs {
+		for si, s := range d.Specs {
 			spec := s.(*ValueSpec)
-			for _, name := range spec.LHS {
-				sym := NewConstSymbol(name.Token, d, d.SourceRange())
+			for ei, name := range spec.LHS {
+				sym := NewConstSymbol(name.Token, d, d.SourceRange(), si, ei)
 				checker.addSymbol(sym)
 			}
 		}
@@ -359,6 +359,8 @@ func (checker *Checker) resolveSymbol(sym Symbol) *TypeAndValue {
 		symType = checker.resolveTypeSymbol(symbol)
 	case *VarSymbol:
 		symType = checker.resolveVarSymbol(symbol)
+	case *ConstSymbol:
+		symType = checker.resolveConstSymbol(symbol)
 	default:
 		panic("unexpected symbol type")
 	}
@@ -372,6 +374,8 @@ func (checker *Checker) resolveSymbol(sym Symbol) *TypeAndValue {
 	case *TypeSymbol:
 		// nothing to do here
 	case *VarSymbol:
+		// nothing to do
+	case *ConstSymbol:
 		// nothing to do
 	default:
 		panic("unexpected symbol type")
@@ -467,6 +471,73 @@ func (checker *Checker) resolveVarSymbol(sym *VarSymbol) *TypeAndValue {
 		Mode:  AddressModeVariable,
 		Type:  varType,
 		Value: nil,
+	}
+}
+
+func (checker *Checker) resolveConstSymbol(sym *ConstSymbol) *TypeAndValue {
+	resolveAndUnpackExprList := func(exprs []Expr) (values []*TypeAndValue, sourceRanges []SourceRange) {
+		if len(exprs) == 1 {
+			e := exprs[0]
+			tv := checker.resolveExpr(e)
+			switch t := tv.Type.(type) {
+			case *TupleType:
+				for range t.Types {
+					values = append(values, tv)
+					sourceRanges = append(sourceRanges, e.SourceRange())
+				}
+			default:
+				values = append(values, tv)
+				sourceRanges = append(sourceRanges, e.SourceRange())
+			}
+		} else {
+			for _, e := range exprs {
+				values = append(values, checker.resolveExpr(e))
+				sourceRanges = append(sourceRanges, e.SourceRange())
+			}
+		}
+		return
+	}
+
+	invalidType := &TypeAndValue{
+		Mode:  AddressModeInvalid,
+		Type:  BuiltinVoidType,
+		Value: nil,
+	}
+
+	spec := sym.SymDecl.(*GenericDecl).Specs[sym.SpecIndex].(*ValueSpec)
+	if len(spec.RHS) == 0 {
+		checker.error(NewError(sym.SourceRange(), "constant declaration requires an initializer"))
+		return invalidType
+	}
+
+	rhsValues, sourceRanges := resolveAndUnpackExprList(spec.RHS)
+
+	if sym.ExprIndex >= len(rhsValues) {
+		checker.error(NewError(sym.SourceRange(), "assignment mismatch: %v constants but %v values", sym.ExprIndex+1, len(rhsValues)))
+		return invalidType
+	}
+
+	rhsValue := rhsValues[sym.ExprIndex]
+	rhsType := rhsValue.Type
+	sourceRange := sourceRanges[sym.ExprIndex]
+
+	if rhsValue.Mode != AddressModeConstant {
+		checker.error(NewError(sourceRange, "constant declaration requires a constant expression"))
+		return invalidType
+	}
+
+	if spec.Type != nil {
+		constType := checker.resolveExpr(spec.Type).Type
+		if !rhsType.Equal(constType) {
+			checker.error(NewError(sourceRange, "type mismatch in constant declaration expected '%v', got '%v'", constType, rhsType))
+			return invalidType
+		}
+	}
+
+	return &TypeAndValue{
+		Mode:  AddressModeConstant,
+		Type:  rhsType,
+		Value: rhsValue.Value,
 	}
 }
 
@@ -1461,8 +1532,7 @@ func (checker *Checker) resolveDeclStmt(s *DeclStmt) {
 		return true
 	}
 
-	switch d := s.Decl.(*GenericDecl); d.DeclToken.Kind() {
-	case TokenVar:
+	resolveValueSymbol := func(d *GenericDecl, symbolFunc func(name Token, decl Decl, sourceRange SourceRange, specIndex, exprIndex int)) {
 		for si, spec := range d.Specs {
 			spec := spec.(*ValueSpec)
 			rhs, _ := checker.resolveAndUnpackTypesFromExprList(spec.RHS)
@@ -1473,11 +1543,24 @@ func (checker *Checker) resolveDeclStmt(s *DeclStmt) {
 			}
 
 			for ei, name := range spec.LHS {
-				sym := NewVarSymbol(name.Token, d, d.SourceRange(), si, ei)
-				checker.addSymbol(sym)
-				checker.resolveVarSymbol(sym)
+				symbolFunc(name.Token, d, d.SourceRange(), si, ei)
 			}
 		}
+	}
+
+	switch d := s.Decl.(*GenericDecl); d.DeclToken.Kind() {
+	case TokenVar:
+		resolveValueSymbol(d, func(name Token, decl Decl, sourceRange SourceRange, specIndex, exprIndex int) {
+			sym := NewVarSymbol(name, decl, sourceRange, specIndex, exprIndex)
+			checker.addSymbol(sym)
+			checker.resolveVarSymbol(sym)
+		})
+	case TokenConst:
+		resolveValueSymbol(d, func(name Token, decl Decl, sourceRange SourceRange, specIndex, exprIndex int) {
+			sym := NewConstSymbol(name, decl, sourceRange, specIndex, exprIndex)
+			checker.addSymbol(sym)
+			checker.resolveConstSymbol(sym)
+		})
 	case TokenType:
 		for _, s := range d.Specs {
 			spec := s.(*TypeSpec)
@@ -1485,7 +1568,6 @@ func (checker *Checker) resolveDeclStmt(s *DeclStmt) {
 			checker.addSymbol(sym)
 			checker.resolveTypeSymbol(sym)
 		}
-	case TokenConst:
 	default:
 		panic("unexpected decl type")
 	}

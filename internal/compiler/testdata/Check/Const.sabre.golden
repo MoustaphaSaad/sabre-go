@@ -1,0 +1,12 @@
+>> 		const x
+>> 		^^^^^^^ 
+Error[internal/compiler/testdata/Check/Const.sabre:21:2]: constant declaration requires an initializer
+>> 		const z int = 3.14
+>> 		              ^^^^ 
+Error[internal/compiler/testdata/Check/Const.sabre:22:16]: type mismatch in constant declaration expected 'int', got 'float32'
+>> 		const y = w
+>> 		          ^ 
+Error[internal/compiler/testdata/Check/Const.sabre:24:12]: constant declaration requires a constant expression
+>> 		const z, u, v = 1, 2
+>> 		^^^^^^^^^^^^^^^^^^^^ 
+Error[internal/compiler/testdata/Check/Const.sabre:25:2]: assignment mismatch: 3 variables but 2 values
