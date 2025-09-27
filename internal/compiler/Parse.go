@@ -725,6 +725,8 @@ func (p *Parser) ParseStmt() Stmt {
 		return p.parseIfStmt()
 	case TokenFor:
 		return p.parseForStmt()
+	case TokenType, TokenConst, TokenVar:
+		return p.parseDeclStmt()
 	default:
 		stmt, _ := p.parseSimpleStmt()
 		p.eatSemicolonOrError()
@@ -1167,6 +1169,19 @@ func (p *Parser) parseForStmt() Stmt {
 		Cond: cond,
 		Post: post,
 		Body: body,
+	}
+}
+
+func (p *Parser) parseDeclStmt() Stmt {
+	switch p.currentToken().Kind() {
+	case TokenType:
+		return &DeclStmt{Decl: p.parseGenericDecl(p.eatToken(), p.parseTypeSpec)}
+	case TokenConst:
+		return &DeclStmt{Decl: p.parseGenericDecl(p.eatToken(), p.parseConstSpec)}
+	case TokenVar:
+		return &DeclStmt{Decl: p.parseGenericDecl(p.eatToken(), p.parseVarSpec)}
+	default:
+		return nil
 	}
 }
 
