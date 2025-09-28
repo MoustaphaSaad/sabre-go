@@ -19,3 +19,44 @@ func test4(a u32x2, b u32x3, c u32x4) (u32x2, u32x3, u32x4) {
 func test5(a b32x2, b b32x3, c b32x4) (b32x2, b32x3, b32x4) {
 	return a, b, c
 }
+
+func test6(a f32x2) float32 {
+	return a.x
+}
+
+func test7(a f32x3) f32x2 {
+	if true {
+		return a.rg
+	} else {
+		return a.xy
+	}
+}
+
+func test8(a f32x4) f32x3 {
+	if true {
+		return a.zxy
+	} else {
+		return a.xxx
+	}
+}
+
+func test9(a f32x4) f32x4 {
+	if true {
+		return a.xyzw
+	} else if false {
+		return a.rgba
+	} else {
+		return a.stqp
+	}
+}
+
+func incorrect() {
+	var a f32x2
+	a.zw
+
+	var b f32x2
+	b.rx
+
+	var c f32x3
+	c.xyzw
+}

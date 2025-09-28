@@ -700,10 +700,125 @@ func (checker *Checker) resolveSelectorExpr(e *SelectorExpr) *TypeAndValue {
 				baseType.Type,
 			))
 		}
+	case *VectorType:
+		return checker.resolveVectorSwizzle(e, t)
 	default:
 		checker.error(NewError(e.SourceRange(), "type '%v' does not support selector expr", baseType.Type))
 	}
 	return invalidResult
+}
+
+func (checker *Checker) resolveVectorSwizzle(e *SelectorExpr, base *VectorType) *TypeAndValue {
+	isValidSwizzle := func(swizzle string, numComponents int) bool {
+		if len(swizzle) == 0 || len(swizzle) > numComponents {
+			return false
+		}
+
+		getStyle := func(r rune) string {
+			switch r {
+			case 'x', 'y', 'z', 'w':
+				return "xyzw"
+			case 'r', 'g', 'b', 'a':
+				return "rgba"
+			case 's', 't', 'q', 'p':
+				return "stqp"
+			default:
+				return ""
+			}
+		}
+
+		inRange := func(style string, r rune) bool {
+			for i := 0; i < numComponents; i++ {
+				if style[i] == byte(r) {
+					return true
+				}
+			}
+			return false
+		}
+
+		style := getStyle(rune(swizzle[0]))
+		for _, char := range swizzle {
+			if !inRange(style, char) {
+				return false
+			}
+		}
+
+		return true
+	}
+
+	getSwizzleResultType := func(componentType Type, swizzleLength int) Type {
+		if swizzleLength == 1 {
+			return componentType
+		}
+
+		switch componentType {
+		case BuiltinFloat32Type:
+			switch swizzleLength {
+			case 2:
+				return BuiltinF32x2Type
+			case 3:
+				return BuiltinF32x3Type
+			case 4:
+				return BuiltinF32x4Type
+			}
+		case BuiltinFloat64Type:
+			switch swizzleLength {
+			case 2:
+				return BuiltinF64x2Type
+			case 3:
+				return BuiltinF64x3Type
+			case 4:
+				return BuiltinF64x4Type
+			}
+		case BuiltinIntType:
+			switch swizzleLength {
+			case 2:
+				return BuiltinI32x2Type
+			case 3:
+				return BuiltinI32x3Type
+			case 4:
+				return BuiltinI32x4Type
+			}
+		case BuiltinUintType:
+			switch swizzleLength {
+			case 2:
+				return BuiltinU32x2Type
+			case 3:
+				return BuiltinU32x3Type
+			case 4:
+				return BuiltinU32x4Type
+			}
+		case BuiltinBoolType:
+			switch swizzleLength {
+			case 2:
+				return BuiltinB32x2Type
+			case 3:
+				return BuiltinB32x3Type
+			case 4:
+				return BuiltinB32x4Type
+			}
+		default:
+			panic("unexpected vector component type")
+		}
+
+		return BuiltinVoidType
+	}
+
+	swizzle := e.Selector.Token.Value()
+	if !isValidSwizzle(swizzle, base.Width) {
+		checker.error(NewError(e.Selector.Token.SourceRange(), "invalid swizzle '%v' for %v-component vector '%v'", swizzle, base.Width, base))
+		return &TypeAndValue{
+			Mode:  AddressModeInvalid,
+			Type:  BuiltinVoidType,
+			Value: nil,
+		}
+	}
+
+	return &TypeAndValue{
+		Mode:  AddressModeComputedValue,
+		Type:  getSwizzleResultType(base.UnderlyingType, len(swizzle)),
+		Value: nil,
+	}
 }
 
 func (checker *Checker) resolveBinaryExpr(e *BinaryExpr) *TypeAndValue {
