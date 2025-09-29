@@ -288,10 +288,10 @@ func (checker *Checker) shallowWalk() {
 func (checker *Checker) shallowWalkGenericDecl(d *GenericDecl) {
 	switch d.DeclToken.Kind() {
 	case TokenConst:
-		for _, s := range d.Specs {
+		for si, s := range d.Specs {
 			spec := s.(*ValueSpec)
-			for _, name := range spec.LHS {
-				sym := NewConstSymbol(name.Token, d, d.SourceRange())
+			for ei, name := range spec.LHS {
+				sym := NewConstSymbol(name.Token, d, d.SourceRange(), si, ei)
 				checker.addSymbol(sym)
 			}
 		}
@@ -359,6 +359,8 @@ func (checker *Checker) resolveSymbol(sym Symbol) *TypeAndValue {
 		symType = checker.resolveTypeSymbol(symbol)
 	case *VarSymbol:
 		symType = checker.resolveVarSymbol(symbol)
+	case *ConstSymbol:
+		symType = checker.resolveConstSymbol(symbol)
 	default:
 		panic("unexpected symbol type")
 	}
@@ -372,6 +374,8 @@ func (checker *Checker) resolveSymbol(sym Symbol) *TypeAndValue {
 	case *TypeSymbol:
 		// nothing to do here
 	case *VarSymbol:
+		// nothing to do
+	case *ConstSymbol:
 		// nothing to do
 	default:
 		panic("unexpected symbol type")
@@ -448,7 +452,7 @@ func (checker *Checker) resolveVarSymbol(sym *VarSymbol) *TypeAndValue {
 			return invalidType
 		}
 
-		varType = rhsTypes[sym.ExprIndex]
+		varType = rhsTypes[sym.ExprIndex].Type
 	} else {
 		if len(rhsTypes) > 0 {
 			if sym.ExprIndex >= len(rhsTypes) {
@@ -456,8 +460,8 @@ func (checker *Checker) resolveVarSymbol(sym *VarSymbol) *TypeAndValue {
 				return invalidType
 			}
 
-			if !rhsTypes[sym.ExprIndex].Equal(varType) {
-				checker.error(NewError(sourceRanges[sym.ExprIndex], "type mismatch in variable declaration expected '%v', got '%v'", varType, rhsTypes[sym.ExprIndex]))
+			if !rhsTypes[sym.ExprIndex].Type.Equal(varType) {
+				checker.error(NewError(sourceRanges[sym.ExprIndex], "type mismatch in variable declaration expected '%v', got '%v'", varType, rhsTypes[sym.ExprIndex].Type))
 				return invalidType
 			}
 		}
@@ -467,6 +471,50 @@ func (checker *Checker) resolveVarSymbol(sym *VarSymbol) *TypeAndValue {
 		Mode:  AddressModeVariable,
 		Type:  varType,
 		Value: nil,
+	}
+}
+
+func (checker *Checker) resolveConstSymbol(sym *ConstSymbol) *TypeAndValue {
+	invalidType := &TypeAndValue{
+		Mode:  AddressModeInvalid,
+		Type:  BuiltinVoidType,
+		Value: nil,
+	}
+
+	spec := sym.SymDecl.(*GenericDecl).Specs[sym.SpecIndex].(*ValueSpec)
+	if len(spec.RHS) == 0 {
+		checker.error(NewError(sym.SourceRange(), "constant declaration requires an initializer"))
+		return invalidType
+	}
+
+	rhsValues, sourceRanges := checker.resolveAndUnpackTypesFromExprList(spec.RHS)
+
+	if sym.ExprIndex >= len(rhsValues) {
+		checker.error(NewError(sym.SourceRange(), "assignment mismatch: %v constants but %v values", sym.ExprIndex+1, len(rhsValues)))
+		return invalidType
+	}
+
+	rhsValue := rhsValues[sym.ExprIndex]
+	rhsType := rhsValue.Type
+	sourceRange := sourceRanges[sym.ExprIndex]
+
+	if rhsValue.Mode != AddressModeConstant {
+		checker.error(NewError(sourceRange, "constant declaration requires a constant expression"))
+		return invalidType
+	}
+
+	if spec.Type != nil {
+		constType := checker.resolveExpr(spec.Type).Type
+		if !rhsType.Equal(constType) {
+			checker.error(NewError(sourceRange, "type mismatch in constant declaration expected '%v', got '%v'", constType, rhsType))
+			return invalidType
+		}
+	}
+
+	return &TypeAndValue{
+		Mode:  AddressModeConstant,
+		Type:  rhsType,
+		Value: rhsValue.Value,
 	}
 }
 
@@ -506,22 +554,23 @@ func (checker *Checker) resolveExpr(expr Expr) (t *TypeAndValue) {
 	return t
 }
 
-func (checker *Checker) resolveAndUnpackTypesFromExprList(exprs []Expr) (types []Type, sourceRanges []SourceRange) {
+func (checker *Checker) resolveAndUnpackTypesFromExprList(exprs []Expr) (types []*TypeAndValue, sourceRanges []SourceRange) {
 	if len(exprs) == 1 {
 		e := exprs[0]
-		switch t := checker.resolveExpr(e).Type.(type) {
+		tv := checker.resolveExpr(e)
+		switch t := tv.Type.(type) {
 		case *TupleType:
 			for _, tt := range t.Types {
-				types = append(types, tt)
+				types = append(types, &TypeAndValue{Mode: tv.Mode, Type: tt, Value: nil})
 				sourceRanges = append(sourceRanges, e.SourceRange())
 			}
 		default:
-			types = append(types, t)
+			types = append(types, tv)
 			sourceRanges = append(sourceRanges, e.SourceRange())
 		}
 	} else {
 		for _, e := range exprs {
-			types = append(types, checker.resolveExpr(e).Type)
+			types = append(types, checker.resolveExpr(e))
 			sourceRanges = append(sourceRanges, e.SourceRange())
 		}
 	}
@@ -805,16 +854,20 @@ func (checker *Checker) resolveCallExpr(e *CallExpr) *TypeAndValue {
 
 	arguments, sourceRanges := checker.resolveAndUnpackTypesFromExprList(e.Args)
 	if len(arguments) != len(funcType.ParameterTypes) {
+		argumentTypes := make([]Type, len(arguments))
+		for i, a := range arguments {
+			argumentTypes[i] = a.Type
+		}
 		checker.error(NewError(e.SourceRange(), "expected %v arguments, but found %v", len(funcType.ParameterTypes), len(e.Args)).
-			Note(e.SourceRange(), "have %v, want %v", TupleType{Types: arguments}, TupleType{Types: funcType.ParameterTypes}),
+			Note(e.SourceRange(), "have %v, want %v", TupleType{Types: argumentTypes}, TupleType{Types: funcType.ParameterTypes}),
 		)
 		return res
 	}
 
 	for i, a := range arguments {
 		parameterType := funcType.ParameterTypes[i]
-		if !a.Equal(parameterType) {
-			checker.error(NewError(sourceRanges[i], "incorrect argument type '%v', expected '%v'", a, parameterType))
+		if !a.Type.Equal(parameterType) {
+			checker.error(NewError(sourceRanges[i], "incorrect argument type '%v', expected '%v'", a.Type, parameterType))
 			return res
 		}
 	}
@@ -1076,15 +1129,19 @@ func (checker *Checker) resolveReturnStmt(s *ReturnStmt) {
 	expectedReturnTypes := checker.unit.semanticInfo.TypeOf(funcDecl).Type.(*FuncType).ReturnTypes
 	if len(returnTypes) == len(expectedReturnTypes) {
 		for i, et := range expectedReturnTypes {
-			if t := returnTypes[i]; !t.Equal(et) {
-				checker.error(NewError(sourceRanges[i], "incorrect return type '%v', expected '%v'", t, et))
+			if t := returnTypes[i]; !t.Type.Equal(et) {
+				checker.error(NewError(sourceRanges[i], "incorrect return type '%v', expected '%v'", t.Type, et))
 			}
 		}
 	} else {
 		named := funcDecl.Type.Result != nil && len(funcDecl.Type.Result.Fields[0].Names) > 0
 		if len(returnTypes) != 0 || !named {
-			checker.error(NewError(s.SourceRange(), "expected %v return values, but found %v", len(expectedReturnTypes), len(returnTypes)).
-				Note(s.SourceRange(), "have %v, want %v", TupleType{Types: returnTypes}, TupleType{Types: expectedReturnTypes}),
+			rTypes := make([]Type, len(returnTypes))
+			for i, a := range returnTypes {
+				rTypes[i] = a.Type
+			}
+			checker.error(NewError(s.SourceRange(), "expected %v return values, but found %v", len(expectedReturnTypes), len(rTypes)).
+				Note(s.SourceRange(), "have %v, want %v", TupleType{Types: rTypes}, TupleType{Types: expectedReturnTypes}),
 			)
 		}
 	}
@@ -1217,7 +1274,7 @@ func (checker *Checker) resolveAssignStmt(s *AssignStmt) {
 			name := lhs.(*IdentifierExpr).Token
 			v := NewVarSymbol(name, nil, name.SourceRange(), 0, 0)
 			v.SetResolveState(ResolveStateResolved)
-			checker.unit.semanticInfo.SetTypeOf(v, &TypeAndValue{Mode: AddressModeVariable, Type: rhsTypes[i]})
+			checker.unit.semanticInfo.SetTypeOf(v, &TypeAndValue{Mode: AddressModeVariable, Type: rhsTypes[i].Type})
 			checker.addSymbol(v)
 		}
 	case TokenAssign:
@@ -1230,7 +1287,7 @@ func (checker *Checker) resolveAssignStmt(s *AssignStmt) {
 			lhs := s.LHS[i]
 			lhsType := checker.resolveExpr(lhs)
 			checkIsAssignable(lhs, lhsType)
-			checkTypeEqual(lhsType.Type, rhsTypes[i], lhs.SourceRange(), rhsSourceRanges[i])
+			checkTypeEqual(lhsType.Type, rhsTypes[i].Type, lhs.SourceRange(), rhsSourceRanges[i])
 		}
 	case TokenAddAssign, TokenSubAssign, TokenMulAssign, TokenDivAssign, TokenModAssign:
 		if !hasSingleValue(s) {
@@ -1461,8 +1518,7 @@ func (checker *Checker) resolveDeclStmt(s *DeclStmt) {
 		return true
 	}
 
-	switch d := s.Decl.(*GenericDecl); d.DeclToken.Kind() {
-	case TokenVar:
+	resolveValueSymbol := func(d *GenericDecl, symbolFunc func(name Token, decl Decl, sourceRange SourceRange, specIndex, exprIndex int)) {
 		for si, spec := range d.Specs {
 			spec := spec.(*ValueSpec)
 			rhs, _ := checker.resolveAndUnpackTypesFromExprList(spec.RHS)
@@ -1473,11 +1529,24 @@ func (checker *Checker) resolveDeclStmt(s *DeclStmt) {
 			}
 
 			for ei, name := range spec.LHS {
-				sym := NewVarSymbol(name.Token, d, d.SourceRange(), si, ei)
-				checker.addSymbol(sym)
-				checker.resolveVarSymbol(sym)
+				symbolFunc(name.Token, d, d.SourceRange(), si, ei)
 			}
 		}
+	}
+
+	switch d := s.Decl.(*GenericDecl); d.DeclToken.Kind() {
+	case TokenVar:
+		resolveValueSymbol(d, func(name Token, decl Decl, sourceRange SourceRange, specIndex, exprIndex int) {
+			sym := NewVarSymbol(name, decl, sourceRange, specIndex, exprIndex)
+			checker.addSymbol(sym)
+			checker.resolveVarSymbol(sym)
+		})
+	case TokenConst:
+		resolveValueSymbol(d, func(name Token, decl Decl, sourceRange SourceRange, specIndex, exprIndex int) {
+			sym := NewConstSymbol(name, decl, sourceRange, specIndex, exprIndex)
+			checker.addSymbol(sym)
+			checker.resolveConstSymbol(sym)
+		})
 	case TokenType:
 		for _, s := range d.Specs {
 			spec := s.(*TypeSpec)
@@ -1485,7 +1554,6 @@ func (checker *Checker) resolveDeclStmt(s *DeclStmt) {
 			checker.addSymbol(sym)
 			checker.resolveTypeSymbol(sym)
 		}
-	case TokenConst:
 	default:
 		panic("unexpected decl type")
 	}

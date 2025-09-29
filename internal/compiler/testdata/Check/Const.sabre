@@ -1,0 +1,26 @@
+package main
+
+const (
+	size int = 1024
+	eof      = -1
+)
+
+const Pi float32 = 3.14159265358979323846
+const zero = 0.0
+const a, b = 3, 4
+const u, v float32 = 0.0, 3.0
+const zero2 = zero
+
+func correct() {
+	const x int = 3
+	const y = 3.14
+	const z, w = 3, 4.0
+}
+
+func incorrect() {
+	const x
+	const z int = 3.14
+	var w = 1
+	const y = w
+	const z, u, v = 1, 2
+}
