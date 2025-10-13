@@ -688,7 +688,7 @@ func (checker *Checker) resolveSelectorExpr(e *SelectorExpr) *TypeAndValue {
 
 func (checker *Checker) resolveVectorSwizzle(e *SelectorExpr, base *VectorType) *TypeAndValue {
 	isValidSwizzle := func(swizzle string, numComponents int) bool {
-		if len(swizzle) == 0 || len(swizzle) > numComponents {
+		if len(swizzle) == 0 {
 			return false
 		}
 
