@@ -9,7 +9,7 @@ type TypeProperties struct {
 	Size, Align                           int
 	Signed, Integral, Floating            bool
 	HasBitOps, HasArithmetic, HasLogicOps bool
-	HasCompare, HasEquality               bool
+	HasCompare, HasEquality, HasModulus   bool
 }
 
 type Type interface {
@@ -75,6 +75,7 @@ func (IntType) Properties() TypeProperties {
 		HasArithmetic: true,
 		HasCompare:    true,
 		HasEquality:   true,
+		HasModulus:    true,
 	}
 }
 func (IntType) String() string    { return "int" }
@@ -100,6 +101,7 @@ func (UintType) Properties() TypeProperties {
 		HasArithmetic: true,
 		HasCompare:    true,
 		HasEquality:   true,
+		HasModulus:    true,
 	}
 }
 func (UintType) String() string    { return "uint" }
@@ -284,6 +286,7 @@ var (
 			HasArithmetic: true,
 			HasCompare:    true,
 			HasEquality:   true,
+			HasModulus:    true,
 		},
 		name: "i32x2",
 	}
@@ -299,6 +302,7 @@ var (
 			HasArithmetic: true,
 			HasCompare:    true,
 			HasEquality:   true,
+			HasModulus:    true,
 		},
 		name: "i32x3",
 	}
@@ -314,6 +318,7 @@ var (
 			HasArithmetic: true,
 			HasCompare:    true,
 			HasEquality:   true,
+			HasModulus:    true,
 		},
 		name: "i32x4",
 	}
@@ -329,6 +334,7 @@ var (
 			HasArithmetic: true,
 			HasCompare:    true,
 			HasEquality:   true,
+			HasModulus:    true,
 		},
 		name: "u32x2",
 	}
@@ -343,6 +349,7 @@ var (
 			HasArithmetic: true,
 			HasCompare:    true,
 			HasEquality:   true,
+			HasModulus:    true,
 		},
 		name: "u32x3",
 	}
@@ -357,6 +364,7 @@ var (
 			HasArithmetic: true,
 			HasCompare:    true,
 			HasEquality:   true,
+			HasModulus:    true,
 		},
 		name: "u32x4",
 	}

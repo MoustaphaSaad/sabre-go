@@ -688,8 +688,63 @@ func (checker *Checker) resolveBinaryExpr(e *BinaryExpr) *TypeAndValue {
 	lhsType := checker.resolveExpr(e.LHS)
 	rhsType := checker.resolveExpr(e.RHS)
 
-	equalTypes := func(e Expr, lhsType, rhsType Type) bool {
-		if !lhsType.Equal(rhsType) {
+	invalidResult := &TypeAndValue{
+		Mode: AddressModeInvalid,
+		Type: BuiltinVoidType,
+	}
+
+	isVectorType := func(t Type) (*VectorType, bool) {
+		if vt, ok := t.Resolve(true).(*VectorType); ok {
+			return vt, true
+		}
+		return nil, false
+	}
+
+	lhsVecType, lhsIsVec := isVectorType(lhsType.Type)
+	rhsVecType, rhsIsVec := isVectorType(rhsType.Type)
+	vecWidth := 1
+	if lhsIsVec && rhsIsVec {
+		vecWidth = lhsVecType.Width
+	} else if lhsIsVec {
+		vecWidth = lhsVecType.Width
+	} else if rhsIsVec {
+		vecWidth = rhsVecType.Width
+	}
+
+	vectorBooleanByWidth := func(width int) Type {
+		switch width {
+		case 1:
+			return BuiltinBoolType
+		case 2:
+			return BuiltinB32x2Type
+		case 3:
+			return BuiltinB32x3Type
+		case 4:
+			return BuiltinB32x4Type
+		default:
+			panic("unsupported vector width")
+		}
+	}
+
+	checkCompatibleTypes := func(e Expr, lhsType, rhsType Type) bool {
+		incompatible := false
+		if lhsIsVec && rhsIsVec {
+			incompatible = lhsType.Equal(rhsType)
+		} else if lhsIsVec || rhsIsVec {
+			var scalarType Type
+			var vectorType *VectorType
+			if lhsIsVec {
+				vectorType = lhsVecType
+				scalarType = rhsType
+			} else {
+				scalarType = lhsType
+				vectorType = rhsVecType
+			}
+			incompatible = vectorType.UnderlyingType.Equal(scalarType)
+		} else {
+			incompatible = lhsType.Equal(rhsType)
+		}
+		if !incompatible {
 			checker.error(NewError(
 				e.SourceRange(),
 				"type mismatch in binary expression, lhs is '%v' and rhs is '%v'",
@@ -714,41 +769,42 @@ func (checker *Checker) resolveBinaryExpr(e *BinaryExpr) *TypeAndValue {
 		return true
 	}
 
-	invalidResult := &TypeAndValue{
-		Mode: AddressModeInvalid,
-		Type: BuiltinVoidType,
-	}
-
 	switch e.Operator.Kind() {
 	case TokenOr, TokenAnd, TokenXor, TokenAndNot:
-		if equalTypes(e, lhsType.Type, rhsType.Type) &&
+		if checkCompatibleTypes(e, lhsType.Type, rhsType.Type) &&
 			hasTypeProperty(e.LHS, lhsType.Type, lhsType.Type.Properties().HasBitOps, "bitwise operations") &&
 			hasTypeProperty(e.RHS, rhsType.Type, rhsType.Type.Properties().HasBitOps, "bitwise operations") {
 			return lhsType.BinaryOpWithType(e.Operator.Kind(), rhsType, lhsType.Type)
 		}
-	case TokenAdd, TokenSub, TokenMul, TokenDiv, TokenMod:
-		if equalTypes(e, lhsType.Type, rhsType.Type) &&
+	case TokenAdd, TokenSub, TokenMul, TokenDiv:
+		if checkCompatibleTypes(e, lhsType.Type, rhsType.Type) &&
 			hasTypeProperty(e.LHS, lhsType.Type, lhsType.Type.Properties().HasArithmetic, "arithmetic operations") &&
 			hasTypeProperty(e.RHS, rhsType.Type, rhsType.Type.Properties().HasArithmetic, "arithmetic operations") {
 			return lhsType.BinaryOpWithType(e.Operator.Kind(), rhsType, lhsType.Type)
 		}
+	case TokenMod:
+		if checkCompatibleTypes(e, lhsType.Type, rhsType.Type) &&
+			hasTypeProperty(e.LHS, lhsType.Type, lhsType.Type.Properties().HasModulus, "modulus operations") &&
+			hasTypeProperty(e.RHS, rhsType.Type, rhsType.Type.Properties().HasModulus, "modulus operations") {
+			return lhsType.BinaryOpWithType(e.Operator.Kind(), rhsType, lhsType.Type)
+		}
 	case TokenLOr, TokenLAnd:
-		if equalTypes(e, lhsType.Type, rhsType.Type) &&
+		if checkCompatibleTypes(e, lhsType.Type, rhsType.Type) &&
 			hasTypeProperty(e.LHS, lhsType.Type, lhsType.Type.Properties().HasLogicOps, "logic operations") &&
 			hasTypeProperty(e.RHS, rhsType.Type, rhsType.Type.Properties().HasLogicOps, "logic operations") {
 			return lhsType.BinaryOpWithType(e.Operator.Kind(), rhsType, lhsType.Type)
 		}
 	case TokenLT, TokenGT, TokenLE, TokenGE:
-		if equalTypes(e, lhsType.Type, rhsType.Type) &&
+		if checkCompatibleTypes(e, lhsType.Type, rhsType.Type) &&
 			hasTypeProperty(e.LHS, lhsType.Type, lhsType.Type.Properties().HasCompare, "compare operations") &&
 			hasTypeProperty(e.RHS, rhsType.Type, rhsType.Type.Properties().HasCompare, "compare operations") {
-			return lhsType.CompareWithType(e.Operator.Kind(), rhsType, BuiltinBoolType)
+			return lhsType.CompareWithType(e.Operator.Kind(), rhsType, vectorBooleanByWidth(vecWidth))
 		}
 	case TokenEQ, TokenNE:
-		if equalTypes(e, lhsType.Type, rhsType.Type) &&
+		if checkCompatibleTypes(e, lhsType.Type, rhsType.Type) &&
 			hasTypeProperty(e.LHS, lhsType.Type, lhsType.Type.Properties().HasEquality, "equality operations") &&
 			hasTypeProperty(e.RHS, rhsType.Type, rhsType.Type.Properties().HasEquality, "equality operations") {
-			return lhsType.CompareWithType(e.Operator.Kind(), rhsType, BuiltinBoolType)
+			return lhsType.CompareWithType(e.Operator.Kind(), rhsType, vectorBooleanByWidth(vecWidth))
 		}
 	case TokenShl, TokenShr:
 		if !rhsType.Type.Properties().Integral {
