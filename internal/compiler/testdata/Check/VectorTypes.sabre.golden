@@ -1,0 +1,9 @@
+>> 		a.zw
+>> 		  ^^ 
+Error[internal/compiler/testdata/Check/VectorTypes.sabre:59:4]: invalid swizzle 'zw' for 2-component vector 'f32x2'
+>> 		b.rx
+>> 		  ^^ 
+Error[internal/compiler/testdata/Check/VectorTypes.sabre:62:4]: invalid swizzle 'rx' for 2-component vector 'f32x2'
+>> 		c.xyzw
+>> 		  ^^^^ 
+Error[internal/compiler/testdata/Check/VectorTypes.sabre:65:4]: invalid swizzle 'xyzw' for 3-component vector 'f32x3'
