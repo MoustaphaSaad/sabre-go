@@ -1,0 +1,169 @@
+package main
+
+// Correct cases - these should compile successfully
+
+func correctVectorOpVector(a f32x2, b f32x2, c f32x3, d f32x3, e f32x4, f f32x4, ia i32x2, ib i32x2, ic i32x3, id i32x3, ie i32x4, ig i32x4, ba b32x2, bb b32x2, bc b32x3, bd b32x3, be b32x4, bf b32x4) {
+	v1 := a + b
+	v2 := c - d
+	v3 := e * f
+	v4 := a / b
+
+	iv1 := ia + ib
+	iv2 := ic - id
+	iv3 := ie * ig
+	iv4 := ia / ib
+
+	iv5 := ia % ib
+
+	ib1 := ia & ib
+	ib2 := ic | id
+	ib3 := ie ^ ig
+
+	is1 := ia << ib
+	is2 := ic >> id
+
+	c1 := a == b
+	c2 := c != d
+	c3 := e < f
+	c4 := a <= b
+	c5 := c > d
+	c6 := e >= f
+}
+
+func correctScalarOpVector(fs float32, a f32x2, b f32x3, c f32x4, i int, ia i32x2, ib i32x3, ic i32x4) {
+	v1 := fs + a
+	v2 := fs - b
+	v3 := fs * c
+	v4 := fs / a
+
+	iv1 := i + ia
+	iv2 := i - ib
+	iv3 := i * ic
+	iv4 := i / ia
+
+	iv5 := i % ib;
+
+	ib1 := i & ia
+	ib2 := i | ib
+	ib3 := i ^ ic
+
+	is1 := i << ia
+	is2 := i >> ib
+
+	c1 := fs == a
+	c2 := fs < b
+	c3 := fs >= c
+	c4 := i >= ic
+}
+
+func correctVectorOpScalar(a f32x2, b f32x3, c f32x4, fs float32, ia i32x2, ib i32x3, ic i32x4, i int) {
+	v1 := a + fs
+	v2 := b - fs
+	v3 := c * fs
+	v4 := a / fs
+
+	iv1 := ia + i
+	iv2 := ib - i
+	iv3 := ic * i
+	iv4 := ia / i
+
+	iv5 := ic % i
+
+	ib1 := ia & i
+	ib2 := ib | i
+	ib3 := ic ^ i
+
+	is1 := ia << i
+	is2 := ic >> i
+
+	c1 := a == fs
+	c2 := b < fs
+	c3 := ic >= i
+	c4 := c > fs
+}
+
+// Incorrect cases - these should produce compile errors
+
+func incorrectMismatchedDimensions(a f32x2, b f32x3, c f32x4, ia i32x2, ib i32x3) {
+	v1 := a + b
+
+	v2 := b - c
+
+	v3 := c * a
+
+	iv1 := ia / ib
+
+	c1 := a == b
+}
+
+func incorrectTypeMismatch(a f32x2, b f32x3, c f32x4, ia i32x2, ib i32x3, ic i32x4, fs float32, i int) {
+	v1 := a + ia
+
+	v2 := ib - b
+
+	v3 := c * ic
+
+	v4 := fs + ia
+
+	v5 := i * b
+}
+
+func incorrectModuloOnFloats(a f32x2, b f32x3, c f32x4, fs float32) {
+	v1 := a % a
+
+	v2 := fs % b
+
+	v3 := c % fs
+}
+
+func incorrectBitwiseOnFloats(a f32x2, b f32x3, c f32x4, fs float32) {
+	v1 := a & a
+
+	v2 := b | b
+
+	v3 := c ^ c
+
+	v4 := fs & a
+
+	v5 := b | fs
+}
+
+func incorrectShiftOnFloats(a f32x2, b f32x3, c f32x4, fs float32) {
+	v1 := a << a
+
+	v2 := b >> b
+
+	v3 := fs << a
+
+	v4 := c >> fs
+}
+
+func incorrectLogicalOnNonBool(a f32x2, b f32x3, ia i32x3, fs float32) {
+	v1 := a && a
+
+	v2 := ia || ia
+
+	v3 := fs && a
+
+	v4 := b || fs
+}
+
+func incorrectArithmeticOnBool(ba b32x2, bb b32x3, bc b32x4, fs float32) {
+	b1 := ba + ba
+
+	b2 := bb * bb
+
+	b3 := bc - bc
+
+	b4 := ba * fs
+
+	b5 := fs / bc
+}
+
+func incorrectNegativeShift(ia i32x2, ib i32x3, i int) {
+	iv1 := ia << -1
+
+	iv2 := ib >> -2
+
+	iv3 := i << -3
+}
