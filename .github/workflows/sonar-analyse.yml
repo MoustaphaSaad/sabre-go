@@ -30,8 +30,16 @@ jobs:
           for golden_file in ./internal/compiler/testdata/SPIRV/*.golden; do
             echo "Verifying: $golden_file"
             temp_spv=$(mktemp --suffix=.spv)
-            spirv-as "$golden_file" -o "$temp_spv"
-            spirv-val "$temp_spv"
+            if ! spirv-as "$golden_file" -o "$temp_spv"; then
+              echo "❌ spirv-as failed for $golden_file"
+              rm -f "$temp_spv"
+              exit 1
+            fi
+            if ! spirv-val "$temp_spv"; then
+              echo "❌ spirv-val failed for $golden_file"
+              rm -f "$temp_spv"
+              exit 1
+            fi
             rm "$temp_spv"
             echo "✓ $golden_file is valid"
           done
