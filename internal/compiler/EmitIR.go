@@ -1,18 +1,20 @@
 package compiler
 
+import "github.com/MoustaphaSaad/sabre-go/internal/compiler/spirv"
+
 type IREmitter struct {
 	unit   *Unit
-	module *Module
+	module *spirv.Module
 }
 
 func NewIREmitter(u *Unit) *IREmitter {
 	return &IREmitter{
 		unit:   u,
-		module: NewModule(),
+		module: spirv.NewModule(),
 	}
 }
 
-func (ir *IREmitter) Emit() *Module {
+func (ir *IREmitter) Emit() *spirv.Module {
 	for _, sym := range ir.unit.semanticInfo.ReachableSymbols {
 		ir.emitSymbol(sym)
 	}
