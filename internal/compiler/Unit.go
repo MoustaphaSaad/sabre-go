@@ -96,6 +96,7 @@ const (
 	CompilationStageScanned
 	CompliationStageParsed
 	CompilationStageChecked
+	CompilationStageEmitted
 	CompilationStageFailure
 )
 
@@ -171,4 +172,13 @@ func (u *Unit) Check() bool {
 		}
 	}
 	return !u.HasErrors()
+}
+
+func (u *Unit) EmitSPIRV() *Module {
+	if u.compilationStage == CompilationStageChecked {
+		u.compilationStage = CompilationStageEmitted
+		emitter := NewIREmitter(u)
+		return emitter.Emit()
+	}
+	return nil
 }

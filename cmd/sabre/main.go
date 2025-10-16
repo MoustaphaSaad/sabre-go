@@ -36,7 +36,11 @@ Commands:
   check            type checks a program
                    "sabre check <file>"
   test-check       tests the type checking against golden output
-                   "sabre test-check <test-data-dir>
+                   "sabre test-check <test-data-dir>"
+  spirv            emits SPIR-V bytecode
+                   "sabre spirv <file>"
+  test-spirv       tests the SPIR-V emission against golden output
+                   "sabre test-spirv <test-data-dir>"
 `
 
 func helpString() string {
@@ -255,6 +259,36 @@ func check(args []string, out io.Writer) error {
 	return nil
 }
 
+func emitSPIRV(args []string, out io.Writer) error {
+	if len(args) < 1 {
+		return fmt.Errorf("no file provided\n%v", helpString())
+	}
+
+	file := filepath.ToSlash(filepath.Clean(args[0]))
+	unit, err := compiler.UnitFromFile(file)
+	if err != nil {
+		return fmt.Errorf("failed to create unit from file '%s': %v", file, err)
+	}
+
+	if !unit.Scan() {
+		unit.PrintErrors(out)
+		return nil
+	}
+
+	if !unit.Parse() {
+		unit.PrintErrors(out)
+		return nil
+	}
+
+	if !unit.Check() {
+		unit.PrintErrors(out)
+	}
+
+	unit.EmitSPIRV()
+
+	return nil
+}
+
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Fprintf(os.Stderr, "Error: no command found\n")
@@ -287,6 +321,10 @@ func main() {
 		err = check(subArgs, os.Stdout)
 	case "test-check":
 		err = testFunc(check, subArgs, os.Stdout)
+	case "spirv":
+		err = emitSPIRV(subArgs, os.Stdout)
+	case "test-spirv":
+		err = testFunc(emitSPIRV, subArgs, os.Stdout)
 	default:
 		fmt.Fprintf(os.Stderr, "Error: unknown command '%s'\n", os.Args[1])
 		help()

@@ -1,1 +1,4 @@
-"sdf"
+package main
+
+func main() {
+}
