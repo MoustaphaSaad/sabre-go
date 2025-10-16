@@ -1,0 +1,102 @@
+>> 		v1 := a + b
+>> 		      ^^^^^ 
+Error[internal/compiler/testdata/Check/BinaryVectors.sabre:88:8]: type mismatch in binary expression, lhs is 'f32x2' and rhs is 'f32x3'
+>> 		v2 := b - c
+>> 		      ^^^^^ 
+Error[internal/compiler/testdata/Check/BinaryVectors.sabre:90:8]: type mismatch in binary expression, lhs is 'f32x3' and rhs is 'f32x4'
+>> 		v3 := c * a
+>> 		      ^^^^^ 
+Error[internal/compiler/testdata/Check/BinaryVectors.sabre:92:8]: type mismatch in binary expression, lhs is 'f32x4' and rhs is 'f32x2'
+>> 		iv1 := ia / ib
+>> 		       ^^^^^^^ 
+Error[internal/compiler/testdata/Check/BinaryVectors.sabre:94:9]: type mismatch in binary expression, lhs is 'i32x2' and rhs is 'i32x3'
+>> 		c1 := a == b
+>> 		      ^^^^^^ 
+Error[internal/compiler/testdata/Check/BinaryVectors.sabre:96:8]: type mismatch in binary expression, lhs is 'f32x2' and rhs is 'f32x3'
+>> 		v1 := a + ia
+>> 		      ^^^^^^ 
+Error[internal/compiler/testdata/Check/BinaryVectors.sabre:100:8]: type mismatch in binary expression, lhs is 'f32x2' and rhs is 'i32x2'
+>> 		v2 := ib - b
+>> 		      ^^^^^^ 
+Error[internal/compiler/testdata/Check/BinaryVectors.sabre:102:8]: type mismatch in binary expression, lhs is 'i32x3' and rhs is 'f32x3'
+>> 		v3 := c * ic
+>> 		      ^^^^^^ 
+Error[internal/compiler/testdata/Check/BinaryVectors.sabre:104:8]: type mismatch in binary expression, lhs is 'f32x4' and rhs is 'i32x4'
+>> 		v4 := fs + ia
+>> 		      ^^^^^^^ 
+Error[internal/compiler/testdata/Check/BinaryVectors.sabre:106:8]: type mismatch in binary expression, lhs is 'float32' and rhs is 'i32x2'
+>> 		v5 := i * b
+>> 		      ^^^^^ 
+Error[internal/compiler/testdata/Check/BinaryVectors.sabre:108:8]: type mismatch in binary expression, lhs is 'int' and rhs is 'f32x3'
+>> 		v1 := a % a
+>> 		      ^     
+Error[internal/compiler/testdata/Check/BinaryVectors.sabre:112:8]: type 'f32x2' doesn't support modulus operations
+>> 		v2 := fs % b
+>> 		      ^^     
+Error[internal/compiler/testdata/Check/BinaryVectors.sabre:114:8]: type 'float32' doesn't support modulus operations
+>> 		v3 := c % fs
+>> 		      ^      
+Error[internal/compiler/testdata/Check/BinaryVectors.sabre:116:8]: type 'f32x4' doesn't support modulus operations
+>> 		v1 := a & a
+>> 		      ^     
+Error[internal/compiler/testdata/Check/BinaryVectors.sabre:120:8]: type 'f32x2' doesn't support bitwise operations
+>> 		v2 := b | b
+>> 		      ^     
+Error[internal/compiler/testdata/Check/BinaryVectors.sabre:122:8]: type 'f32x3' doesn't support bitwise operations
+>> 		v3 := c ^ c
+>> 		      ^     
+Error[internal/compiler/testdata/Check/BinaryVectors.sabre:124:8]: type 'f32x4' doesn't support bitwise operations
+>> 		v4 := fs & a
+>> 		      ^^     
+Error[internal/compiler/testdata/Check/BinaryVectors.sabre:126:8]: type 'float32' doesn't support bitwise operations
+>> 		v5 := b | fs
+>> 		      ^      
+Error[internal/compiler/testdata/Check/BinaryVectors.sabre:128:8]: type 'f32x3' doesn't support bitwise operations
+>> 		v1 := a << a
+>> 		           ^ 
+Error[internal/compiler/testdata/Check/BinaryVectors.sabre:132:13]: shift operator should be integral type instead of 'f32x2'
+>> 		v2 := b >> b
+>> 		           ^ 
+Error[internal/compiler/testdata/Check/BinaryVectors.sabre:134:13]: shift operator should be integral type instead of 'f32x3'
+>> 		v3 := fs << a
+>> 		            ^ 
+Error[internal/compiler/testdata/Check/BinaryVectors.sabre:136:14]: shift operator should be integral type instead of 'f32x2'
+>> 		v4 := c >> fs
+>> 		           ^^ 
+Error[internal/compiler/testdata/Check/BinaryVectors.sabre:138:13]: shift operator should be integral type instead of 'float32'
+>> 		v1 := a && a
+>> 		      ^      
+Error[internal/compiler/testdata/Check/BinaryVectors.sabre:142:8]: type 'f32x2' doesn't support logic operations
+>> 		v2 := ia || ia
+>> 		      ^^       
+Error[internal/compiler/testdata/Check/BinaryVectors.sabre:144:8]: type 'i32x3' doesn't support logic operations
+>> 		v3 := fs && a
+>> 		      ^^      
+Error[internal/compiler/testdata/Check/BinaryVectors.sabre:146:8]: type 'float32' doesn't support logic operations
+>> 		v4 := b || fs
+>> 		      ^       
+Error[internal/compiler/testdata/Check/BinaryVectors.sabre:148:8]: type 'f32x3' doesn't support logic operations
+>> 		b1 := ba + ba
+>> 		      ^^      
+Error[internal/compiler/testdata/Check/BinaryVectors.sabre:152:8]: type 'b32x2' doesn't support arithmetic operations
+>> 		b2 := bb * bb
+>> 		      ^^      
+Error[internal/compiler/testdata/Check/BinaryVectors.sabre:154:8]: type 'b32x3' doesn't support arithmetic operations
+>> 		b3 := bc - bc
+>> 		      ^^      
+Error[internal/compiler/testdata/Check/BinaryVectors.sabre:156:8]: type 'b32x4' doesn't support arithmetic operations
+>> 		b4 := ba * fs
+>> 		      ^^      
+Error[internal/compiler/testdata/Check/BinaryVectors.sabre:158:8]: type 'b32x2' doesn't support arithmetic operations
+>> 		b5 := fs / bc
+>> 		           ^^ 
+Error[internal/compiler/testdata/Check/BinaryVectors.sabre:160:13]: type 'b32x4' doesn't support arithmetic operations
+>> 		iv1 := ia << -1
+>> 		             ^^ 
+Error[internal/compiler/testdata/Check/BinaryVectors.sabre:164:15]: shift operator should not be negative, but it has value '-1'
+>> 		iv2 := ib >> -2
+>> 		             ^^ 
+Error[internal/compiler/testdata/Check/BinaryVectors.sabre:166:15]: shift operator should not be negative, but it has value '-2'
+>> 		iv3 := i << -3
+>> 		            ^^ 
+Error[internal/compiler/testdata/Check/BinaryVectors.sabre:168:14]: shift operator should not be negative, but it has value '-3'
