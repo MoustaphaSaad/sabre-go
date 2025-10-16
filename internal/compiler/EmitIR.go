@@ -9,12 +9,17 @@ type IREmitter struct {
 
 func NewIREmitter(u *Unit) *IREmitter {
 	return &IREmitter{
-		unit:   u,
-		module: spirv.NewModule(),
+		unit: u,
+		// we set the addressing and memory model to some defaults for now
+		module: spirv.NewModule(spirv.AddressingModelLogical, spirv.MemoryModelGLSL450),
 	}
 }
 
 func (ir *IREmitter) Emit() *spirv.Module {
+	// we add this hardcoded capability for now
+	ir.module.AddCapability(spirv.CapabilityShader)
+	ir.module.AddCapability(spirv.CapabilityLinkage)
+
 	for _, sym := range ir.unit.semanticInfo.ReachableSymbols {
 		ir.emitSymbol(sym)
 	}
@@ -22,5 +27,5 @@ func (ir *IREmitter) Emit() *spirv.Module {
 }
 
 func (ir *IREmitter) emitSymbol(sym Symbol) {
-	panic("Function not implemented yet")
+	// To be implemented later
 }

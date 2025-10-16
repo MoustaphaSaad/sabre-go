@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/MoustaphaSaad/sabre-go/internal/compiler"
+	"github.com/MoustaphaSaad/sabre-go/internal/compiler/spirv"
 )
 
 const commandUsageTemplate = `Usage: %s <command> [flags]
@@ -284,7 +285,9 @@ func emitSPIRV(args []string, out io.Writer) error {
 		unit.PrintErrors(out)
 	}
 
-	unit.EmitSPIRV()
+	module := unit.EmitSPIRV()
+	printer := spirv.NewTextPrinter(out, module)
+	printer.Print()
 
 	return nil
 }
