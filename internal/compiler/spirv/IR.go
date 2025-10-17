@@ -94,5 +94,7 @@ func (b *Block) Push(instr Instruction) {
 
 // Instruction represents a single SPIR-V instruction with an opcode.
 type Instruction interface {
-	Opcode() string
+	Opcode() Opcode
 }
+
+type Opcode int
