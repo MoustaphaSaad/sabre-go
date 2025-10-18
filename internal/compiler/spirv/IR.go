@@ -24,14 +24,20 @@ func (o BaseObject) Name() string {
 
 // Module represents a SPIR-V module containing functions.
 type Module struct {
-	idGenerator int
-	objectsByID map[ID]Object
+	idGenerator     int
+	objectsByID     map[ID]Object
+	capabilities    []Capability
+	AddressingModel AddressingModel
+	MemoryModel     MemoryModel
 }
 
-func NewModule() *Module {
+func NewModule(addressingModel AddressingModel, memoryModel MemoryModel) *Module {
 	return &Module{
-		idGenerator: 0,
-		objectsByID: make(map[ID]Object),
+		idGenerator:     0,
+		objectsByID:     make(map[ID]Object),
+		capabilities:    make([]Capability, 0),
+		AddressingModel: addressingModel,
+		MemoryModel:     memoryModel,
 	}
 }
 
@@ -97,4 +103,16 @@ type Instruction interface {
 	Opcode() Opcode
 }
 
-type Opcode int
+type ReturnInstruction struct{}
+
+func (r ReturnInstruction) Opcode() Opcode {
+	return OpReturn
+}
+
+type ReturnValueInstruction struct {
+	Value ID
+}
+
+func (r ReturnValueInstruction) Opcode() Opcode {
+	return OpReturnValue
+}
