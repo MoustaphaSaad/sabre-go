@@ -69,8 +69,8 @@ func (m *Module) NewFunction(name string) *Function {
 
 func (m *Module) InternVoid() *VoidType {
 	t := &VoidType{}
-	if t, ok := m.typesByKey[t.HashKey()]; ok {
-		return t.(*VoidType)
+	if existingType, ok := m.typesByKey[t.HashKey()]; ok {
+		return existingType.(*VoidType)
 	}
 	t.ObjectID = m.NewID()
 	t.ObjectName = t.HashKey()
@@ -82,8 +82,8 @@ func (m *Module) InternVoid() *VoidType {
 
 func (m *Module) InternBool() *BoolType {
 	t := &BoolType{}
-	if t, ok := m.typesByKey[t.HashKey()]; ok {
-		return t.(*BoolType)
+	if existingType, ok := m.typesByKey[t.HashKey()]; ok {
+		return existingType.(*BoolType)
 	}
 	t.ObjectID = m.NewID()
 	t.ObjectName = t.HashKey()
@@ -98,8 +98,8 @@ func (m *Module) InternInt(bitWidth int, isSigned bool) *IntType {
 		BitWidth: bitWidth,
 		IsSigned: isSigned,
 	}
-	if t, ok := m.typesByKey[t.HashKey()]; ok {
-		return t.(*IntType)
+	if existingType, ok := m.typesByKey[t.HashKey()]; ok {
+		return existingType.(*IntType)
 	}
 	t.ObjectID = m.NewID()
 	t.ObjectName = t.HashKey()
@@ -114,8 +114,8 @@ func (m *Module) InternPtr(to Type, sc StorageClass) *PtrType {
 		To:           to,
 		StorageClass: sc,
 	}
-	if t, ok := m.typesByKey[t.HashKey()]; ok {
-		return t.(*PtrType)
+	if existingType, ok := m.typesByKey[t.HashKey()]; ok {
+		return existingType.(*PtrType)
 	}
 	t.ObjectID = m.NewID()
 	t.ObjectName = t.HashKey()
@@ -130,8 +130,8 @@ func (m *Module) InternFunc(returnType Type, args []Type) *FuncType {
 		ReturnType: returnType,
 		ArgTypes:   args,
 	}
-	if t, ok := m.typesByKey[t.HashKey()]; ok {
-		return t.(*FuncType)
+	if existingType, ok := m.typesByKey[t.HashKey()]; ok {
+		return existingType.(*FuncType)
 	}
 	t.ObjectID = m.NewID()
 	t.ObjectName = t.HashKey()
