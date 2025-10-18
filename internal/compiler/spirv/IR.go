@@ -26,6 +26,7 @@ func (o BaseObject) Name() string {
 type Module struct {
 	idGenerator     int
 	objectsByID     map[ID]Object
+	typesByKey      map[string]Type
 	capabilities    []Capability
 	AddressingModel AddressingModel
 	MemoryModel     MemoryModel
@@ -64,6 +65,93 @@ func (m *Module) NewFunction(name string) *Function {
 	}
 	m.objectsByID[f.ObjectID] = f
 	return f
+}
+
+func (m *Module) InternVoid() *VoidType {
+	t := &VoidType{}
+	if t, ok := m.typesByKey[t.HashKey()]; ok {
+		return t.(*VoidType)
+	}
+	t.ObjectID = m.NewID()
+	t.ObjectName = t.HashKey()
+	t.Module = m
+	m.objectsByID[t.ObjectID] = t
+	m.typesByKey[t.HashKey()] = t
+	return t
+}
+
+func (m *Module) InternBool() *BoolType {
+	t := &BoolType{}
+	if t, ok := m.typesByKey[t.HashKey()]; ok {
+		return t.(*BoolType)
+	}
+	t.ObjectID = m.NewID()
+	t.ObjectName = t.HashKey()
+	t.Module = m
+	m.objectsByID[t.ObjectID] = t
+	m.typesByKey[t.HashKey()] = t
+	return t
+}
+
+func (m *Module) InternInt(bitWidth int, isSigned bool) *IntType {
+	t := &IntType{
+		BitWidth: bitWidth,
+		IsSigned: isSigned,
+	}
+	if t, ok := m.typesByKey[t.HashKey()]; ok {
+		return t.(*IntType)
+	}
+	t.ObjectID = m.NewID()
+	t.ObjectName = t.HashKey()
+	t.Module = m
+	m.objectsByID[t.ObjectID] = t
+	m.typesByKey[t.HashKey()] = t
+	return t
+}
+
+func (m *Module) InternPtr(to Type, sc StorageClass) *PtrType {
+	t := &PtrType{
+		To:           to,
+		StorageClass: sc,
+	}
+	if t, ok := m.typesByKey[t.HashKey()]; ok {
+		return t.(*PtrType)
+	}
+	t.ObjectID = m.NewID()
+	t.ObjectName = t.HashKey()
+	t.Module = m
+	m.objectsByID[t.ObjectID] = t
+	m.typesByKey[t.HashKey()] = t
+	return t
+}
+
+func (m *Module) InternFunc(returnType Type, args []Type) *FuncType {
+	t := &FuncType{
+		ReturnType: returnType,
+		ArgTypes:   args,
+	}
+	if t, ok := m.typesByKey[t.HashKey()]; ok {
+		return t.(*FuncType)
+	}
+	t.ObjectID = m.NewID()
+	t.ObjectName = t.HashKey()
+	t.Module = m
+	m.objectsByID[t.ObjectID] = t
+	m.typesByKey[t.HashKey()] = t
+	return t
+}
+
+func (m *Module) AddCapability(cap Capability) {
+	for _, c := range m.capabilities {
+		if c == cap {
+			return
+		}
+	}
+	m.capabilities = append(m.capabilities, cap)
+}
+
+func (m *Module) Capabilities() []Capability {
+	return m.capabilities
 }
 
 // Function represents a SPIR-V function containing a sequence of basic blocks.
