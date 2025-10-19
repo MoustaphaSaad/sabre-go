@@ -326,3 +326,76 @@ func (m MemoryModel) String() string {
 		panic("unknown memory model")
 	}
 }
+
+type StorageClass int
+
+const (
+	// Shared externally, visible across all invocations. Graphics uniform memory.
+	// OpenCL constant memory. Variables declared with this storage class are read-only.
+	// They may have initializers, as allowed by the client API.
+	StorageClassUniformConstant StorageClass = 0
+	// Input from pipeline. Visible only by the current invocation. Variables
+	// declared with this storage class are read-only, and must not have initializers.
+	StorageClassInput StorageClass = 1
+	// Shared externally, visible across all invocations. Composite objects in this
+	// storage class must have a type with an explicit layout.
+	StorageClassUniform StorageClass = 2
+	// Output to pipeline. Visible only by the current invocation.
+	StorageClassOutput StorageClass = 3
+	// Visible across all invocations within a workgroup.
+	StorageClassWorkgroup StorageClass = 4
+	// Visible across all invocations.
+	StorageClassCrossWorkgroup StorageClass = 5
+	// Visible only by the current invocation.
+	StorageClassPrivate StorageClass = 6
+	// Visible only by the current invocation. For memory allocation within
+	// a function with specific lifetime. See OpVariable for more information.
+	StorageClassFunction StorageClass = 7
+	// For generic pointers, which overload the Function, Workgroup, and CrossWorkgroup Storage Classes.
+	StorageClassGeneric StorageClass = 8
+	// For holding push-constant memory, visible across all invocations. Intended to
+	// contain a small bank of values pushed from the client API. Variables declared
+	// with this storage class are read-only, and must not have initializers.
+	// Composite objects in this storage class must have a type with an explicit layout.
+	StorageClassPushConstant StorageClass = 9
+	// For holding atomic counters. Visible only by the current invocation.
+	StorageClassAtomicCounter StorageClass = 10
+	// For holding image memory.
+	StorageClassImage StorageClass = 11
+	// Shared externally, readable and writable, visible across all invocations.
+	// Composite objects in this storage class must have a type with an explicit layout.
+	StorageClassStorageBuffer StorageClass = 12
+)
+
+func (s StorageClass) String() string {
+	switch s {
+	case StorageClassUniformConstant:
+		return "UniformConstant"
+	case StorageClassInput:
+		return "Input"
+	case StorageClassUniform:
+		return "Uniform"
+	case StorageClassOutput:
+		return "Output"
+	case StorageClassWorkgroup:
+		return "Workgroup"
+	case StorageClassCrossWorkgroup:
+		return "CrossWorkgroup"
+	case StorageClassPrivate:
+		return "Private"
+	case StorageClassFunction:
+		return "Function"
+	case StorageClassGeneric:
+		return "Generic"
+	case StorageClassPushConstant:
+		return "PushConstant"
+	case StorageClassAtomicCounter:
+		return "AtomicCounter"
+	case StorageClassImage:
+		return "Image"
+	case StorageClassStorageBuffer:
+		return "StorageBuffer"
+	default:
+		panic("unknown storage class")
+	}
+}
