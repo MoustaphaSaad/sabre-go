@@ -20,7 +20,7 @@ func NewIREmitter(u *Unit) *IREmitter {
 }
 
 func (ir *IREmitter) Emit() *spirv.Module {
-	// we add this hardcoded capabilties for now
+	// we add this hardcoded capabilities for now
 	ir.module.AddCapability(spirv.CapabilityShader)
 	ir.module.AddCapability(spirv.CapabilityLinkage)
 

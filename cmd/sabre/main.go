@@ -40,7 +40,7 @@ Commands:
   spirv            emits SPIR-V bytecode
                    "sabre spirv <file>"
   test-spirv       tests the SPIR-V emission against golden output
-                   "sabre test-spirv <test-data-dir>
+                   "sabre test-spirv <test-data-dir>"
 `
 
 func helpString() string {
