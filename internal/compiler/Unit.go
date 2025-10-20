@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/MoustaphaSaad/sabre-go/internal/compiler/spirv"
 )
 
 type UnitFile struct {
@@ -96,6 +98,7 @@ const (
 	CompilationStageScanned
 	CompliationStageParsed
 	CompilationStageChecked
+	CompilationStagedEmitted
 	CompilationStageFailure
 )
 
@@ -171,4 +174,13 @@ func (u *Unit) Check() bool {
 		}
 	}
 	return !u.HasErrors()
+}
+
+func (u *Unit) EmitSPIRV() *spirv.Module {
+	if u.compilationStage == CompilationStageChecked {
+		u.compilationStage = CompilationStagedEmitted
+		emitter := NewIREmitter(u)
+		return emitter.Emit()
+	}
+	return nil
 }

@@ -7,16 +7,18 @@ import (
 )
 
 type SemanticInfo struct {
-	Types        map[any]*TypeAndValue
-	Scopes       map[any]*Scope
-	TypeInterner *TypeInterner
+	Types            map[any]*TypeAndValue
+	Scopes           map[any]*Scope
+	TypeInterner     *TypeInterner
+	ReachableSymbols []Symbol
 }
 
 func NewSemanticInfo() *SemanticInfo {
 	return &SemanticInfo{
-		Types:        make(map[any]*TypeAndValue),
-		Scopes:       make(map[any]*Scope),
-		TypeInterner: NewTypeInterner(),
+		Types:            make(map[any]*TypeAndValue),
+		Scopes:           make(map[any]*Scope),
+		TypeInterner:     NewTypeInterner(),
+		ReachableSymbols: make([]Symbol, 0),
 	}
 }
 
@@ -379,6 +381,11 @@ func (checker *Checker) resolveSymbol(sym Symbol) *TypeAndValue {
 		// nothing to do
 	default:
 		panic("unexpected symbol type")
+	}
+
+	globalScope := checker.unit.semanticInfo.ScopeOf(checker.unit.rootFile)
+	if sym.Scope() == globalScope {
+		checker.unit.semanticInfo.ReachableSymbols = append(checker.unit.semanticInfo.ReachableSymbols, sym)
 	}
 
 	return symType
