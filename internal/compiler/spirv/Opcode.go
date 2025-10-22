@@ -1,5 +1,7 @@
 package spirv
 
+import "strings"
+
 // Opcode represents a SPIR-V instruction opcode.
 type Opcode int
 
@@ -398,4 +400,44 @@ func (s StorageClass) String() string {
 	default:
 		panic("unknown storage class")
 	}
+}
+
+type FunctionControl int
+
+const (
+	FunctionControlNone FunctionControl = 0
+	// Performance hint. Strong request to inline the function.
+	FunctionControlInline FunctionControl = 1
+	// Performance hint. Strong request to not inline the function.
+	FunctionControlDontInline FunctionControl = 2
+	// Compiler can assume this function has no side effect, but might read global memory or
+	// read through dereferenced function parameters.
+	// Always computes the same result when called with the same argument values and
+	// the same global state.
+	FunctionControlPure FunctionControl = 4
+	// Compiler assumes this function has no side effects, and does not access global
+	// memory or dereference function parameters. Always computes the same result for the
+	// same argument values.
+	FunctionControlConst FunctionControl = 8
+)
+
+func (v FunctionControl) String() string {
+	if v == FunctionControlNone {
+		return "None"
+	}
+
+	var flags []string
+	if v&FunctionControlInline != 0 {
+		flags = append(flags, "Inline")
+	}
+	if v&FunctionControlDontInline != 0 {
+		flags = append(flags, "DontInline")
+	}
+	if v&FunctionControlPure != 0 {
+		flags = append(flags, "Pure")
+	}
+	if v&FunctionControlConst != 0 {
+		flags = append(flags, "Const")
+	}
+	return strings.Join(flags, "|")
 }
