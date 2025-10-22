@@ -144,7 +144,7 @@ func (tp *TextPrinter) nameOfByID(id ID) string {
 	if obj := tp.module.GetObject(id); obj != nil {
 		return tp.nameOf(obj)
 	}
-	panic("object doesn't exist")
+	panic(fmt.Sprintf("object with ID %v does not exist", id))
 }
 
 func (tp *TextPrinter) nameOf(obj Object) string {
