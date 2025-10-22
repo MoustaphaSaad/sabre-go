@@ -54,13 +54,14 @@ func (m *Module) GetObject(id ID) Object {
 	return nil
 }
 
-func (m *Module) NewFunction(name string) *Function {
+func (m *Module) NewFunction(name string, functionType *FuncType) *Function {
 	f := &Function{
 		BaseObject: BaseObject{
 			ObjectID:   m.NewID(),
 			ObjectName: name,
 		},
 		Module: m,
+		Type:   functionType,
 		Blocks: make([]Block, 0),
 	}
 	m.objectsByID[f.ObjectID] = f
@@ -158,6 +159,7 @@ func (m *Module) Capabilities() []Capability {
 type Function struct {
 	BaseObject
 	Module *Module
+	Type   *FuncType
 	Blocks []Block
 }
 
