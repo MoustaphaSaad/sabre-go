@@ -1,8 +1,6 @@
 package compiler
 
 import (
-	"fmt"
-
 	"github.com/MoustaphaSaad/sabre-go/internal/compiler/spirv"
 )
 
@@ -31,5 +29,39 @@ func (ir *IREmitter) Emit() *spirv.Module {
 }
 
 func (ir *IREmitter) emitSymbol(sym Symbol) {
-	fmt.Printf("Emit symbol \"%v\"\n", sym.Name())
+	switch s := sym.(type) {
+	case *FuncSymbol:
+		ir.emitFunc(s)
+	}
+}
+
+func (ir *IREmitter) emitFunc(sym *FuncSymbol) {
+	funcType := ir.unit.semanticInfo.TypeOf(sym).Type.(*FuncType)
+	spirvFuncType := ir.internType(sym.Name(), funcType).(*spirv.FuncType)
+	spirvFunction := ir.module.NewFunction(sym.Name(), spirvFuncType)
+	spirvBlock := spirvFunction.NewBlock(sym.Name())
+	spirvBlock.Push(spirv.ReturnInstruction{})
+}
+
+func (ir *IREmitter) internType(name string, Type Type) spirv.Type {
+	switch t := Type.(type) {
+	case *VoidType:
+		return ir.module.InternVoid()
+	case *FuncType:
+		var spirvReturnType spirv.Type
+		if len(t.ReturnTypes) > 0 {
+			spirvReturnType = ir.internType("", t.ReturnTypes[0])
+		} else {
+			spirvReturnType = ir.module.InternVoid()
+		}
+
+		var parameterTypes []spirv.Type
+		for _, paramType := range t.ParameterTypes {
+			parameterTypes = append(parameterTypes, ir.internType("", paramType))
+		}
+
+		return ir.module.InternFunc(name, spirvReturnType, parameterTypes)
+	default:
+		panic("unexpected type")
+	}
 }

@@ -61,7 +61,7 @@ func (tp *TextPrinter) emitFunction(f *Function) {
 		tp.nameOf(f.Type),
 	)
 	for _, bb := range f.Blocks {
-		tp.emitBlock(&bb)
+		tp.emitBlock(bb)
 	}
 	tp.emit(OpFunctionEnd)
 }
@@ -75,7 +75,7 @@ func (tp *TextPrinter) emitBlock(bb *Block) {
 
 func (tp *TextPrinter) emitInstruction(inst Instruction) {
 	switch i := inst.(type) {
-	case *ReturnInstruction:
+	case ReturnInstruction:
 		tp.emit(OpReturn)
 	case *ReturnValueInstruction:
 		tp.emit(OpReturnValue, tp.nameOfByID(i.Value))

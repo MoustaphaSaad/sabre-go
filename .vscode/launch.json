@@ -64,5 +64,17 @@
 				"${file}"
 			]
 		},
+		{
+			"name": "spirv",
+			"type": "go",
+			"request": "launch",
+			"mode": "auto",
+			"program": "${workspaceFolder}/cmd/sabre",
+			"cwd": "${workspaceFolder}",
+			"args": [
+				"spirv",
+				"${file}"
+			]
+		},
 	]
 }

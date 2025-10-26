@@ -36,6 +36,7 @@ func NewModule(addressingModel AddressingModel, memoryModel MemoryModel) *Module
 	return &Module{
 		idGenerator:     0,
 		objectsByID:     make(map[ID]Object),
+		typesByKey:      make(map[string]Type),
 		capabilities:    make([]Capability, 0),
 		AddressingModel: addressingModel,
 		MemoryModel:     memoryModel,
@@ -62,7 +63,7 @@ func (m *Module) NewFunction(name string, functionType *FuncType) *Function {
 		},
 		Module: m,
 		Type:   functionType,
-		Blocks: make([]Block, 0),
+		Blocks: make([]*Block, 0),
 	}
 	m.objectsByID[f.ObjectID] = f
 	return f
@@ -126,7 +127,7 @@ func (m *Module) InternPtr(to Type, sc StorageClass) *PtrType {
 	return t
 }
 
-func (m *Module) InternFunc(returnType Type, args []Type) *FuncType {
+func (m *Module) InternFunc(name string, returnType Type, args []Type) *FuncType {
 	t := &FuncType{
 		ReturnType: returnType,
 		ArgTypes:   args,
@@ -135,7 +136,7 @@ func (m *Module) InternFunc(returnType Type, args []Type) *FuncType {
 		return existingType.(*FuncType)
 	}
 	t.ObjectID = m.NewID()
-	t.ObjectName = t.HashKey()
+	t.ObjectName = name
 	t.Module = m
 	m.objectsByID[t.ObjectID] = t
 	m.typesByKey[t.HashKey()] = t
@@ -160,7 +161,7 @@ type Function struct {
 	BaseObject
 	Module *Module
 	Type   *FuncType
-	Blocks []Block
+	Blocks []*Block
 }
 
 func (f *Function) NewBlock(name string) *Block {
@@ -172,7 +173,7 @@ func (f *Function) NewBlock(name string) *Block {
 		Function:     f,
 		Instructions: make([]Instruction, 0),
 	}
-	f.Blocks = append(f.Blocks, *b)
+	f.Blocks = append(f.Blocks, b)
 	f.Module.objectsByID[b.ObjectID] = b
 	return b
 }
