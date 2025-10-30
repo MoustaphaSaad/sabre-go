@@ -39,8 +39,21 @@ func (ir *IREmitter) emitFunc(sym *FuncSymbol) {
 	funcType := ir.unit.semanticInfo.TypeOf(sym).Type.(*FuncType)
 	spirvFuncType := ir.emitType(funcType).(*spirv.FuncType)
 	spirvFunction := ir.module.NewFunction(sym.Name(), spirvFuncType)
+
+	funcDecl := sym.Decl().(*FuncDecl)
+	if funcDecl.Body == nil {
+		return
+	}
+
 	spirvBlock := spirvFunction.NewBlock(sym.Name())
-	spirvBlock.Push(&spirv.ReturnInstruction{})
+	if len(funcDecl.Body.Stmts) == 0 {
+		spirvBlock.Push(&spirv.ReturnInstruction{})
+		return
+	}
+
+	for _, stmt := range funcDecl.Body.Stmts {
+		ir.emitStatement(stmt, spirvBlock)
+	}
 }
 
 func (ir *IREmitter) emitType(Type Type) spirv.Type {
@@ -65,4 +78,17 @@ func (ir *IREmitter) emitType(Type Type) spirv.Type {
 	default:
 		panic("unexpected type")
 	}
+}
+
+func (ir *IREmitter) emitStatement(stmt Stmt, block *spirv.Block) {
+	switch s := stmt.(type) {
+	case *ReturnStmt:
+		ir.emitReturnStmt(s, block)
+	default:
+		panic("unsupported statement")
+	}
+}
+
+func (ir *IREmitter) emitReturnStmt(s *ReturnStmt, block *spirv.Block) {
+	block.Push(&spirv.ReturnInstruction{})
 }
