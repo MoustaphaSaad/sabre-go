@@ -61,7 +61,7 @@ func (tp *TextPrinter) emitFunction(f *Function) {
 		tp.nameOf(f.Type),
 	)
 	for _, bb := range f.Blocks {
-		tp.emitBlock(&bb)
+		tp.emitBlock(bb)
 	}
 	tp.emit(OpFunctionEnd)
 }

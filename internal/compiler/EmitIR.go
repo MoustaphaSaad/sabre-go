@@ -1,8 +1,6 @@
 package compiler
 
 import (
-	"fmt"
-
 	"github.com/MoustaphaSaad/sabre-go/internal/compiler/spirv"
 )
 
@@ -31,5 +29,66 @@ func (ir *IREmitter) Emit() *spirv.Module {
 }
 
 func (ir *IREmitter) emitSymbol(sym Symbol) {
-	fmt.Printf("Emit symbol \"%v\"\n", sym.Name())
+	switch s := sym.(type) {
+	case *FuncSymbol:
+		ir.emitFunc(s)
+	}
+}
+
+func (ir *IREmitter) emitFunc(sym *FuncSymbol) {
+	funcType := ir.unit.semanticInfo.TypeOf(sym).Type.(*FuncType)
+	spirvFuncType := ir.emitType(funcType).(*spirv.FuncType)
+	spirvFunction := ir.module.NewFunction(sym.Name(), spirvFuncType)
+
+	funcDecl := sym.Decl().(*FuncDecl)
+	if funcDecl.Body == nil {
+		return
+	}
+
+	spirvBlock := spirvFunction.NewBlock(sym.Name())
+	if len(funcDecl.Body.Stmts) == 0 {
+		spirvBlock.Push(&spirv.ReturnInstruction{})
+		return
+	}
+
+	for _, stmt := range funcDecl.Body.Stmts {
+		ir.emitStatement(stmt, spirvBlock)
+	}
+}
+
+func (ir *IREmitter) emitType(Type Type) spirv.Type {
+	switch t := Type.(type) {
+	case *VoidType:
+		return ir.module.InternVoid()
+	case *FuncType:
+		var spirvReturnType spirv.Type
+		if len(t.ReturnTypes) > 0 {
+			// TODO: Handle multiple return types
+			spirvReturnType = ir.emitType(t.ReturnTypes[0])
+		} else {
+			spirvReturnType = ir.module.InternVoid()
+		}
+
+		var parameterTypes []spirv.Type
+		for _, paramType := range t.ParameterTypes {
+			parameterTypes = append(parameterTypes, ir.emitType(paramType))
+		}
+
+		return ir.module.InternFunc(spirvReturnType, parameterTypes)
+	default:
+		panic("unexpected type")
+	}
+}
+
+func (ir *IREmitter) emitStatement(stmt Stmt, block *spirv.Block) {
+	switch s := stmt.(type) {
+	case *ReturnStmt:
+		ir.emitReturnStmt(s, block)
+	default:
+		panic("unsupported statement")
+	}
+}
+
+func (ir *IREmitter) emitReturnStmt(s *ReturnStmt, block *spirv.Block) {
+	block.Push(&spirv.ReturnInstruction{})
 }
