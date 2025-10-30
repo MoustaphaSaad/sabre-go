@@ -8,6 +8,7 @@ import (
 type Type interface {
 	Object
 	aType()
+	TypeName() string
 	HashKey() string
 }
 
@@ -24,8 +25,11 @@ func (t VoidType) Name() string {
 	return t.ObjectName
 }
 func (VoidType) aType() {}
-func (t VoidType) HashKey() string {
+func (t VoidType) TypeName() string {
 	return "void"
+}
+func (t VoidType) HashKey() string {
+	return t.TypeName()
 }
 
 type BoolType struct {
@@ -41,8 +45,11 @@ func (t BoolType) Name() string {
 	return t.ObjectName
 }
 func (BoolType) aType() {}
-func (t BoolType) HashKey() string {
+func (t BoolType) TypeName() string {
 	return "bool"
+}
+func (t BoolType) HashKey() string {
+	return t.TypeName()
 }
 
 type IntType struct {
@@ -60,12 +67,15 @@ func (t IntType) Name() string {
 	return t.ObjectName
 }
 func (IntType) aType() {}
-func (t IntType) HashKey() string {
+func (t IntType) TypeName() string {
 	if t.IsSigned {
 		return fmt.Sprintf("int%d", t.BitWidth)
 	} else {
 		return fmt.Sprintf("uint%d", t.BitWidth)
 	}
+}
+func (t IntType) HashKey() string {
+	return t.TypeName()
 }
 
 type PtrType struct {
@@ -83,6 +93,9 @@ func (t PtrType) Name() string {
 	return t.ObjectName
 }
 func (PtrType) aType() {}
+func (t PtrType) TypeName() string {
+	return fmt.Sprintf("ptr_%s_%d", t.To.TypeName(), t.StorageClass)
+}
 func (t PtrType) HashKey() string {
 	return fmt.Sprintf("ptr(%s,%d)", t.To.HashKey(), t.StorageClass)
 }
@@ -102,6 +115,17 @@ func (t FuncType) Name() string {
 	return t.ObjectName
 }
 func (FuncType) aType() {}
+func (t FuncType) TypeName() string {
+	var b strings.Builder
+	b.WriteString("func")
+	for _, arg := range t.ArgTypes {
+		b.WriteString("_")
+		b.WriteString(arg.TypeName())
+	}
+	b.WriteString("_ret_")
+	b.WriteString(t.ReturnType.TypeName())
+	return b.String()
+}
 func (t FuncType) HashKey() string {
 	var b strings.Builder
 	b.WriteString("func(")

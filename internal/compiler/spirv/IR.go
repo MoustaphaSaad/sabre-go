@@ -127,7 +127,7 @@ func (m *Module) InternPtr(to Type, sc StorageClass) *PtrType {
 	return t
 }
 
-func (m *Module) InternFunc(name string, returnType Type, args []Type) *FuncType {
+func (m *Module) InternFunc(returnType Type, args []Type) *FuncType {
 	t := &FuncType{
 		ReturnType: returnType,
 		ArgTypes:   args,
@@ -136,7 +136,7 @@ func (m *Module) InternFunc(name string, returnType Type, args []Type) *FuncType
 		return existingType.(*FuncType)
 	}
 	t.ObjectID = m.NewID()
-	t.ObjectName = name
+	t.ObjectName = t.TypeName()
 	t.Module = m
 	m.objectsByID[t.ObjectID] = t
 	m.typesByKey[t.HashKey()] = t
@@ -196,7 +196,7 @@ type Instruction interface {
 
 type ReturnInstruction struct{}
 
-func (r ReturnInstruction) Opcode() Opcode {
+func (r *ReturnInstruction) Opcode() Opcode {
 	return OpReturn
 }
 
@@ -204,6 +204,6 @@ type ReturnValueInstruction struct {
 	Value ID
 }
 
-func (r ReturnValueInstruction) Opcode() Opcode {
+func (r *ReturnValueInstruction) Opcode() Opcode {
 	return OpReturnValue
 }

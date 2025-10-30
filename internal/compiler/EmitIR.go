@@ -37,30 +37,31 @@ func (ir *IREmitter) emitSymbol(sym Symbol) {
 
 func (ir *IREmitter) emitFunc(sym *FuncSymbol) {
 	funcType := ir.unit.semanticInfo.TypeOf(sym).Type.(*FuncType)
-	spirvFuncType := ir.internType(sym.Name(), funcType).(*spirv.FuncType)
+	spirvFuncType := ir.emitType(funcType).(*spirv.FuncType)
 	spirvFunction := ir.module.NewFunction(sym.Name(), spirvFuncType)
 	spirvBlock := spirvFunction.NewBlock(sym.Name())
-	spirvBlock.Push(spirv.ReturnInstruction{})
+	spirvBlock.Push(&spirv.ReturnInstruction{})
 }
 
-func (ir *IREmitter) internType(name string, Type Type) spirv.Type {
+func (ir *IREmitter) emitType(Type Type) spirv.Type {
 	switch t := Type.(type) {
 	case *VoidType:
 		return ir.module.InternVoid()
 	case *FuncType:
 		var spirvReturnType spirv.Type
 		if len(t.ReturnTypes) > 0 {
-			spirvReturnType = ir.internType("", t.ReturnTypes[0])
+			// TODO: Handle multiple return types
+			spirvReturnType = ir.emitType(t.ReturnTypes[0])
 		} else {
 			spirvReturnType = ir.module.InternVoid()
 		}
 
 		var parameterTypes []spirv.Type
 		for _, paramType := range t.ParameterTypes {
-			parameterTypes = append(parameterTypes, ir.internType("", paramType))
+			parameterTypes = append(parameterTypes, ir.emitType(paramType))
 		}
 
-		return ir.module.InternFunc(name, spirvReturnType, parameterTypes)
+		return ir.module.InternFunc(spirvReturnType, parameterTypes)
 	default:
 		panic("unexpected type")
 	}

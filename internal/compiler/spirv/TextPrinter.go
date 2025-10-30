@@ -75,7 +75,7 @@ func (tp *TextPrinter) emitBlock(bb *Block) {
 
 func (tp *TextPrinter) emitInstruction(inst Instruction) {
 	switch i := inst.(type) {
-	case ReturnInstruction:
+	case *ReturnInstruction:
 		tp.emit(OpReturn)
 	case *ReturnValueInstruction:
 		tp.emit(OpReturnValue, tp.nameOfByID(i.Value))
