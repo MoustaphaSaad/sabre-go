@@ -14,6 +14,41 @@ jobs:
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
 
+      - name: Install Vulkan SDK
+        run: |
+          wget -qO - https://packages.lunarg.com/lunarg-signing-key-pub.asc | sudo apt-key add -
+          UBUNTU_CODENAME=$(lsb_release -cs)
+          sudo wget -qO /etc/apt/sources.list.d/lunarg-vulkan-${UBUNTU_CODENAME}.list https://packages.lunarg.com/vulkan/lunarg-vulkan-${UBUNTU_CODENAME}.list
+          sudo apt update
+          sudo apt install -y vulkan-sdk
+          spirv-as --version
+          spirv-val --version
+
+      - name: Validate SPIR-V binaries
+        run: |
+          echo "Validating SPIR-V binaries..."
+          for file in ./internal/compiler/testdata/SPIRV/*.sabre.golden.bin; do
+            if [ -f "$file" ]; then
+              echo "Validating: $file"
+              spirv-val "$file"
+            fi
+          done
+          echo "All SPIR-V binaries validated successfully!"
+
+      - name: Validate SPIR-V text files
+        run: |
+          echo "Validating SPIR-V text files..."
+          for file in ./internal/compiler/testdata/SPIRV/*.sabre.golden; do
+            if [ -f "$file" ]; then
+              echo "Assembling and validating: $file"
+              temp_bin=$(mktemp --suffix=.spv)
+              spirv-as "$file" -o "$temp_bin"
+              spirv-val "$temp_bin"
+              rm "$temp_bin"
+            fi
+          done
+          echo "All SPIR-V text files validated successfully!"
+
       - name: test
         run: |
           go version
@@ -28,6 +63,7 @@ jobs:
           ./sabre test-parse-decl ./internal/compiler/testdata/Parse/decl
           ./sabre test-check ./internal/compiler/testdata/Check
           ./sabre test-spirv ./internal/compiler/testdata/SPIRV
+          ./sabre test-spirv -ext .golden.bin -test-func-args "-binary" ./internal/compiler/testdata/SPIRV
           go tool covdata textfmt -i=cov -o sabre-cov.out
 
       - name: SonarQube Scan

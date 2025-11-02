@@ -89,6 +89,8 @@ func scan(args []string, out io.Writer) error {
 func testFunc(f func([]string, io.Writer) error, args []string, out io.Writer) error {
 	flagSet := flag.NewFlagSet("test-scan", flag.ContinueOnError)
 	update := flagSet.Bool("update", false, "updates test outputs")
+	goldenExt := flagSet.String("ext", ".golden", "the extension of golden files")
+	testFuncArgs := flagSet.String("test-func-args", "", "Send args flag to test function")
 	err := flagSet.Parse(args)
 	if err != nil {
 		return err
@@ -101,7 +103,7 @@ func testFunc(f func([]string, io.Writer) error, args []string, out io.Writer) e
 	dir := flagSet.Arg(0)
 	var goldenFiles []string
 	err = filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
-		if !d.IsDir() && filepath.Ext(path) == ".golden" {
+		if !d.IsDir() && strings.HasSuffix(path, *goldenExt) {
 			goldenFiles = append(goldenFiles, path)
 		}
 		return nil
@@ -113,7 +115,7 @@ func testFunc(f func([]string, io.Writer) error, args []string, out io.Writer) e
 	var failedTests []string
 
 	for i, goldenFile := range goldenFiles {
-		testFile := strings.TrimSuffix(goldenFile, filepath.Ext(goldenFile))
+		testFile := strings.TrimSuffix(goldenFile, *goldenExt)
 		expectedBytes, err := os.ReadFile(goldenFile)
 		if err != nil {
 			return fmt.Errorf("failed to read test file '%v': %v", testFile, err)
@@ -123,7 +125,13 @@ func testFunc(f func([]string, io.Writer) error, args []string, out io.Writer) e
 		fmt.Fprintf(out, "%v/%v) testing %v\n", i, len(goldenFiles), testFile)
 
 		var actualOutputBuffer bytes.Buffer
-		err = f([]string{testFile}, &actualOutputBuffer)
+		var args []string
+		if *testFuncArgs != "" {
+			splitArgs := strings.Split(*testFuncArgs, " ")
+			args = append(args, splitArgs...)
+		}
+		args = append(args, testFile)
+		err = f(args, &actualOutputBuffer)
 		if err != nil {
 			return err
 		}
@@ -261,6 +269,14 @@ func check(args []string, out io.Writer) error {
 }
 
 func emitSPIRV(args []string, out io.Writer) error {
+	flagSet := flag.NewFlagSet("emit-spirv", flag.ContinueOnError)
+	binary := flagSet.Bool("binary", false, "emit SPIR-V in binary format")
+	err := flagSet.Parse(args)
+	if err != nil {
+		return err
+	}
+
+	args = flagSet.Args()
 	if len(args) < 1 {
 		return fmt.Errorf("no file provided\n%v", helpString())
 	}
@@ -286,8 +302,13 @@ func emitSPIRV(args []string, out io.Writer) error {
 	}
 
 	module := unit.EmitSPIRV()
-	printer := spirv.NewTextPrinter(out, module)
-	printer.Emit()
+	if *binary {
+		printer := spirv.NewBinaryPrinter(out, module)
+		printer.Emit()
+	} else {
+		printer := spirv.NewTextPrinter(out, module)
+		printer.Emit()
+	}
 
 	return nil
 }
