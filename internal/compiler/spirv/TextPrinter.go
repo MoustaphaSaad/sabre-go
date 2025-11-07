@@ -29,7 +29,21 @@ func (tp *TextPrinter) Emit() {
 	sort.Slice(objs, func(i, j int) bool { return objs[i].ID() < objs[j].ID() })
 
 	for _, obj := range objs {
-		tp.emitObject(obj)
+		if _, isType := obj.(Type); isType {
+			tp.emitObject(obj)
+		}
+	}
+
+	for _, obj := range objs {
+		if _, isConstant := obj.(Constant); isConstant {
+			tp.emitObject(obj)
+		}
+	}
+
+	for _, obj := range objs {
+		if _, isFunction := obj.(*Function); isFunction {
+			tp.emitObject(obj)
+		}
 	}
 }
 
@@ -49,6 +63,8 @@ func (tp *TextPrinter) emitObject(obj Object) {
 		tp.emitFunction(v)
 	case Type:
 		tp.emitType(v)
+	case Constant:
+		tp.emitConstant(v)
 	}
 }
 
@@ -79,6 +95,8 @@ func (tp *TextPrinter) emitInstruction(inst Instruction) {
 		tp.emit(OpReturn)
 	case *ReturnValueInstruction:
 		tp.emit(OpReturnValue, tp.nameOfByID(i.Value))
+	default:
+		panic(fmt.Sprintf("unsupported instruction: %T", inst))
 	}
 }
 
@@ -95,7 +113,21 @@ func (tp *TextPrinter) emitType(abstractType Type) {
 	case *FuncType:
 		tp.emitFuncType(t)
 	default:
-		panic("unsupported type")
+		panic(fmt.Sprintf("unsupported type: %T", abstractType))
+	}
+}
+
+func (tp *TextPrinter) emitConstant(c Constant) {
+	switch constant := c.(type) {
+	case *BoolConstant:
+		boolValue := constant.Value
+		if boolValue {
+			tp.emitWithObject(constant, OpConstantTrue, tp.nameOf(constant.Type))
+		} else {
+			tp.emitWithObject(constant, OpConstantFalse, tp.nameOf(constant.Type))
+		}
+	default:
+		panic(fmt.Sprintf("unsupported constant: %T", c))
 	}
 }
 
@@ -156,6 +188,8 @@ func (tp *TextPrinter) nameOf(obj Object) string {
 		kind = "block"
 	case Type:
 		kind = "type"
+	case Constant:
+		kind = "const"
 	}
 	if len(kind) == 0 {
 		return fmt.Sprintf("%%%s_%d", obj.Name(), obj.ID())

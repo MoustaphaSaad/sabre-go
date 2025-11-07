@@ -6,19 +6,23 @@ import "strings"
 type Opcode int
 
 const (
-	OpNone         Opcode = 0
-	OpMemoryModel  Opcode = 14
-	OpCapability   Opcode = 17
-	OpTypeVoid     Opcode = 19
-	OpTypeBool     Opcode = 20
-	OpTypeInt      Opcode = 21
-	OpTypePointer  Opcode = 32
-	OpTypeFunction Opcode = 33
-	OpFunction     Opcode = 54
-	OpFunctionEnd  Opcode = 56
-	OpLabel        Opcode = 248
-	OpReturn       Opcode = 253
-	OpReturnValue  Opcode = 254
+	OpNone          Opcode = 0
+	OpMemoryModel   Opcode = 14
+	OpCapability    Opcode = 17
+	OpTypeVoid      Opcode = 19
+	OpTypeBool      Opcode = 20
+	OpTypeInt       Opcode = 21
+	OpTypeFloat     Opcode = 22
+	OpTypePointer   Opcode = 32
+	OpTypeFunction  Opcode = 33
+	OpConstantTrue  Opcode = 41
+	OpConstantFalse Opcode = 42
+	OpConstant      Opcode = 43
+	OpFunction      Opcode = 54
+	OpFunctionEnd   Opcode = 56
+	OpLabel         Opcode = 248
+	OpReturn        Opcode = 253
+	OpReturnValue   Opcode = 254
 )
 
 func (op Opcode) String() string {
@@ -33,10 +37,18 @@ func (op Opcode) String() string {
 		return "OpTypeBool"
 	case OpTypeInt:
 		return "OpTypeInt"
+	case OpTypeFloat:
+		return "OpTypeFloat"
 	case OpTypePointer:
 		return "OpTypePointer"
 	case OpTypeFunction:
 		return "OpTypeFunction"
+	case OpConstantTrue:
+		return "OpConstantTrue"
+	case OpConstantFalse:
+		return "OpConstantFalse"
+	case OpConstant:
+		return "OpConstant"
 	case OpFunction:
 		return "OpFunction"
 	case OpFunctionEnd:

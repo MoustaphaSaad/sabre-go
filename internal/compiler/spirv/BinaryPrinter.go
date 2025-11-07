@@ -32,7 +32,21 @@ func (bp *BinaryPrinter) Emit() {
 	sort.Slice(objs, func(i, j int) bool { return objs[i].ID() < objs[j].ID() })
 
 	for _, obj := range objs {
-		bp.emitObject(obj)
+		if _, isType := obj.(Type); isType {
+			bp.emitObject(obj)
+		}
+	}
+
+	for _, obj := range objs {
+		if _, isConstant := obj.(Constant); isConstant {
+			bp.emitObject(obj)
+		}
+	}
+
+	for _, obj := range objs {
+		if _, isFunction := obj.(*Function); isFunction {
+			bp.emitObject(obj)
+		}
 	}
 }
 
@@ -42,6 +56,8 @@ func (bp *BinaryPrinter) emitObject(obj Object) {
 		bp.emitFunction(v)
 	case Type:
 		bp.emitType(v)
+	case Constant:
+		bp.emitConstant(v)
 	}
 }
 
@@ -68,10 +84,16 @@ func (bp *BinaryPrinter) emitBlock(block *Block) {
 
 func (bp *BinaryPrinter) emitInstruction(inst Instruction) {
 	switch i := inst.(type) {
+	case *ConstantTrueInstruction:
+		bp.emitOp(Word(OpConstantTrue), Word(i.ResultType), Word(i.ResultID))
+	case *ConstantFalseInstruction:
+		bp.emitOp(Word(OpConstantFalse), Word(i.ResultType), Word(i.ResultID))
 	case *ReturnInstruction:
 		bp.emitOp(Word(OpReturn))
 	case *ReturnValueInstruction:
 		bp.emitOp(Word(OpReturnValue), Word(i.Value))
+	default:
+		panic("unsupported instruction")
 	}
 }
 
@@ -89,6 +111,15 @@ func (bp *BinaryPrinter) emitType(abstractType Type) {
 		bp.emitFuncType(t)
 	default:
 		panic("unsupported type")
+	}
+}
+
+func (bp *BinaryPrinter) emitConstant(c Constant) {
+	switch c := c.(type) {
+	case *BoolConstant:
+		bp.emitInstruction(c.Instruction)
+	default:
+		panic("unsupported constant")
 	}
 }
 

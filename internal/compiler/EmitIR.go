@@ -1,6 +1,8 @@
 package compiler
 
 import (
+	"go/constant"
+
 	"github.com/MoustaphaSaad/sabre-go/internal/compiler/spirv"
 )
 
@@ -32,6 +34,8 @@ func (ir *IREmitter) emitSymbol(sym Symbol) {
 	switch s := sym.(type) {
 	case *FuncSymbol:
 		ir.emitFunc(s)
+	default:
+		panic("unsupported symbol")
 	}
 }
 
@@ -56,10 +60,32 @@ func (ir *IREmitter) emitFunc(sym *FuncSymbol) {
 	}
 }
 
+func (ir *IREmitter) emitExpression(expr Expr) spirv.ID {
+	switch e := expr.(type) {
+	case *LiteralExpr:
+		return ir.emitLiteralExpr(e)
+	default:
+		panic("unsupported expression")
+	}
+}
+
+func (ir *IREmitter) emitLiteralExpr(e *LiteralExpr) spirv.ID {
+	tav := ir.unit.semanticInfo.TypeOf(e)
+	switch t := ir.emitType(tav.Type).(type) {
+	case *spirv.BoolType:
+		val := constant.BoolVal(tav.Value)
+		return ir.module.InternConstantBool(val, t).ID()
+	default:
+		panic("unsupported literal type")
+	}
+}
+
 func (ir *IREmitter) emitType(Type Type) spirv.Type {
 	switch t := Type.(type) {
 	case *VoidType:
 		return ir.module.InternVoid()
+	case *BoolType:
+		return ir.module.InternBool()
 	case *FuncType:
 		var spirvReturnType spirv.Type
 		if len(t.ReturnTypes) > 0 {
@@ -90,5 +116,10 @@ func (ir *IREmitter) emitStatement(stmt Stmt, block *spirv.Block) {
 }
 
 func (ir *IREmitter) emitReturnStmt(s *ReturnStmt, block *spirv.Block) {
-	block.Push(&spirv.ReturnInstruction{})
+	if len(s.Exprs) > 0 {
+		// TODO: Multiple return values
+		block.Push(&spirv.ReturnValueInstruction{Value: ir.emitExpression(s.Exprs[0])})
+	} else {
+		block.Push(&spirv.ReturnInstruction{})
+	}
 }
