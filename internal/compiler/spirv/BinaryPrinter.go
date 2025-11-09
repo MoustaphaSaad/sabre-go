@@ -2,6 +2,7 @@ package spirv
 
 import (
 	"encoding/binary"
+	"fmt"
 	"io"
 	"sort"
 )
@@ -39,7 +40,7 @@ func (bp *BinaryPrinter) Emit() {
 
 	for _, obj := range objs {
 		switch obj.(type) {
-		case *BoolConstant:
+		case Constant:
 			bp.emitObject(obj)
 		}
 	}
@@ -57,8 +58,8 @@ func (bp *BinaryPrinter) emitObject(obj Object) {
 		bp.emitFunction(v)
 	case Type:
 		bp.emitType(v)
-	case *BoolConstant:
-		bp.emitBoolConstant(v)
+	case Constant:
+		bp.emitConstant(v)
 	}
 }
 
@@ -115,12 +116,27 @@ func (bp *BinaryPrinter) emitType(abstractType Type) {
 	}
 }
 
+func (bp *BinaryPrinter) emitConstant(constant Constant) {
+	switch c := constant.(type) {
+	case *BoolConstant:
+		bp.emitBoolConstant(c)
+	case *IntConstant:
+		bp.emitIntConstant(c)
+	default:
+		panic(fmt.Sprintf("unsupported constant: %T", c))
+	}
+}
+
 func (bp *BinaryPrinter) emitBoolConstant(c *BoolConstant) {
 	if c.Value {
 		bp.emitOp(Word(OpConstantTrue), Word(c.Type.ID()), Word(c.ID()))
 	} else {
 		bp.emitOp(Word(OpConstantFalse), Word(c.Type.ID()), Word(c.ID()))
 	}
+}
+
+func (bp *BinaryPrinter) emitIntConstant(c *IntConstant) {
+	bp.emitOp(Word(OpConstant), Word(c.Type.ID()), Word(c.ID()), Word(uint32(c.Value)))
 }
 
 func (bp *BinaryPrinter) emitVoidType(t *VoidType) {

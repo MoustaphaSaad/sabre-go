@@ -36,7 +36,7 @@ func (tp *TextPrinter) Emit() {
 
 	for _, obj := range objs {
 		switch obj.(type) {
-		case *BoolConstant:
+		case Constant:
 			tp.emitObject(obj)
 		}
 	}
@@ -64,8 +64,8 @@ func (tp *TextPrinter) emitObject(obj Object) {
 		tp.emitFunction(v)
 	case Type:
 		tp.emitType(v)
-	case *BoolConstant:
-		tp.emitBoolConstant(v)
+	case Constant:
+		tp.emitConstant(v)
 	}
 }
 
@@ -118,12 +118,27 @@ func (tp *TextPrinter) emitType(abstractType Type) {
 	}
 }
 
+func (tp *TextPrinter) emitConstant(constant Constant) {
+	switch c := constant.(type) {
+	case *BoolConstant:
+		tp.emitBoolConstant(c)
+	case *IntConstant:
+		tp.emitIntConstant(c)
+	default:
+		panic(fmt.Sprintf("unsupported constant: %T", c))
+	}
+}
+
 func (tp *TextPrinter) emitBoolConstant(c *BoolConstant) {
 	if c.Value {
 		tp.emitWithObject(c, OpConstantTrue, tp.nameOf(c.Type))
 	} else {
 		tp.emitWithObject(c, OpConstantFalse, tp.nameOf(c.Type))
 	}
+}
+
+func (tp *TextPrinter) emitIntConstant(c *IntConstant) {
+	tp.emitWithObject(c, OpConstant, tp.nameOf(c.Type), c.Value)
 }
 
 func (tp *TextPrinter) emitVoidType(t *VoidType) {

@@ -74,7 +74,10 @@ func (ir *IREmitter) emitLiteralExpr(e *LiteralExpr) spirv.ID {
 	switch t := ir.emitType(tav.Type).(type) {
 	case *spirv.BoolType:
 		val := constant.BoolVal(tav.Value)
-		return ir.module.InternConstantBool(val, t).ID()
+		return ir.module.InternBoolConstant(val, t).ID()
+	case *spirv.IntType:
+		val, _ := constant.Int64Val(tav.Value)
+		return ir.module.InternIntConstant(val, t).ID()
 	default:
 		panic("unsupported literal type")
 	}
@@ -86,6 +89,8 @@ func (ir *IREmitter) emitType(Type Type) spirv.Type {
 		return ir.module.InternVoid()
 	case *BoolType:
 		return ir.module.InternBool()
+	case *IntType:
+		return ir.module.InternInt(32, t.Properties().Signed)
 	case *FuncType:
 		var spirvReturnType spirv.Type
 		if len(t.ReturnTypes) > 0 {

@@ -29,7 +29,7 @@ type Module struct {
 	idGenerator     int
 	objectsByID     map[ID]Object
 	typesByKey      map[string]Type
-	constantsByKey  map[string]Object
+	constantsByKey  map[string]Constant
 	capabilities    []Capability
 	AddressingModel AddressingModel
 	MemoryModel     MemoryModel
@@ -40,7 +40,7 @@ func NewModule(addressingModel AddressingModel, memoryModel MemoryModel) *Module
 		idGenerator:     0,
 		objectsByID:     make(map[ID]Object),
 		typesByKey:      make(map[string]Type),
-		constantsByKey:  make(map[string]Object),
+		constantsByKey:  make(map[string]Constant),
 		capabilities:    make([]Capability, 0),
 		AddressingModel: addressingModel,
 		MemoryModel:     memoryModel,
@@ -99,7 +99,7 @@ func (m *Module) InternBool() *BoolType {
 	return t
 }
 
-func (m *Module) InternConstantBool(value bool, t *BoolType) *BoolConstant {
+func (m *Module) InternBoolConstant(value bool, t *BoolType) *BoolConstant {
 	key := fmt.Sprintf("const_bool_%v_%v", t.ID(), value)
 	if existing, ok := m.constantsByKey[key]; ok {
 		return existing.(*BoolConstant)
@@ -134,6 +134,25 @@ func (m *Module) InternInt(bitWidth int, isSigned bool) *IntType {
 	m.objectsByID[t.ObjectID] = t
 	m.typesByKey[t.HashKey()] = t
 	return t
+}
+
+func (m *Module) InternIntConstant(value int64, t *IntType) *IntConstant {
+	key := fmt.Sprintf("const_int_%d_%v_%v", t.BitWidth, t.IsSigned, value)
+	if existing, ok := m.constantsByKey[key]; ok {
+		return existing.(*IntConstant)
+	}
+	id := m.NewID()
+	constant := &IntConstant{
+		BaseObject: BaseObject{
+			ObjectID:   id,
+			ObjectName: fmt.Sprintf("const_int_%d", value),
+		},
+		Type:  t,
+		Value: value,
+	}
+	m.objectsByID[id] = constant
+	m.constantsByKey[key] = constant
+	return constant
 }
 
 func (m *Module) InternPtr(to Type, sc StorageClass) *PtrType {
@@ -182,11 +201,25 @@ func (m *Module) Capabilities() []Capability {
 }
 
 // Constant represents a SPIR-V constant value.
+type Constant interface {
+	IsConstant()
+}
+
 type BoolConstant struct {
 	BaseObject
 	Type  *BoolType
 	Value bool
 }
+
+func (c *BoolConstant) IsConstant() {}
+
+type IntConstant struct {
+	BaseObject
+	Type  *IntType
+	Value int64
+}
+
+func (c *IntConstant) IsConstant() {}
 
 // Function represents a SPIR-V function containing a sequence of basic blocks.
 type Function struct {
