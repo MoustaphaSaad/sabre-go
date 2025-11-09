@@ -109,6 +109,8 @@ func (tp *TextPrinter) emitType(abstractType Type) {
 		tp.emitBoolType(t)
 	case *IntType:
 		tp.emitIntType(t)
+	case *FloatType:
+		tp.emitFloatType(t)
 	case *PtrType:
 		tp.emitPtrType(t)
 	case *FuncType:
@@ -124,6 +126,8 @@ func (tp *TextPrinter) emitConstant(constant Constant) {
 		tp.emitBoolConstant(c)
 	case *IntConstant:
 		tp.emitIntConstant(c)
+	case *FloatConstant:
+		tp.emitFloatConstant(c)
 	default:
 		panic(fmt.Sprintf("unsupported constant: %T", c))
 	}
@@ -141,6 +145,10 @@ func (tp *TextPrinter) emitIntConstant(c *IntConstant) {
 	tp.emitWithObject(c, OpConstant, tp.nameOf(c.Type), c.Value)
 }
 
+func (tp *TextPrinter) emitFloatConstant(c *FloatConstant) {
+	tp.emitWithObject(c, OpConstant, tp.nameOf(c.Type), c.Value)
+}
+
 func (tp *TextPrinter) emitVoidType(t *VoidType) {
 	tp.emitWithObject(t, OpTypeVoid)
 }
@@ -151,6 +159,10 @@ func (tp *TextPrinter) emitBoolType(t *BoolType) {
 
 func (tp *TextPrinter) emitIntType(t *IntType) {
 	tp.emitWithObject(t, OpTypeInt, t.BitWidth, boolToInt(t.IsSigned))
+}
+
+func (tp *TextPrinter) emitFloatType(t *FloatType) {
+	tp.emitWithObject(t, OpTypeFloat, t.BitWidth)
 }
 
 func (tp *TextPrinter) emitPtrType(t *PtrType) {

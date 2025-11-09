@@ -107,6 +107,8 @@ func (bp *BinaryPrinter) emitType(abstractType Type) {
 		bp.emitBoolType(t)
 	case *IntType:
 		bp.emitIntType(t)
+	case *FloatType:
+		bp.emitFloatType(t)
 	case *PtrType:
 		bp.emitPtrType(t)
 	case *FuncType:
@@ -122,6 +124,8 @@ func (bp *BinaryPrinter) emitConstant(constant Constant) {
 		bp.emitBoolConstant(c)
 	case *IntConstant:
 		bp.emitIntConstant(c)
+	case *FloatConstant:
+		bp.emitFloatConstant(c)
 	default:
 		panic(fmt.Sprintf("unsupported constant: %T", c))
 	}
@@ -139,6 +143,11 @@ func (bp *BinaryPrinter) emitIntConstant(c *IntConstant) {
 	bp.emitOp(Word(OpConstant), Word(c.Type.ID()), Word(c.ID()), Word(uint32(c.Value)))
 }
 
+func (bp *BinaryPrinter) emitFloatConstant(c *FloatConstant) {
+	bits := binary.LittleEndian.Uint32([]byte(fmt.Sprintf("%f", c.Value)))
+	bp.emitOp(Word(OpConstant), Word(c.Type.ID()), Word(c.ID()), Word(bits))
+}
+
 func (bp *BinaryPrinter) emitVoidType(t *VoidType) {
 	bp.emitOp(Word(OpTypeVoid), Word(t.ID()))
 }
@@ -149,6 +158,10 @@ func (bp *BinaryPrinter) emitBoolType(t *BoolType) {
 
 func (bp *BinaryPrinter) emitIntType(t *IntType) {
 	bp.emitOp(Word(OpTypeInt), Word(t.ID()), Word(t.BitWidth), Word(boolToWord(t.IsSigned)))
+}
+
+func (bp *BinaryPrinter) emitFloatType(t *FloatType) {
+	bp.emitOp(Word(OpTypeFloat), Word(t.ID()), Word(t.BitWidth))
 }
 
 func (bp *BinaryPrinter) emitPtrType(t *PtrType) {

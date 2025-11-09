@@ -1,6 +1,9 @@
 package spirv
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // ID represents a unique identifier for SPIR-V objects.
 type ID int32
@@ -155,6 +158,43 @@ func (m *Module) InternIntConstant(value int64, t *IntType) *IntConstant {
 	return constant
 }
 
+func (m *Module) InternFloat(bitWidth int) *FloatType {
+	t := &FloatType{
+		BitWidth: bitWidth,
+	}
+	if existingType, ok := m.typesByKey[t.HashKey()]; ok {
+		return existingType.(*FloatType)
+	}
+	t.ObjectID = m.NewID()
+	t.ObjectName = t.HashKey()
+	t.Module = m
+	m.objectsByID[t.ObjectID] = t
+	m.typesByKey[t.HashKey()] = t
+	return t
+}
+
+func (m *Module) InternFloatConstant(value float64, t *FloatType) *FloatConstant {
+	valueFmt := fmt.Sprintf("%f", value)
+	valueName := strings.ReplaceAll(valueFmt, ".", "_")
+
+	key := fmt.Sprintf("const_float_%d_%v", t.BitWidth, valueName)
+	if existing, ok := m.constantsByKey[key]; ok {
+		return existing.(*FloatConstant)
+	}
+	id := m.NewID()
+	constant := &FloatConstant{
+		BaseObject: BaseObject{
+			ObjectID:   id,
+			ObjectName: fmt.Sprintf("const_float_%v", valueName),
+		},
+		Type:  t,
+		Value: value,
+	}
+	m.objectsByID[id] = constant
+	m.constantsByKey[key] = constant
+	return constant
+}
+
 func (m *Module) InternPtr(to Type, sc StorageClass) *PtrType {
 	t := &PtrType{
 		To:           to,
@@ -220,6 +260,14 @@ type IntConstant struct {
 }
 
 func (c *IntConstant) IsConstant() {}
+
+type FloatConstant struct {
+	BaseObject
+	Type  *FloatType
+	Value float64
+}
+
+func (c *FloatConstant) IsConstant() {}
 
 // Function represents a SPIR-V function containing a sequence of basic blocks.
 type Function struct {

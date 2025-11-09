@@ -78,6 +78,30 @@ func (t IntType) HashKey() string {
 	return t.TypeName()
 }
 
+type FloatType struct {
+	ObjectID   ID
+	ObjectName string
+	Module     *Module
+	BitWidth   int
+}
+
+func (t FloatType) ID() ID {
+	return t.ObjectID
+}
+
+func (t FloatType) Name() string {
+	return t.ObjectName
+}
+
+func (FloatType) aType() {}
+
+func (t FloatType) TypeName() string {
+	return fmt.Sprintf("float%d", t.BitWidth)
+}
+func (t FloatType) HashKey() string {
+	return t.TypeName()
+}
+
 type PtrType struct {
 	ObjectID     ID
 	ObjectName   string
