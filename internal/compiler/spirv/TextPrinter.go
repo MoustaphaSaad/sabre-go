@@ -35,7 +35,8 @@ func (tp *TextPrinter) Emit() {
 	}
 
 	for _, obj := range objs {
-		if _, isConstant := obj.(Constant); isConstant {
+		switch obj.(type) {
+		case *BoolConstant:
 			tp.emitObject(obj)
 		}
 	}
@@ -63,8 +64,8 @@ func (tp *TextPrinter) emitObject(obj Object) {
 		tp.emitFunction(v)
 	case Type:
 		tp.emitType(v)
-	case Constant:
-		tp.emitConstant(v)
+	case *BoolConstant:
+		tp.emitBoolConstant(v)
 	}
 }
 
@@ -117,17 +118,11 @@ func (tp *TextPrinter) emitType(abstractType Type) {
 	}
 }
 
-func (tp *TextPrinter) emitConstant(c Constant) {
-	switch constant := c.(type) {
-	case *BoolConstant:
-		boolValue := constant.Value
-		if boolValue {
-			tp.emitWithObject(constant, OpConstantTrue, tp.nameOf(constant.Type))
-		} else {
-			tp.emitWithObject(constant, OpConstantFalse, tp.nameOf(constant.Type))
-		}
-	default:
-		panic(fmt.Sprintf("unsupported constant: %T", c))
+func (tp *TextPrinter) emitBoolConstant(c *BoolConstant) {
+	if c.Value {
+		tp.emitWithObject(c, OpConstantTrue, tp.nameOf(c.Type))
+	} else {
+		tp.emitWithObject(c, OpConstantFalse, tp.nameOf(c.Type))
 	}
 }
 
@@ -188,7 +183,7 @@ func (tp *TextPrinter) nameOf(obj Object) string {
 		kind = "block"
 	case Type:
 		kind = "type"
-	case Constant:
+	case *BoolConstant:
 		kind = "const"
 	}
 	if len(kind) == 0 {

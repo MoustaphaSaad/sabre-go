@@ -38,7 +38,8 @@ func (bp *BinaryPrinter) Emit() {
 	}
 
 	for _, obj := range objs {
-		if _, isConstant := obj.(Constant); isConstant {
+		switch obj.(type) {
+		case *BoolConstant:
 			bp.emitObject(obj)
 		}
 	}
@@ -56,8 +57,8 @@ func (bp *BinaryPrinter) emitObject(obj Object) {
 		bp.emitFunction(v)
 	case Type:
 		bp.emitType(v)
-	case Constant:
-		bp.emitConstant(v)
+	case *BoolConstant:
+		bp.emitBoolConstant(v)
 	}
 }
 
@@ -114,12 +115,11 @@ func (bp *BinaryPrinter) emitType(abstractType Type) {
 	}
 }
 
-func (bp *BinaryPrinter) emitConstant(c Constant) {
-	switch c := c.(type) {
-	case *BoolConstant:
-		bp.emitInstruction(c.Instruction)
-	default:
-		panic("unsupported constant")
+func (bp *BinaryPrinter) emitBoolConstant(c *BoolConstant) {
+	if c.Value {
+		bp.emitOp(Word(OpConstantTrue), Word(c.Type.ID()), Word(c.ID()))
+	} else {
+		bp.emitOp(Word(OpConstantFalse), Word(c.Type.ID()), Word(c.ID()))
 	}
 }
 

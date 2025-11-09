@@ -29,7 +29,7 @@ type Module struct {
 	idGenerator     int
 	objectsByID     map[ID]Object
 	typesByKey      map[string]Type
-	constantsByKey  map[string]Constant
+	constantsByKey  map[string]Object
 	capabilities    []Capability
 	AddressingModel AddressingModel
 	MemoryModel     MemoryModel
@@ -40,7 +40,7 @@ func NewModule(addressingModel AddressingModel, memoryModel MemoryModel) *Module
 		idGenerator:     0,
 		objectsByID:     make(map[ID]Object),
 		typesByKey:      make(map[string]Type),
-		constantsByKey:  make(map[string]Constant),
+		constantsByKey:  make(map[string]Object),
 		capabilities:    make([]Capability, 0),
 		AddressingModel: addressingModel,
 		MemoryModel:     memoryModel,
@@ -111,19 +111,6 @@ func (m *Module) InternConstantBool(value bool, t *BoolType) *BoolConstant {
 			ObjectID:   id,
 			ObjectName: fmt.Sprintf("const_bool_%v", value),
 		},
-		Instruction: func() Instruction {
-			if value {
-				return &ConstantTrueInstruction{
-					ResultType: t.ID(),
-					ResultID:   id,
-				}
-			} else {
-				return &ConstantFalseInstruction{
-					ResultType: t.ID(),
-					ResultID:   id,
-				}
-			}
-		}(),
 		Type:  t,
 		Value: value,
 	}
@@ -195,19 +182,11 @@ func (m *Module) Capabilities() []Capability {
 }
 
 // Constant represents a SPIR-V constant value.
-type Constant interface {
-	IsConstant()
-}
-
 type BoolConstant struct {
-	Constant
 	BaseObject
-	Instruction Instruction
-	Type        *BoolType
-	Value       bool
+	Type  *BoolType
+	Value bool
 }
-
-func (c *BoolConstant) IsConstant() {}
 
 // Function represents a SPIR-V function containing a sequence of basic blocks.
 type Function struct {
