@@ -88,13 +88,10 @@ type FloatType struct {
 func (t FloatType) ID() ID {
 	return t.ObjectID
 }
-
 func (t FloatType) Name() string {
 	return t.ObjectName
 }
-
 func (FloatType) aType() {}
-
 func (t FloatType) TypeName() string {
 	return fmt.Sprintf("float%d", t.BitWidth)
 }

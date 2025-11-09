@@ -102,27 +102,6 @@ func (m *Module) InternBool() *BoolType {
 	return t
 }
 
-func (m *Module) InternBoolConstant(value bool, t *BoolType) *BoolConstant {
-	key := fmt.Sprintf("const_bool_%v_%v", t.ID(), value)
-	if existing, ok := m.constantsByKey[key]; ok {
-		return existing.(*BoolConstant)
-	}
-
-	id := m.NewID()
-	constant := &BoolConstant{
-		BaseObject: BaseObject{
-			ObjectID:   id,
-			ObjectName: fmt.Sprintf("const_bool_%v", value),
-		},
-		Type:  t,
-		Value: value,
-	}
-
-	m.objectsByID[id] = constant
-	m.constantsByKey[key] = constant
-	return constant
-}
-
 func (m *Module) InternInt(bitWidth int, isSigned bool) *IntType {
 	t := &IntType{
 		BitWidth: bitWidth,
@@ -139,25 +118,6 @@ func (m *Module) InternInt(bitWidth int, isSigned bool) *IntType {
 	return t
 }
 
-func (m *Module) InternIntConstant(value int64, t *IntType) *IntConstant {
-	key := fmt.Sprintf("const_int_%d_%v_%v", t.BitWidth, t.IsSigned, value)
-	if existing, ok := m.constantsByKey[key]; ok {
-		return existing.(*IntConstant)
-	}
-	id := m.NewID()
-	constant := &IntConstant{
-		BaseObject: BaseObject{
-			ObjectID:   id,
-			ObjectName: fmt.Sprintf("const_int_%d", value),
-		},
-		Type:  t,
-		Value: value,
-	}
-	m.objectsByID[id] = constant
-	m.constantsByKey[key] = constant
-	return constant
-}
-
 func (m *Module) InternFloat(bitWidth int) *FloatType {
 	t := &FloatType{
 		BitWidth: bitWidth,
@@ -171,28 +131,6 @@ func (m *Module) InternFloat(bitWidth int) *FloatType {
 	m.objectsByID[t.ObjectID] = t
 	m.typesByKey[t.HashKey()] = t
 	return t
-}
-
-func (m *Module) InternFloatConstant(value float64, t *FloatType) *FloatConstant {
-	valueFmt := fmt.Sprintf("%f", value)
-	valueName := strings.ReplaceAll(valueFmt, ".", "_")
-
-	key := fmt.Sprintf("const_float_%d_%v", t.BitWidth, valueName)
-	if existing, ok := m.constantsByKey[key]; ok {
-		return existing.(*FloatConstant)
-	}
-	id := m.NewID()
-	constant := &FloatConstant{
-		BaseObject: BaseObject{
-			ObjectID:   id,
-			ObjectName: fmt.Sprintf("const_float_%v", valueName),
-		},
-		Type:  t,
-		Value: value,
-	}
-	m.objectsByID[id] = constant
-	m.constantsByKey[key] = constant
-	return constant
 }
 
 func (m *Module) InternPtr(to Type, sc StorageClass) *PtrType {
@@ -242,7 +180,7 @@ func (m *Module) Capabilities() []Capability {
 
 // Constant represents a SPIR-V constant value.
 type Constant interface {
-	IsConstant()
+	isConstant()
 }
 
 type BoolConstant struct {
@@ -251,7 +189,7 @@ type BoolConstant struct {
 	Value bool
 }
 
-func (c *BoolConstant) IsConstant() {}
+func (c *BoolConstant) isConstant() {}
 
 type IntConstant struct {
 	BaseObject
@@ -259,7 +197,7 @@ type IntConstant struct {
 	Value int64
 }
 
-func (c *IntConstant) IsConstant() {}
+func (c *IntConstant) isConstant() {}
 
 type FloatConstant struct {
 	BaseObject
@@ -267,7 +205,69 @@ type FloatConstant struct {
 	Value float64
 }
 
-func (c *FloatConstant) IsConstant() {}
+func (c *FloatConstant) isConstant() {}
+
+func (m *Module) InternBoolConstant(value bool, t *BoolType) *BoolConstant {
+	key := fmt.Sprintf("const_%v_%v", t.HashKey(), value)
+	if existing, ok := m.constantsByKey[key]; ok {
+		return existing.(*BoolConstant)
+	}
+
+	id := m.NewID()
+	constant := &BoolConstant{
+		BaseObject: BaseObject{
+			ObjectID:   id,
+			ObjectName: key,
+		},
+		Type:  t,
+		Value: value,
+	}
+
+	m.objectsByID[id] = constant
+	m.constantsByKey[key] = constant
+	return constant
+}
+
+func (m *Module) InternIntConstant(value int64, t *IntType) *IntConstant {
+	key := fmt.Sprintf("const_%v_%v", t.HashKey(), value)
+	if existing, ok := m.constantsByKey[key]; ok {
+		return existing.(*IntConstant)
+	}
+	id := m.NewID()
+	constant := &IntConstant{
+		BaseObject: BaseObject{
+			ObjectID:   id,
+			ObjectName: key,
+		},
+		Type:  t,
+		Value: value,
+	}
+	m.objectsByID[id] = constant
+	m.constantsByKey[key] = constant
+	return constant
+}
+
+func (m *Module) InternFloatConstant(value float64, t *FloatType) *FloatConstant {
+	valueFmt := fmt.Sprintf("%f", value)
+	valueName := strings.ReplaceAll(valueFmt, ".", "_")
+
+	key := fmt.Sprintf("const_%v_%v", t.HashKey(), valueName)
+	if existing, ok := m.constantsByKey[key]; ok {
+		return existing.(*FloatConstant)
+	}
+	id := m.NewID()
+	constant := &FloatConstant{
+		BaseObject: BaseObject{
+			ObjectID:   id,
+			ObjectName: key,
+		},
+		Type:  t,
+		Value: value,
+	}
+	m.objectsByID[id] = constant
+	m.constantsByKey[key] = constant
+	return constant
+}
 
 // Function represents a SPIR-V function containing a sequence of basic blocks.
 type Function struct {

@@ -144,8 +144,7 @@ func (bp *BinaryPrinter) emitIntConstant(c *IntConstant) {
 }
 
 func (bp *BinaryPrinter) emitFloatConstant(c *FloatConstant) {
-	bits := binary.LittleEndian.Uint32([]byte(fmt.Sprintf("%f", c.Value)))
-	bp.emitOp(Word(OpConstant), Word(c.Type.ID()), Word(c.ID()), Word(bits))
+	bp.emitOp(Word(OpConstant), Word(c.Type.ID()), Word(c.ID()), Word(c.Value))
 }
 
 func (bp *BinaryPrinter) emitVoidType(t *VoidType) {
