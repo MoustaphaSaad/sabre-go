@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"math"
 	"sort"
 )
 
@@ -144,7 +145,7 @@ func (bp *BinaryPrinter) emitIntConstant(c *IntConstant) {
 }
 
 func (bp *BinaryPrinter) emitFloatConstant(c *FloatConstant) {
-	bp.emitOp(Word(OpConstant), Word(c.Type.ID()), Word(c.ID()), Word(c.Value))
+	bp.emitOp(Word(OpConstant), Word(c.Type.ID()), Word(c.ID()), Word(math.Float32bits(float32(c.Value))))
 }
 
 func (bp *BinaryPrinter) emitVoidType(t *VoidType) {
