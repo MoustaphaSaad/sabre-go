@@ -145,7 +145,14 @@ func (bp *BinaryPrinter) emitIntConstant(c *IntConstant) {
 }
 
 func (bp *BinaryPrinter) emitFloatConstant(c *FloatConstant) {
-	bp.emitOp(Word(OpConstant), Word(c.Type.ID()), Word(c.ID()), Word(math.Float32bits(float32(c.Value))))
+	switch c.Type.BitWidth {
+	case 32:
+		bp.emitOp(Word(OpConstant), Word(c.Type.ID()), Word(c.ID()), Word(math.Float32bits(float32(c.Value))))
+	case 64:
+		bp.emitOp(Word(OpConstant), Word(c.Type.ID()), Word(c.ID()), Word(math.Float64bits(c.Value)))
+	default:
+		panic("unsupported float bit width")
+	}
 }
 
 func (bp *BinaryPrinter) emitVoidType(t *VoidType) {
