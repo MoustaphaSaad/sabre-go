@@ -1,5 +1,10 @@
 package spirv
 
+import (
+	"fmt"
+	"strings"
+)
+
 // ID represents a unique identifier for SPIR-V objects.
 type ID int32
 
@@ -27,6 +32,7 @@ type Module struct {
 	idGenerator     int
 	objectsByID     map[ID]Object
 	typesByKey      map[string]Type
+	constantsByKey  map[string]Constant
 	capabilities    []Capability
 	AddressingModel AddressingModel
 	MemoryModel     MemoryModel
@@ -37,6 +43,7 @@ func NewModule(addressingModel AddressingModel, memoryModel MemoryModel) *Module
 		idGenerator:     0,
 		objectsByID:     make(map[ID]Object),
 		typesByKey:      make(map[string]Type),
+		constantsByKey:  make(map[string]Constant),
 		capabilities:    make([]Capability, 0),
 		AddressingModel: addressingModel,
 		MemoryModel:     memoryModel,
@@ -111,6 +118,21 @@ func (m *Module) InternInt(bitWidth int, isSigned bool) *IntType {
 	return t
 }
 
+func (m *Module) InternFloat(bitWidth int) *FloatType {
+	t := &FloatType{
+		BitWidth: bitWidth,
+	}
+	if existingType, ok := m.typesByKey[t.HashKey()]; ok {
+		return existingType.(*FloatType)
+	}
+	t.ObjectID = m.NewID()
+	t.ObjectName = t.HashKey()
+	t.Module = m
+	m.objectsByID[t.ObjectID] = t
+	m.typesByKey[t.HashKey()] = t
+	return t
+}
+
 func (m *Module) InternPtr(to Type, sc StorageClass) *PtrType {
 	t := &PtrType{
 		To:           to,
@@ -156,6 +178,97 @@ func (m *Module) Capabilities() []Capability {
 	return m.capabilities
 }
 
+// Constant represents a SPIR-V constant value.
+type Constant interface {
+	isConstant()
+}
+
+type BoolConstant struct {
+	BaseObject
+	Type  *BoolType
+	Value bool
+}
+
+func (c *BoolConstant) isConstant() {}
+
+type IntConstant struct {
+	BaseObject
+	Type  *IntType
+	Value int64
+}
+
+func (c *IntConstant) isConstant() {}
+
+type FloatConstant struct {
+	BaseObject
+	Type  *FloatType
+	Value float64
+}
+
+func (c *FloatConstant) isConstant() {}
+
+func (m *Module) InternBoolConstant(value bool, t *BoolType) *BoolConstant {
+	key := fmt.Sprintf("const_%v_%v", t.HashKey(), value)
+	if existing, ok := m.constantsByKey[key]; ok {
+		return existing.(*BoolConstant)
+	}
+
+	id := m.NewID()
+	constant := &BoolConstant{
+		BaseObject: BaseObject{
+			ObjectID:   id,
+			ObjectName: key,
+		},
+		Type:  t,
+		Value: value,
+	}
+
+	m.objectsByID[id] = constant
+	m.constantsByKey[key] = constant
+	return constant
+}
+
+func (m *Module) InternIntConstant(value int64, t *IntType) *IntConstant {
+	key := fmt.Sprintf("const_%v_%v", t.HashKey(), value)
+	if existing, ok := m.constantsByKey[key]; ok {
+		return existing.(*IntConstant)
+	}
+	id := m.NewID()
+	constant := &IntConstant{
+		BaseObject: BaseObject{
+			ObjectID:   id,
+			ObjectName: key,
+		},
+		Type:  t,
+		Value: value,
+	}
+	m.objectsByID[id] = constant
+	m.constantsByKey[key] = constant
+	return constant
+}
+
+func (m *Module) InternFloatConstant(value float64, t *FloatType) *FloatConstant {
+	valueFmt := fmt.Sprintf("%f", value)
+	valueName := strings.ReplaceAll(valueFmt, ".", "_")
+
+	key := fmt.Sprintf("const_%v_%v", t.HashKey(), valueName)
+	if existing, ok := m.constantsByKey[key]; ok {
+		return existing.(*FloatConstant)
+	}
+	id := m.NewID()
+	constant := &FloatConstant{
+		BaseObject: BaseObject{
+			ObjectID:   id,
+			ObjectName: key,
+		},
+		Type:  t,
+		Value: value,
+	}
+	m.objectsByID[id] = constant
+	m.constantsByKey[key] = constant
+	return constant
+}
+
 // Function represents a SPIR-V function containing a sequence of basic blocks.
 type Function struct {
 	BaseObject
@@ -192,6 +305,24 @@ func (b *Block) Push(instr Instruction) {
 // Instruction represents a single SPIR-V instruction with an opcode.
 type Instruction interface {
 	Opcode() Opcode
+}
+
+type ConstantTrueInstruction struct {
+	ResultType ID
+	ResultID   ID
+}
+
+func (i *ConstantTrueInstruction) Opcode() Opcode {
+	return OpConstantTrue
+}
+
+type ConstantFalseInstruction struct {
+	ResultType ID
+	ResultID   ID
+}
+
+func (i *ConstantFalseInstruction) Opcode() Opcode {
+	return OpConstantFalse
 }
 
 type ReturnInstruction struct{}

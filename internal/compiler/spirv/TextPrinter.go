@@ -29,7 +29,22 @@ func (tp *TextPrinter) Emit() {
 	sort.Slice(objs, func(i, j int) bool { return objs[i].ID() < objs[j].ID() })
 
 	for _, obj := range objs {
-		tp.emitObject(obj)
+		if _, isType := obj.(Type); isType {
+			tp.emitObject(obj)
+		}
+	}
+
+	for _, obj := range objs {
+		switch obj.(type) {
+		case Constant:
+			tp.emitObject(obj)
+		}
+	}
+
+	for _, obj := range objs {
+		if _, isFunction := obj.(*Function); isFunction {
+			tp.emitObject(obj)
+		}
 	}
 }
 
@@ -49,6 +64,8 @@ func (tp *TextPrinter) emitObject(obj Object) {
 		tp.emitFunction(v)
 	case Type:
 		tp.emitType(v)
+	case Constant:
+		tp.emitConstant(v)
 	}
 }
 
@@ -79,6 +96,8 @@ func (tp *TextPrinter) emitInstruction(inst Instruction) {
 		tp.emit(OpReturn)
 	case *ReturnValueInstruction:
 		tp.emit(OpReturnValue, tp.nameOfByID(i.Value))
+	default:
+		panic(fmt.Sprintf("unsupported instruction: %T", inst))
 	}
 }
 
@@ -90,13 +109,44 @@ func (tp *TextPrinter) emitType(abstractType Type) {
 		tp.emitBoolType(t)
 	case *IntType:
 		tp.emitIntType(t)
+	case *FloatType:
+		tp.emitFloatType(t)
 	case *PtrType:
 		tp.emitPtrType(t)
 	case *FuncType:
 		tp.emitFuncType(t)
 	default:
-		panic("unsupported type")
+		panic(fmt.Sprintf("unsupported type: %T", abstractType))
 	}
+}
+
+func (tp *TextPrinter) emitConstant(constant Constant) {
+	switch c := constant.(type) {
+	case *BoolConstant:
+		tp.emitBoolConstant(c)
+	case *IntConstant:
+		tp.emitIntConstant(c)
+	case *FloatConstant:
+		tp.emitFloatConstant(c)
+	default:
+		panic(fmt.Sprintf("unsupported constant: %T", c))
+	}
+}
+
+func (tp *TextPrinter) emitBoolConstant(c *BoolConstant) {
+	if c.Value {
+		tp.emitWithObject(c, OpConstantTrue, tp.nameOf(c.Type))
+	} else {
+		tp.emitWithObject(c, OpConstantFalse, tp.nameOf(c.Type))
+	}
+}
+
+func (tp *TextPrinter) emitIntConstant(c *IntConstant) {
+	tp.emitWithObject(c, OpConstant, tp.nameOf(c.Type), c.Value)
+}
+
+func (tp *TextPrinter) emitFloatConstant(c *FloatConstant) {
+	tp.emitWithObject(c, OpConstant, tp.nameOf(c.Type), c.Value)
 }
 
 func (tp *TextPrinter) emitVoidType(t *VoidType) {
@@ -109,6 +159,10 @@ func (tp *TextPrinter) emitBoolType(t *BoolType) {
 
 func (tp *TextPrinter) emitIntType(t *IntType) {
 	tp.emitWithObject(t, OpTypeInt, t.BitWidth, boolToInt(t.IsSigned))
+}
+
+func (tp *TextPrinter) emitFloatType(t *FloatType) {
+	tp.emitWithObject(t, OpTypeFloat, t.BitWidth)
 }
 
 func (tp *TextPrinter) emitPtrType(t *PtrType) {
@@ -156,6 +210,8 @@ func (tp *TextPrinter) nameOf(obj Object) string {
 		kind = "block"
 	case Type:
 		kind = "type"
+	case *BoolConstant:
+		kind = "const"
 	}
 	if len(kind) == 0 {
 		return fmt.Sprintf("%%%s_%d", obj.Name(), obj.ID())

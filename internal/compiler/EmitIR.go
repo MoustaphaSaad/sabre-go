@@ -1,6 +1,8 @@
 package compiler
 
 import (
+	"go/constant"
+
 	"github.com/MoustaphaSaad/sabre-go/internal/compiler/spirv"
 )
 
@@ -32,6 +34,8 @@ func (ir *IREmitter) emitSymbol(sym Symbol) {
 	switch s := sym.(type) {
 	case *FuncSymbol:
 		ir.emitFunc(s)
+	default:
+		panic("unsupported symbol")
 	}
 }
 
@@ -56,10 +60,44 @@ func (ir *IREmitter) emitFunc(sym *FuncSymbol) {
 	}
 }
 
+func (ir *IREmitter) emitExpression(expr Expr) spirv.ID {
+	switch e := expr.(type) {
+	case *LiteralExpr:
+		return ir.emitLiteralExpr(e)
+	default:
+		panic("unsupported expression")
+	}
+}
+
+func (ir *IREmitter) emitLiteralExpr(e *LiteralExpr) spirv.ID {
+	tav := ir.unit.semanticInfo.TypeOf(e)
+	switch t := ir.emitType(tav.Type).(type) {
+	case *spirv.BoolType:
+		val := constant.BoolVal(tav.Value)
+		return ir.module.InternBoolConstant(val, t).ID()
+	case *spirv.IntType:
+		val, _ := constant.Int64Val(tav.Value)
+		return ir.module.InternIntConstant(val, t).ID()
+	case *spirv.FloatType:
+		val, _ := constant.Float64Val(tav.Value)
+		return ir.module.InternFloatConstant(val, t).ID()
+	default:
+		panic("unsupported literal type")
+	}
+}
+
 func (ir *IREmitter) emitType(Type Type) spirv.Type {
 	switch t := Type.(type) {
 	case *VoidType:
 		return ir.module.InternVoid()
+	case *BoolType:
+		return ir.module.InternBool()
+	case *IntType:
+		return ir.module.InternInt(32, t.Properties().Signed)
+	case *Float32Type:
+		return ir.module.InternFloat(32)
+	case *Float64Type:
+		return ir.module.InternFloat(64)
 	case *FuncType:
 		var spirvReturnType spirv.Type
 		if len(t.ReturnTypes) > 0 {
@@ -90,5 +128,10 @@ func (ir *IREmitter) emitStatement(stmt Stmt, block *spirv.Block) {
 }
 
 func (ir *IREmitter) emitReturnStmt(s *ReturnStmt, block *spirv.Block) {
-	block.Push(&spirv.ReturnInstruction{})
+	if len(s.Exprs) > 0 {
+		// TODO: Multiple return values
+		block.Push(&spirv.ReturnValueInstruction{Value: ir.emitExpression(s.Exprs[0])})
+	} else {
+		block.Push(&spirv.ReturnInstruction{})
+	}
 }

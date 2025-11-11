@@ -2,7 +2,9 @@ package spirv
 
 import (
 	"encoding/binary"
+	"fmt"
 	"io"
+	"math"
 	"sort"
 )
 
@@ -32,7 +34,22 @@ func (bp *BinaryPrinter) Emit() {
 	sort.Slice(objs, func(i, j int) bool { return objs[i].ID() < objs[j].ID() })
 
 	for _, obj := range objs {
-		bp.emitObject(obj)
+		if _, isType := obj.(Type); isType {
+			bp.emitObject(obj)
+		}
+	}
+
+	for _, obj := range objs {
+		switch obj.(type) {
+		case Constant:
+			bp.emitObject(obj)
+		}
+	}
+
+	for _, obj := range objs {
+		if _, isFunction := obj.(*Function); isFunction {
+			bp.emitObject(obj)
+		}
 	}
 }
 
@@ -42,6 +59,8 @@ func (bp *BinaryPrinter) emitObject(obj Object) {
 		bp.emitFunction(v)
 	case Type:
 		bp.emitType(v)
+	case Constant:
+		bp.emitConstant(v)
 	}
 }
 
@@ -68,10 +87,16 @@ func (bp *BinaryPrinter) emitBlock(block *Block) {
 
 func (bp *BinaryPrinter) emitInstruction(inst Instruction) {
 	switch i := inst.(type) {
+	case *ConstantTrueInstruction:
+		bp.emitOp(Word(OpConstantTrue), Word(i.ResultType), Word(i.ResultID))
+	case *ConstantFalseInstruction:
+		bp.emitOp(Word(OpConstantFalse), Word(i.ResultType), Word(i.ResultID))
 	case *ReturnInstruction:
 		bp.emitOp(Word(OpReturn))
 	case *ReturnValueInstruction:
 		bp.emitOp(Word(OpReturnValue), Word(i.Value))
+	default:
+		panic("unsupported instruction")
 	}
 }
 
@@ -83,12 +108,53 @@ func (bp *BinaryPrinter) emitType(abstractType Type) {
 		bp.emitBoolType(t)
 	case *IntType:
 		bp.emitIntType(t)
+	case *FloatType:
+		bp.emitFloatType(t)
 	case *PtrType:
 		bp.emitPtrType(t)
 	case *FuncType:
 		bp.emitFuncType(t)
 	default:
 		panic("unsupported type")
+	}
+}
+
+func (bp *BinaryPrinter) emitConstant(constant Constant) {
+	switch c := constant.(type) {
+	case *BoolConstant:
+		bp.emitBoolConstant(c)
+	case *IntConstant:
+		bp.emitIntConstant(c)
+	case *FloatConstant:
+		bp.emitFloatConstant(c)
+	default:
+		panic(fmt.Sprintf("unsupported constant: %T", c))
+	}
+}
+
+func (bp *BinaryPrinter) emitBoolConstant(c *BoolConstant) {
+	if c.Value {
+		bp.emitOp(Word(OpConstantTrue), Word(c.Type.ID()), Word(c.ID()))
+	} else {
+		bp.emitOp(Word(OpConstantFalse), Word(c.Type.ID()), Word(c.ID()))
+	}
+}
+
+func (bp *BinaryPrinter) emitIntConstant(c *IntConstant) {
+	bp.emitOp(Word(OpConstant), Word(c.Type.ID()), Word(c.ID()), Word(uint32(c.Value)))
+}
+
+func (bp *BinaryPrinter) emitFloatConstant(c *FloatConstant) {
+	switch c.Type.BitWidth {
+	case 32:
+		bp.emitOp(Word(OpConstant), Word(c.Type.ID()), Word(c.ID()), Word(math.Float32bits(float32(c.Value))))
+	case 64:
+		bits := math.Float64bits(c.Value)
+		lowWord := Word(bits & 0xFFFFFFFF)
+		highWord := Word(bits >> 32)
+		bp.emitOp(Word(OpConstant), Word(c.Type.ID()), Word(c.ID()), lowWord, highWord)
+	default:
+		panic("unsupported float bit width")
 	}
 }
 
@@ -102,6 +168,10 @@ func (bp *BinaryPrinter) emitBoolType(t *BoolType) {
 
 func (bp *BinaryPrinter) emitIntType(t *IntType) {
 	bp.emitOp(Word(OpTypeInt), Word(t.ID()), Word(t.BitWidth), Word(boolToWord(t.IsSigned)))
+}
+
+func (bp *BinaryPrinter) emitFloatType(t *FloatType) {
+	bp.emitOp(Word(OpTypeFloat), Word(t.ID()), Word(t.BitWidth))
 }
 
 func (bp *BinaryPrinter) emitPtrType(t *PtrType) {
