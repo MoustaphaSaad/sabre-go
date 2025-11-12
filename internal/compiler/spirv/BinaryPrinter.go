@@ -95,6 +95,14 @@ func (bp *BinaryPrinter) emitInstruction(inst Instruction) {
 		bp.emitOp(Word(OpReturn))
 	case *ReturnValueInstruction:
 		bp.emitOp(Word(OpReturnValue), Word(i.Value))
+	case *SNegateInstruction:
+		bp.emitOp(Word(OpSNegate), Word(i.ResultType), Word(i.ResultID), Word(i.Operand))
+	case *FNegateInstruction:
+		bp.emitOp(Word(OpFNegate), Word(i.ResultType), Word(i.ResultID), Word(i.Operand))
+	case *LogicalNotInstruction:
+		bp.emitOp(Word(OpLogicalNot), Word(i.ResultType), Word(i.ResultID), Word(i.Operand))
+	case *NotInstruction:
+		bp.emitOp(Word(OpNot), Word(i.ResultType), Word(i.ResultID), Word(i.Operand))
 	default:
 		panic("unsupported instruction")
 	}

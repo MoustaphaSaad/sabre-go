@@ -96,6 +96,18 @@ func (tp *TextPrinter) emitInstruction(inst Instruction) {
 		tp.emit(OpReturn)
 	case *ReturnValueInstruction:
 		tp.emit(OpReturnValue, tp.nameOfByID(i.Value))
+	case *SNegateInstruction:
+		resultObj := tp.module.GetObject(i.ResultID)
+		tp.emitWithObject(resultObj, OpSNegate, tp.nameOfByID(i.ResultType), tp.nameOfByID(i.Operand))
+	case *FNegateInstruction:
+		resultObj := tp.module.GetObject(i.ResultID)
+		tp.emitWithObject(resultObj, OpFNegate, tp.nameOfByID(i.ResultType), tp.nameOfByID(i.Operand))
+	case *LogicalNotInstruction:
+		resultObj := tp.module.GetObject(i.ResultID)
+		tp.emitWithObject(resultObj, OpLogicalNot, tp.nameOfByID(i.ResultType), tp.nameOfByID(i.Operand))
+	case *NotInstruction:
+		resultObj := tp.module.GetObject(i.ResultID)
+		tp.emitWithObject(resultObj, OpNot, tp.nameOfByID(i.ResultType), tp.nameOfByID(i.Operand))
 	default:
 		panic(fmt.Sprintf("unsupported instruction: %T", inst))
 	}

@@ -20,6 +20,10 @@ const (
 	OpConstant      Opcode = 43
 	OpFunction      Opcode = 54
 	OpFunctionEnd   Opcode = 56
+	OpSNegate       Opcode = 126
+	OpFNegate       Opcode = 127
+	OpLogicalNot    Opcode = 168
+	OpNot           Opcode = 200
 	OpLabel         Opcode = 248
 	OpReturn        Opcode = 253
 	OpReturnValue   Opcode = 254
@@ -53,6 +57,14 @@ func (op Opcode) String() string {
 		return "OpFunction"
 	case OpFunctionEnd:
 		return "OpFunctionEnd"
+	case OpSNegate:
+		return "OpSNegate"
+	case OpFNegate:
+		return "OpFNegate"
+	case OpLogicalNot:
+		return "OpLogicalNot"
+	case OpNot:
+		return "OpNot"
 	case OpLabel:
 		return "OpLabel"
 	case OpReturn:

@@ -7,16 +7,35 @@ import (
 )
 
 type IREmitter struct {
-	unit   *Unit
-	module *spirv.Module
+	unit       *Unit
+	module     *spirv.Module
+	blockStack []*spirv.Block
 }
 
 func NewIREmitter(u *Unit) *IREmitter {
 	return &IREmitter{
 		unit: u,
 		// we set the addressing and memory model to default values for now
-		module: spirv.NewModule(spirv.AddressingModelLogical, spirv.MemoryModelGLSL450),
+		module:     spirv.NewModule(spirv.AddressingModelLogical, spirv.MemoryModelGLSL450),
+		blockStack: make([]*spirv.Block, 0),
 	}
+}
+
+func (ir *IREmitter) enterBlock(block *spirv.Block) {
+	ir.blockStack = append(ir.blockStack, block)
+}
+
+func (ir *IREmitter) leaveBlock() {
+	if len(ir.blockStack) > 0 {
+		ir.blockStack = ir.blockStack[:len(ir.blockStack)-1]
+	}
+}
+
+func (ir *IREmitter) currentBlock() *spirv.Block {
+	if len(ir.blockStack) > 0 {
+		return ir.blockStack[len(ir.blockStack)-1]
+	}
+	return nil
 }
 
 func (ir *IREmitter) Emit() *spirv.Module {
@@ -50,6 +69,9 @@ func (ir *IREmitter) emitFunc(sym *FuncSymbol) {
 	}
 
 	spirvBlock := spirvFunction.NewBlock(sym.Name())
+	ir.enterBlock(spirvBlock)
+	defer ir.leaveBlock()
+
 	if len(funcDecl.Body.Stmts) == 0 {
 		spirvBlock.Push(&spirv.ReturnInstruction{})
 		return
@@ -60,29 +82,84 @@ func (ir *IREmitter) emitFunc(sym *FuncSymbol) {
 	}
 }
 
-func (ir *IREmitter) emitExpression(expr Expr) spirv.ID {
+func (ir *IREmitter) emitExpression(expr Expr) spirv.Object {
 	switch e := expr.(type) {
 	case *LiteralExpr:
 		return ir.emitLiteralExpr(e)
+	case *UnaryExpr:
+		return ir.emitUnaryExpr(e)
 	default:
 		panic("unsupported expression")
 	}
 }
 
-func (ir *IREmitter) emitLiteralExpr(e *LiteralExpr) spirv.ID {
+func (ir *IREmitter) emitLiteralExpr(e *LiteralExpr) spirv.Object {
 	tav := ir.unit.semanticInfo.TypeOf(e)
 	switch t := ir.emitType(tav.Type).(type) {
 	case *spirv.BoolType:
 		val := constant.BoolVal(tav.Value)
-		return ir.module.InternBoolConstant(val, t).ID()
+		return ir.module.InternBoolConstant(val, t)
 	case *spirv.IntType:
 		val, _ := constant.Int64Val(tav.Value)
-		return ir.module.InternIntConstant(val, t).ID()
+		return ir.module.InternIntConstant(val, t)
 	case *spirv.FloatType:
 		val, _ := constant.Float64Val(tav.Value)
-		return ir.module.InternFloatConstant(val, t).ID()
+		return ir.module.InternFloatConstant(val, t)
 	default:
 		panic("unsupported literal type")
+	}
+}
+
+func (ir *IREmitter) emitUnaryExpr(e *UnaryExpr) spirv.Object {
+	base := ir.emitExpression(e.Base)
+	tav := ir.unit.semanticInfo.TypeOf(e)
+	resultType := ir.emitType(tav.Type)
+	result := ir.module.NewValue(resultType)
+	block := ir.currentBlock()
+
+	switch e.Operator.Kind() {
+	case TokenAdd:
+		// Unary + is a no-op, just return the base value
+		return base
+	case TokenSub:
+		// Unary - requires negation
+		props := tav.Type.Properties()
+		if props.Floating {
+			// Use FNegate for floating-point types
+			block.Push(&spirv.FNegateInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand:    base.ID(),
+			})
+		} else if props.Integral {
+			// Use SNegate for signed integer types
+			block.Push(&spirv.SNegateInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand:    base.ID(),
+			})
+		} else {
+			panic("unsupported type for unary minus")
+		}
+		return result
+	case TokenNot:
+		// Logical NOT for boolean types
+		block.Push(&spirv.LogicalNotInstruction{
+			ResultType: resultType.ID(),
+			ResultID:   result.ID(),
+			Operand:    base.ID(),
+		})
+		return result
+	case TokenXor:
+		// Bitwise NOT (complement) for integer types
+		block.Push(&spirv.NotInstruction{
+			ResultType: resultType.ID(),
+			ResultID:   result.ID(),
+			Operand:    base.ID(),
+		})
+		return result
+	default:
+		panic("unsupported unary operator")
 	}
 }
 
@@ -130,7 +207,7 @@ func (ir *IREmitter) emitStatement(stmt Stmt, block *spirv.Block) {
 func (ir *IREmitter) emitReturnStmt(s *ReturnStmt, block *spirv.Block) {
 	if len(s.Exprs) > 0 {
 		// TODO: Multiple return values
-		block.Push(&spirv.ReturnValueInstruction{Value: ir.emitExpression(s.Exprs[0])})
+		block.Push(&spirv.ReturnValueInstruction{Value: ir.emitExpression(s.Exprs[0]).ID()})
 	} else {
 		block.Push(&spirv.ReturnInstruction{})
 	}
