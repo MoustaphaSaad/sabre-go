@@ -27,6 +27,45 @@ func (o BaseObject) Name() string {
 	return o.ObjectName
 }
 
+// Constant represents a SPIR-V constant value.
+type Constant interface {
+	isConstant()
+}
+
+type BoolConstant struct {
+	BaseObject
+	Type  *BoolType
+	Value bool
+}
+
+func (c *BoolConstant) isConstant() {}
+
+type IntConstant struct {
+	BaseObject
+	Type  *IntType
+	Value int64
+}
+
+func (c *IntConstant) isConstant() {}
+
+type FloatConstant struct {
+	BaseObject
+	Type  *FloatType
+	Value float64
+}
+
+func (c *FloatConstant) isConstant() {}
+
+// RuntimeValue represents a value produced by an instruction at runtime.
+type RuntimeValue struct {
+	BaseObject
+	Type Type
+}
+
+func (v *RuntimeValue) GetType() Type {
+	return v.Type
+}
+
 // Module represents a SPIR-V module containing functions.
 type Module struct {
 	idGenerator     int
@@ -178,35 +217,6 @@ func (m *Module) Capabilities() []Capability {
 	return m.capabilities
 }
 
-// Constant represents a SPIR-V constant value.
-type Constant interface {
-	isConstant()
-}
-
-type BoolConstant struct {
-	BaseObject
-	Type  *BoolType
-	Value bool
-}
-
-func (c *BoolConstant) isConstant() {}
-
-type IntConstant struct {
-	BaseObject
-	Type  *IntType
-	Value int64
-}
-
-func (c *IntConstant) isConstant() {}
-
-type FloatConstant struct {
-	BaseObject
-	Type  *FloatType
-	Value float64
-}
-
-func (c *FloatConstant) isConstant() {}
-
 func (m *Module) InternBoolConstant(value bool, t *BoolType) *BoolConstant {
 	key := fmt.Sprintf("const_%v_%v", t.HashKey(), value)
 	if existing, ok := m.constantsByKey[key]; ok {
@@ -267,6 +277,25 @@ func (m *Module) InternFloatConstant(value float64, t *FloatType) *FloatConstant
 	m.objectsByID[id] = constant
 	m.constantsByKey[key] = constant
 	return constant
+}
+
+// NewNamedValue creates a new runtime value with the given name and type.
+func (m *Module) NewNamedValue(name string, valueType Type) *RuntimeValue {
+	id := m.NewID()
+	value := &RuntimeValue{
+		BaseObject: BaseObject{
+			ObjectID:   id,
+			ObjectName: name,
+		},
+		Type: valueType,
+	}
+	m.objectsByID[id] = value
+	return value
+}
+
+// NewValue creates a new runtime value with the given type.
+func (m *Module) NewValue(valueType Type) *RuntimeValue {
+	return m.NewNamedValue("", valueType)
 }
 
 // Function represents a SPIR-V function containing a sequence of basic blocks.
@@ -337,4 +366,44 @@ type ReturnValueInstruction struct {
 
 func (r *ReturnValueInstruction) Opcode() Opcode {
 	return OpReturnValue
+}
+
+type SNegateInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand    ID
+}
+
+func (i *SNegateInstruction) Opcode() Opcode {
+	return OpSNegate
+}
+
+type FNegateInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand    ID
+}
+
+func (i *FNegateInstruction) Opcode() Opcode {
+	return OpFNegate
+}
+
+type LogicalNotInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand    ID
+}
+
+func (i *LogicalNotInstruction) Opcode() Opcode {
+	return OpLogicalNot
+}
+
+type NotInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand    ID
+}
+
+func (i *NotInstruction) Opcode() Opcode {
+	return OpNot
 }

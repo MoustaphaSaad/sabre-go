@@ -1,0 +1,25 @@
+package main
+
+func plusFloat32() float32 {
+	return +5.0
+}
+
+func minusFloat32() float32 {
+	return -5.0
+}
+
+func plusInt() int {
+	return +5
+}
+
+func minusInt() int {
+	return -5
+}
+
+func not() bool {
+	return !true
+}
+
+func xor() int {
+	return ^5
+}
