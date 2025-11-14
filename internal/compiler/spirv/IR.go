@@ -420,6 +420,28 @@ func (i *LogicalNotInstruction) Opcode() Opcode {
 	return OpLogicalNot
 }
 
+type UGreaterThanInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *UGreaterThanInstruction) Opcode() Opcode {
+	return OpUGreaterThan
+}
+
+type SGreaterThanInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *SGreaterThanInstruction) Opcode() Opcode {
+	return OpSGreaterThan
+}
+
 type ULessThanInstruction struct {
 	ResultType ID
 	ResultID   ID
@@ -451,6 +473,17 @@ type FOrdLessThanInstruction struct {
 
 func (i *FOrdLessThanInstruction) Opcode() Opcode {
 	return OpFOrdLessThan
+}
+
+type FOrdGreaterThanInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *FOrdGreaterThanInstruction) Opcode() Opcode {
+	return OpFOrdGreaterThan
 }
 
 type NotInstruction struct {

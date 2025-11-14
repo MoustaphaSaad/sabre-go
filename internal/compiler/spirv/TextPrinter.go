@@ -111,6 +111,12 @@ func (tp *TextPrinter) emitInstruction(inst Instruction) {
 	case *LogicalNotInstruction:
 		resultObj := tp.module.GetObject(i.ResultID)
 		tp.emitWithObject(resultObj, OpLogicalNot, tp.nameOfByID(i.ResultType), tp.nameOfByID(i.Operand))
+	case *UGreaterThanInstruction:
+		resultObj := tp.module.GetObject(i.ResultID)
+		tp.emitWithObject(resultObj, OpUGreaterThan, tp.nameOfByID(i.ResultType), tp.nameOfByID(i.Operand1), tp.nameOfByID(i.Operand2))
+	case *SGreaterThanInstruction:
+		resultObj := tp.module.GetObject(i.ResultID)
+		tp.emitWithObject(resultObj, OpSGreaterThan, tp.nameOfByID(i.ResultType), tp.nameOfByID(i.Operand1), tp.nameOfByID(i.Operand2))
 	case *ULessThanInstruction:
 		resultObj := tp.module.GetObject(i.ResultID)
 		tp.emitWithObject(resultObj, OpULessThan, tp.nameOfByID(i.ResultType), tp.nameOfByID(i.Operand1), tp.nameOfByID(i.Operand2))
@@ -120,6 +126,9 @@ func (tp *TextPrinter) emitInstruction(inst Instruction) {
 	case *FOrdLessThanInstruction:
 		resultObj := tp.module.GetObject(i.ResultID)
 		tp.emitWithObject(resultObj, OpFOrdLessThan, tp.nameOfByID(i.ResultType), tp.nameOfByID(i.Operand1), tp.nameOfByID(i.Operand2))
+	case *FOrdGreaterThanInstruction:
+		resultObj := tp.module.GetObject(i.ResultID)
+		tp.emitWithObject(resultObj, OpFOrdGreaterThan, tp.nameOfByID(i.ResultType), tp.nameOfByID(i.Operand1), tp.nameOfByID(i.Operand2))
 	case *NotInstruction:
 		resultObj := tp.module.GetObject(i.ResultID)
 		tp.emitWithObject(resultObj, OpNot, tp.nameOfByID(i.ResultType), tp.nameOfByID(i.Operand))

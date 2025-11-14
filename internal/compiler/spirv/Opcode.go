@@ -6,32 +6,35 @@ import "strings"
 type Opcode int
 
 const (
-	OpNone          Opcode = 0
-	OpMemoryModel   Opcode = 14
-	OpCapability    Opcode = 17
-	OpTypeVoid      Opcode = 19
-	OpTypeBool      Opcode = 20
-	OpTypeInt       Opcode = 21
-	OpTypeFloat     Opcode = 22
-	OpTypePointer   Opcode = 32
-	OpTypeFunction  Opcode = 33
-	OpConstantTrue  Opcode = 41
-	OpConstantFalse Opcode = 42
-	OpConstant      Opcode = 43
-	OpFunction      Opcode = 54
-	OpFunctionEnd   Opcode = 56
-	OpSNegate       Opcode = 126
-	OpFNegate       Opcode = 127
-	OpLogicalOr     Opcode = 166
-	OpLogicalAnd    Opcode = 167
-	OpLogicalNot    Opcode = 168
-	OpULessThan     Opcode = 176
-	OpSLessThan     Opcode = 177
-	OpFOrdLessThan  Opcode = 184
-	OpNot           Opcode = 200
-	OpLabel         Opcode = 248
-	OpReturn        Opcode = 253
-	OpReturnValue   Opcode = 254
+	OpNone            Opcode = 0
+	OpMemoryModel     Opcode = 14
+	OpCapability      Opcode = 17
+	OpTypeVoid        Opcode = 19
+	OpTypeBool        Opcode = 20
+	OpTypeInt         Opcode = 21
+	OpTypeFloat       Opcode = 22
+	OpTypePointer     Opcode = 32
+	OpTypeFunction    Opcode = 33
+	OpConstantTrue    Opcode = 41
+	OpConstantFalse   Opcode = 42
+	OpConstant        Opcode = 43
+	OpFunction        Opcode = 54
+	OpFunctionEnd     Opcode = 56
+	OpSNegate         Opcode = 126
+	OpFNegate         Opcode = 127
+	OpLogicalOr       Opcode = 166
+	OpLogicalAnd      Opcode = 167
+	OpLogicalNot      Opcode = 168
+	OpUGreaterThan    Opcode = 172
+	OpSGreaterThan    Opcode = 173
+	OpULessThan       Opcode = 176
+	OpSLessThan       Opcode = 177
+	OpFOrdLessThan    Opcode = 184
+	OpFOrdGreaterThan Opcode = 186
+	OpNot             Opcode = 200
+	OpLabel           Opcode = 248
+	OpReturn          Opcode = 253
+	OpReturnValue     Opcode = 254
 )
 
 func (op Opcode) String() string {
@@ -72,12 +75,18 @@ func (op Opcode) String() string {
 		return "OpLogicalAnd"
 	case OpLogicalNot:
 		return "OpLogicalNot"
+	case OpUGreaterThan:
+		return "OpUGreaterThan"
+	case OpSGreaterThan:
+		return "OpSGreaterThan"
 	case OpULessThan:
 		return "OpULessThan"
 	case OpSLessThan:
 		return "OpSLessThan"
 	case OpFOrdLessThan:
 		return "OpFOrdLessThan"
+	case OpFOrdGreaterThan:
+		return "OpFOrdGreaterThan"
 	case OpNot:
 		return "OpNot"
 	case OpLabel:
