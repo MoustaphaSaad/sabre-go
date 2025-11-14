@@ -474,6 +474,32 @@ func (ir *IREmitter) emitBinaryExpr(e *BinaryExpr) spirv.Object {
 		}
 		return result
 
+	case TokenMul:
+		// Multiplication - need to check operand types
+		lhsType := ir.unit.semanticInfo.TypeOf(e.LHS).Type
+		props := lhsType.Properties()
+
+		if props.Floating {
+			// Floating-point multiplication
+			block.Push(&spirv.FMulInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   rhs.ID(),
+			})
+		} else if props.Integral {
+			// Integer multiplication (same for signed and unsigned)
+			block.Push(&spirv.IMulInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   rhs.ID(),
+			})
+		} else {
+			panic("unsupported type for multiplication")
+		}
+		return result
+
 	default:
 		panic("unsupported binary operator")
 	}
