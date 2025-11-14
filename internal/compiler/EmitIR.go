@@ -360,6 +360,32 @@ func (ir *IREmitter) emitBinaryExpr(e *BinaryExpr) spirv.Object {
 		}
 		return result
 
+	case TokenNE:
+		// Not equal comparison - need to check operand types
+		lhsType := ir.unit.semanticInfo.TypeOf(e.LHS).Type
+		props := lhsType.Properties()
+
+		if props.Floating {
+			// Floating-point ordered not equal
+			block.Push(&spirv.FOrdNotEqualInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   rhs.ID(),
+			})
+		} else if props.Integral {
+			// Integer not equal (same for signed and unsigned)
+			block.Push(&spirv.INotEqualInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   rhs.ID(),
+			})
+		} else {
+			panic("unsupported type for not equal comparison")
+		}
+		return result
+
 	default:
 		panic("unsupported binary operator")
 	}

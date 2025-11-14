@@ -574,6 +574,28 @@ func (i *FOrdEqualInstruction) Opcode() Opcode {
 	return OpFOrdEqual
 }
 
+type INotEqualInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *INotEqualInstruction) Opcode() Opcode {
+	return OpINotEqual
+}
+
+type FOrdNotEqualInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *FOrdNotEqualInstruction) Opcode() Opcode {
+	return OpFOrdNotEqual
+}
+
 type NotInstruction struct {
 	ResultType ID
 	ResultID   ID

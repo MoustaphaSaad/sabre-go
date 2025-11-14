@@ -26,6 +26,7 @@ const (
 	OpLogicalAnd           Opcode = 167
 	OpLogicalNot           Opcode = 168
 	OpIEqual               Opcode = 170
+	OpINotEqual            Opcode = 171
 	OpUGreaterThan         Opcode = 172
 	OpSGreaterThan         Opcode = 173
 	OpUGreaterThanEqual    Opcode = 174
@@ -35,6 +36,7 @@ const (
 	OpULessThanEqual       Opcode = 178
 	OpSLessThanEqual       Opcode = 179
 	OpFOrdEqual            Opcode = 180
+	OpFOrdNotEqual         Opcode = 182
 	OpFOrdLessThan         Opcode = 184
 	OpFOrdGreaterThan      Opcode = 186
 	OpFOrdLessThanEqual    Opcode = 188
@@ -85,6 +87,8 @@ func (op Opcode) String() string {
 		return "OpLogicalNot"
 	case OpIEqual:
 		return "OpIEqual"
+	case OpINotEqual:
+		return "OpINotEqual"
 	case OpUGreaterThan:
 		return "OpUGreaterThan"
 	case OpSGreaterThan:
@@ -103,6 +107,8 @@ func (op Opcode) String() string {
 		return "OpSLessThanEqual"
 	case OpFOrdEqual:
 		return "OpFOrdEqual"
+	case OpFOrdNotEqual:
+		return "OpFOrdNotEqual"
 	case OpFOrdLessThan:
 		return "OpFOrdLessThan"
 	case OpFOrdGreaterThan:
