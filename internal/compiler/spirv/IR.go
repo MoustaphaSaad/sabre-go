@@ -770,3 +770,14 @@ type NotInstruction struct {
 func (i *NotInstruction) Opcode() Opcode {
 	return OpNot
 }
+
+type ShiftLeftLogicalInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Base       ID
+	Shift      ID
+}
+
+func (i *ShiftLeftLogicalInstruction) Opcode() Opcode {
+	return OpShiftLeftLogical
+}

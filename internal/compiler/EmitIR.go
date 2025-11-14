@@ -617,6 +617,24 @@ func (ir *IREmitter) emitBinaryExpr(e *BinaryExpr) spirv.Object {
 		}
 		return result
 
+	case TokenShl:
+		// Shift left logical - only for integers
+		lhsType := ir.unit.semanticInfo.TypeOf(e.LHS).Type
+		props := lhsType.Properties()
+
+		if props.Integral {
+			// Shift left logical
+			block.Push(&spirv.ShiftLeftLogicalInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Base:       lhs.ID(),
+				Shift:      rhs.ID(),
+			})
+		} else {
+			panic("unsupported type for shift left")
+		}
+		return result
+
 	default:
 		panic("unsupported binary operator")
 	}

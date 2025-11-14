@@ -57,6 +57,7 @@ const (
 	OpBitwiseXor           Opcode = 198
 	OpBitwiseAnd           Opcode = 199
 	OpNot                  Opcode = 200
+	OpShiftLeftLogical     Opcode = 203
 	OpLabel                Opcode = 248
 	OpReturn               Opcode = 253
 	OpReturnValue          Opcode = 254
@@ -164,6 +165,8 @@ func (op Opcode) String() string {
 		return "OpBitwiseAnd"
 	case OpNot:
 		return "OpNot"
+	case OpShiftLeftLogical:
+		return "OpShiftLeftLogical"
 	case OpLabel:
 		return "OpLabel"
 	case OpReturn:
