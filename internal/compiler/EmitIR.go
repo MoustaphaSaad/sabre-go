@@ -635,6 +635,35 @@ func (ir *IREmitter) emitBinaryExpr(e *BinaryExpr) spirv.Object {
 		}
 		return result
 
+	case TokenShr:
+		// Shift right - only for integers
+		// Use arithmetic shift for signed integers, logical shift for unsigned
+		lhsType := ir.unit.semanticInfo.TypeOf(e.LHS).Type
+		props := lhsType.Properties()
+
+		if props.Integral {
+			if props.Signed {
+				// Arithmetic shift right (preserves sign bit)
+				block.Push(&spirv.ShiftRightArithmeticInstruction{
+					ResultType: resultType.ID(),
+					ResultID:   result.ID(),
+					Base:       lhs.ID(),
+					Shift:      rhs.ID(),
+				})
+			} else {
+				// Logical shift right (shifts in zeros)
+				block.Push(&spirv.ShiftRightLogicalInstruction{
+					ResultType: resultType.ID(),
+					ResultID:   result.ID(),
+					Base:       lhs.ID(),
+					Shift:      rhs.ID(),
+				})
+			}
+		} else {
+			panic("unsupported type for shift right")
+		}
+		return result
+
 	default:
 		panic("unsupported binary operator")
 	}

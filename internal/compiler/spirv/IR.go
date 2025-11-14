@@ -781,3 +781,25 @@ type ShiftLeftLogicalInstruction struct {
 func (i *ShiftLeftLogicalInstruction) Opcode() Opcode {
 	return OpShiftLeftLogical
 }
+
+type ShiftRightLogicalInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Base       ID
+	Shift      ID
+}
+
+func (i *ShiftRightLogicalInstruction) Opcode() Opcode {
+	return OpShiftRightLogical
+}
+
+type ShiftRightArithmeticInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Base       ID
+	Shift      ID
+}
+
+func (i *ShiftRightArithmeticInstruction) Opcode() Opcode {
+	return OpShiftRightArithmetic
+}

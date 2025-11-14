@@ -53,6 +53,8 @@ const (
 	OpFOrdGreaterThan      Opcode = 186
 	OpFOrdLessThanEqual    Opcode = 188
 	OpFOrdGreaterThanEqual Opcode = 190
+	OpShiftRightLogical    Opcode = 194
+	OpShiftRightArithmetic Opcode = 195
 	OpBitwiseOr            Opcode = 197
 	OpBitwiseXor           Opcode = 198
 	OpBitwiseAnd           Opcode = 199
@@ -157,6 +159,10 @@ func (op Opcode) String() string {
 		return "OpFOrdLessThanEqual"
 	case OpFOrdGreaterThanEqual:
 		return "OpFOrdGreaterThanEqual"
+	case OpShiftRightLogical:
+		return "OpShiftRightLogical"
+	case OpShiftRightArithmetic:
+		return "OpShiftRightArithmetic"
 	case OpBitwiseOr:
 		return "OpBitwiseOr"
 	case OpBitwiseXor:

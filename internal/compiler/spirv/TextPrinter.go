@@ -210,6 +210,12 @@ func (tp *TextPrinter) emitInstruction(inst Instruction) {
 	case *ShiftLeftLogicalInstruction:
 		resultObj := tp.module.GetObject(i.ResultID)
 		tp.emitWithObject(resultObj, OpShiftLeftLogical, tp.nameOfByID(i.ResultType), tp.nameOfByID(i.Base), tp.nameOfByID(i.Shift))
+	case *ShiftRightLogicalInstruction:
+		resultObj := tp.module.GetObject(i.ResultID)
+		tp.emitWithObject(resultObj, OpShiftRightLogical, tp.nameOfByID(i.ResultType), tp.nameOfByID(i.Base), tp.nameOfByID(i.Shift))
+	case *ShiftRightArithmeticInstruction:
+		resultObj := tp.module.GetObject(i.ResultID)
+		tp.emitWithObject(resultObj, OpShiftRightArithmetic, tp.nameOfByID(i.ResultType), tp.nameOfByID(i.Base), tp.nameOfByID(i.Shift))
 	default:
 		panic(fmt.Sprintf("unsupported instruction: %T", inst))
 	}

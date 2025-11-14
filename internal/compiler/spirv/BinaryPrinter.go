@@ -171,6 +171,10 @@ func (bp *BinaryPrinter) emitInstruction(inst Instruction) {
 		bp.emitOp(Word(OpNot), Word(i.ResultType), Word(i.ResultID), Word(i.Operand))
 	case *ShiftLeftLogicalInstruction:
 		bp.emitOp(Word(OpShiftLeftLogical), Word(i.ResultType), Word(i.ResultID), Word(i.Base), Word(i.Shift))
+	case *ShiftRightLogicalInstruction:
+		bp.emitOp(Word(OpShiftRightLogical), Word(i.ResultType), Word(i.ResultID), Word(i.Base), Word(i.Shift))
+	case *ShiftRightArithmeticInstruction:
+		bp.emitOp(Word(OpShiftRightArithmetic), Word(i.ResultType), Word(i.ResultID), Word(i.Base), Word(i.Shift))
 	default:
 		panic("unsupported instruction")
 	}
