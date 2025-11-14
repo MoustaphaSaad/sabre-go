@@ -183,6 +183,15 @@ func (ir *IREmitter) emitBinaryExpr(e *BinaryExpr) spirv.Object {
 			Operand2:   rhs.ID(),
 		})
 		return result
+	case TokenLAnd:
+		// Logical AND - only for boolean types
+		block.Push(&spirv.LogicalAndInstruction{
+			ResultType: resultType.ID(),
+			ResultID:   result.ID(),
+			Operand1:   lhs.ID(),
+			Operand2:   rhs.ID(),
+		})
+		return result
 
 	default:
 		panic("unsupported binary operator")

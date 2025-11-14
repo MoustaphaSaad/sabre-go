@@ -399,6 +399,17 @@ func (i *LogicalOrInstruction) Opcode() Opcode {
 	return OpLogicalOr
 }
 
+type LogicalAndInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *LogicalAndInstruction) Opcode() Opcode {
+	return OpLogicalAnd
+}
+
 type LogicalNotInstruction struct {
 	ResultType ID
 	ResultID   ID

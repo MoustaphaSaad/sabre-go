@@ -105,6 +105,9 @@ func (tp *TextPrinter) emitInstruction(inst Instruction) {
 	case *LogicalOrInstruction:
 		resultObj := tp.module.GetObject(i.ResultID)
 		tp.emitWithObject(resultObj, OpLogicalOr, tp.nameOfByID(i.ResultType), tp.nameOfByID(i.Operand1), tp.nameOfByID(i.Operand2))
+	case *LogicalAndInstruction:
+		resultObj := tp.module.GetObject(i.ResultID)
+		tp.emitWithObject(resultObj, OpLogicalAnd, tp.nameOfByID(i.ResultType), tp.nameOfByID(i.Operand1), tp.nameOfByID(i.Operand2))
 	case *LogicalNotInstruction:
 		resultObj := tp.module.GetObject(i.ResultID)
 		tp.emitWithObject(resultObj, OpLogicalNot, tp.nameOfByID(i.ResultType), tp.nameOfByID(i.Operand))
