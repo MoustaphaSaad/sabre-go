@@ -618,6 +618,28 @@ func (i *FAddInstruction) Opcode() Opcode {
 	return OpFAdd
 }
 
+type ISubInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *ISubInstruction) Opcode() Opcode {
+	return OpISub
+}
+
+type FSubInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *FSubInstruction) Opcode() Opcode {
+	return OpFSub
+}
+
 type NotInstruction struct {
 	ResultType ID
 	ResultID   ID

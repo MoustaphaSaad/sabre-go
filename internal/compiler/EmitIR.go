@@ -412,6 +412,32 @@ func (ir *IREmitter) emitBinaryExpr(e *BinaryExpr) spirv.Object {
 		}
 		return result
 
+	case TokenSub:
+		// Subtraction - need to check operand types
+		lhsType := ir.unit.semanticInfo.TypeOf(e.LHS).Type
+		props := lhsType.Properties()
+
+		if props.Floating {
+			// Floating-point subtraction
+			block.Push(&spirv.FSubInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   rhs.ID(),
+			})
+		} else if props.Integral {
+			// Integer subtraction (same for signed and unsigned)
+			block.Push(&spirv.ISubInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   rhs.ID(),
+			})
+		} else {
+			panic("unsupported type for subtraction")
+		}
+		return result
+
 	default:
 		panic("unsupported binary operator")
 	}
