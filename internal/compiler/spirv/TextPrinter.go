@@ -111,6 +111,12 @@ func (tp *TextPrinter) emitInstruction(inst Instruction) {
 	case *LogicalNotInstruction:
 		resultObj := tp.module.GetObject(i.ResultID)
 		tp.emitWithObject(resultObj, OpLogicalNot, tp.nameOfByID(i.ResultType), tp.nameOfByID(i.Operand))
+	case *LogicalEqualInstruction:
+		resultObj := tp.module.GetObject(i.ResultID)
+		tp.emitWithObject(resultObj, OpLogicalEqual, tp.nameOfByID(i.ResultType), tp.nameOfByID(i.Operand1), tp.nameOfByID(i.Operand2))
+	case *LogicalNotEqualInstruction:
+		resultObj := tp.module.GetObject(i.ResultID)
+		tp.emitWithObject(resultObj, OpLogicalNotEqual, tp.nameOfByID(i.ResultType), tp.nameOfByID(i.Operand1), tp.nameOfByID(i.Operand2))
 	case *UGreaterThanInstruction:
 		resultObj := tp.module.GetObject(i.ResultID)
 		tp.emitWithObject(resultObj, OpUGreaterThan, tp.nameOfByID(i.ResultType), tp.nameOfByID(i.Operand1), tp.nameOfByID(i.Operand2))

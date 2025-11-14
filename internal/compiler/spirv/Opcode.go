@@ -34,6 +34,8 @@ const (
 	OpUMod                 Opcode = 137
 	OpSRem                 Opcode = 139
 	OpFRem                 Opcode = 141
+	OpLogicalEqual         Opcode = 164
+	OpLogicalNotEqual      Opcode = 165
 	OpLogicalOr            Opcode = 166
 	OpLogicalAnd           Opcode = 167
 	OpLogicalNot           Opcode = 168
@@ -55,11 +57,11 @@ const (
 	OpFOrdGreaterThanEqual Opcode = 190
 	OpShiftRightLogical    Opcode = 194
 	OpShiftRightArithmetic Opcode = 195
+	OpShiftLeftLogical     Opcode = 196
 	OpBitwiseOr            Opcode = 197
 	OpBitwiseXor           Opcode = 198
 	OpBitwiseAnd           Opcode = 199
 	OpNot                  Opcode = 200
-	OpShiftLeftLogical     Opcode = 203
 	OpLabel                Opcode = 248
 	OpReturn               Opcode = 253
 	OpReturnValue          Opcode = 254
@@ -121,6 +123,10 @@ func (op Opcode) String() string {
 		return "OpSRem"
 	case OpFRem:
 		return "OpFRem"
+	case OpLogicalEqual:
+		return "OpLogicalEqual"
+	case OpLogicalNotEqual:
+		return "OpLogicalNotEqual"
 	case OpLogicalOr:
 		return "OpLogicalOr"
 	case OpLogicalAnd:

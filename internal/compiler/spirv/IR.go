@@ -420,6 +420,28 @@ func (i *LogicalNotInstruction) Opcode() Opcode {
 	return OpLogicalNot
 }
 
+type LogicalEqualInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *LogicalEqualInstruction) Opcode() Opcode {
+	return OpLogicalEqual
+}
+
+type LogicalNotEqualInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *LogicalNotEqualInstruction) Opcode() Opcode {
+	return OpLogicalNotEqual
+}
+
 type UGreaterThanInstruction struct {
 	ResultType ID
 	ResultID   ID

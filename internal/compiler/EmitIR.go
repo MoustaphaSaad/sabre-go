@@ -355,6 +355,14 @@ func (ir *IREmitter) emitBinaryExpr(e *BinaryExpr) spirv.Object {
 				Operand1:   lhs.ID(),
 				Operand2:   rhs.ID(),
 			})
+		} else if props.HasEquality && props.HasLogicOps {
+			// Bool equal (logical equal)
+			block.Push(&spirv.LogicalEqualInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   rhs.ID(),
+			})
 		} else {
 			panic("unsupported type for equality comparison")
 		}
@@ -376,6 +384,14 @@ func (ir *IREmitter) emitBinaryExpr(e *BinaryExpr) spirv.Object {
 		} else if props.Integral {
 			// Integer not equal (same for signed and unsigned)
 			block.Push(&spirv.INotEqualInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   rhs.ID(),
+			})
+		} else if props.HasEquality && props.HasLogicOps {
+			// Bool not equal (logical not equal)
+			block.Push(&spirv.LogicalNotEqualInstruction{
 				ResultType: resultType.ID(),
 				ResultID:   result.ID(),
 				Operand1:   lhs.ID(),

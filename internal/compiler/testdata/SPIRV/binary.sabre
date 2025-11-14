@@ -1,0 +1,125 @@
+package main
+
+func LOr() bool {
+	return true || false
+}
+
+func LAnd() bool {
+	return true && false
+}
+
+func LTInt() bool {
+	return 2 < 3
+}
+
+func LTFloat32() bool {
+	return 4.5 < 5.5
+}
+
+func GTInt() bool {
+	return 2 > 3
+}
+
+func GTFloat32() bool {
+	return 4.5 > 5.5
+}
+
+func LEInt() bool {
+	return 2 <= 3
+}
+
+func LEFloat32() bool {
+	return 4.5 <= 5.5
+}
+
+func GEInt() bool {
+	return 2 >= 3
+}
+
+func GEFloat32() bool {
+	return 4.5 >= 5.5
+}
+
+func EQInt() bool {
+	return 2 == 3
+}
+
+func EQFloat32() bool {
+	return 4.5 == 5.5
+}
+
+func EQBool() bool {
+	return true == false
+}
+
+func NEInt() bool {
+	return 2 != 3
+}
+
+func NEFloat32() bool {
+	return 4.5 != 5.5
+}
+
+func NEBool() bool {
+	return true != false
+}
+
+func AddInt() int {
+	return 2 + 3
+}
+
+func AddFloat32() float32 {
+	return 4.5 + 5.5
+}
+
+func SubInt() int {
+	return 2 - 3
+}
+
+func SubFloat32() float32 {
+	return 4.5 - 5.5
+}
+
+func XorInt() int {
+	return 2 ^ 3
+}
+
+func OrInt() int {
+	return 2 | 3
+}
+
+func MulInt() int {
+	return 2 * 3
+}
+
+func MulFloat32() float32 {
+	return 4.5 * 5.5
+}
+
+func DivInt() int {
+	return 2 / 3
+}
+
+func DivFloat32() float32 {
+	return 4.5 / 5.5
+}
+
+func ModInt() int {
+	return 2 % 3
+}
+
+func AndInt() int {
+	return 2 & 3
+}
+
+func AndNotInt() int {
+	return 2 &^ 3
+}
+
+func ShlInt() int {
+	return 2 << 3
+}
+
+func ShrInt() int {
+	return 2 >> 3
+}
