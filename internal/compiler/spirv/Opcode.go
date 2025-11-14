@@ -25,6 +25,9 @@ const (
 	OpLogicalOr     Opcode = 166
 	OpLogicalAnd    Opcode = 167
 	OpLogicalNot    Opcode = 168
+	OpULessThan     Opcode = 176
+	OpSLessThan     Opcode = 177
+	OpFOrdLessThan  Opcode = 184
 	OpNot           Opcode = 200
 	OpLabel         Opcode = 248
 	OpReturn        Opcode = 253
@@ -69,6 +72,12 @@ func (op Opcode) String() string {
 		return "OpLogicalAnd"
 	case OpLogicalNot:
 		return "OpLogicalNot"
+	case OpULessThan:
+		return "OpULessThan"
+	case OpSLessThan:
+		return "OpSLessThan"
+	case OpFOrdLessThan:
+		return "OpFOrdLessThan"
 	case OpNot:
 		return "OpNot"
 	case OpLabel:

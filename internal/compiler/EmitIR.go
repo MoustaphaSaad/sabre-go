@@ -192,6 +192,41 @@ func (ir *IREmitter) emitBinaryExpr(e *BinaryExpr) spirv.Object {
 			Operand2:   rhs.ID(),
 		})
 		return result
+	case TokenLT:
+		// Less than comparison - need to check operand types
+		lhsType := ir.unit.semanticInfo.TypeOf(e.LHS).Type
+		props := lhsType.Properties()
+
+		if props.Floating {
+			// Floating-point ordered less than
+			block.Push(&spirv.FOrdLessThanInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   rhs.ID(),
+			})
+		} else if props.Integral {
+			if props.Signed {
+				// Signed integer less than
+				block.Push(&spirv.SLessThanInstruction{
+					ResultType: resultType.ID(),
+					ResultID:   result.ID(),
+					Operand1:   lhs.ID(),
+					Operand2:   rhs.ID(),
+				})
+			} else {
+				// Unsigned integer less than
+				block.Push(&spirv.ULessThanInstruction{
+					ResultType: resultType.ID(),
+					ResultID:   result.ID(),
+					Operand1:   lhs.ID(),
+					Operand2:   rhs.ID(),
+				})
+			}
+		} else {
+			panic("unsupported type for less than comparison")
+		}
+		return result
 
 	default:
 		panic("unsupported binary operator")
