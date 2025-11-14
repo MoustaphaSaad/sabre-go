@@ -590,6 +590,33 @@ func (ir *IREmitter) emitBinaryExpr(e *BinaryExpr) spirv.Object {
 		}
 		return result
 
+	case TokenAndNot:
+		// Bitwise AND NOT - only for integers
+		// In Go, a &^ b is equivalent to a & (^b) - clear bits in a that are set in b
+		lhsType := ir.unit.semanticInfo.TypeOf(e.LHS).Type
+		props := lhsType.Properties()
+
+		if props.Integral {
+			// First, compute NOT of rhs: ^b
+			notRhs := ir.module.NewValue(resultType)
+			block.Push(&spirv.NotInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   notRhs.ID(),
+				Operand:    rhs.ID(),
+			})
+
+			// Then, compute AND with lhs: a & (^b)
+			block.Push(&spirv.BitwiseAndInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   notRhs.ID(),
+			})
+		} else {
+			panic("unsupported type for bitwise AND NOT")
+		}
+		return result
+
 	default:
 		panic("unsupported binary operator")
 	}
