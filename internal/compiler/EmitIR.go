@@ -298,11 +298,46 @@ func (ir *IREmitter) emitBinaryExpr(e *BinaryExpr) spirv.Object {
 		}
 		return result
 
+	case TokenGE:
+		// Greater than or equal comparison - need to check operand types
+		lhsType := ir.unit.semanticInfo.TypeOf(e.LHS).Type
+		props := lhsType.Properties()
+
+		if props.Floating {
+			// Floating-point ordered greater than or equal
+			block.Push(&spirv.FOrdGreaterThanEqualInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   rhs.ID(),
+			})
+		} else if props.Integral {
+			if props.Signed {
+				// Signed integer greater than or equal
+				block.Push(&spirv.SGreaterThanEqualInstruction{
+					ResultType: resultType.ID(),
+					ResultID:   result.ID(),
+					Operand1:   lhs.ID(),
+					Operand2:   rhs.ID(),
+				})
+			} else {
+				// Unsigned integer greater than or equal
+				block.Push(&spirv.UGreaterThanEqualInstruction{
+					ResultType: resultType.ID(),
+					ResultID:   result.ID(),
+					Operand1:   lhs.ID(),
+					Operand2:   rhs.ID(),
+				})
+			}
+		} else {
+			panic("unsupported type for greater than or equal comparison")
+		}
+		return result
+
 	default:
 		panic("unsupported binary operator")
 	}
 }
-
 func (ir *IREmitter) emitType(Type Type) spirv.Type {
 	switch t := Type.(type) {
 	case *VoidType:

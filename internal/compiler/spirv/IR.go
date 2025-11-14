@@ -519,6 +519,39 @@ func (i *FOrdLessThanEqualInstruction) Opcode() Opcode {
 	return OpFOrdLessThanEqual
 }
 
+type UGreaterThanEqualInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *UGreaterThanEqualInstruction) Opcode() Opcode {
+	return OpUGreaterThanEqual
+}
+
+type SGreaterThanEqualInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *SGreaterThanEqualInstruction) Opcode() Opcode {
+	return OpSGreaterThanEqual
+}
+
+type FOrdGreaterThanEqualInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *FOrdGreaterThanEqualInstruction) Opcode() Opcode {
+	return OpFOrdGreaterThanEqual
+}
+
 type NotInstruction struct {
 	ResultType ID
 	ResultID   ID
