@@ -572,6 +572,24 @@ func (ir *IREmitter) emitBinaryExpr(e *BinaryExpr) spirv.Object {
 		}
 		return result
 
+	case TokenAnd:
+		// Bitwise AND - only for integers
+		lhsType := ir.unit.semanticInfo.TypeOf(e.LHS).Type
+		props := lhsType.Properties()
+
+		if props.Integral {
+			// Bitwise AND (same for signed and unsigned)
+			block.Push(&spirv.BitwiseAndInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   rhs.ID(),
+			})
+		} else {
+			panic("unsupported type for bitwise AND")
+		}
+		return result
+
 	default:
 		panic("unsupported binary operator")
 	}

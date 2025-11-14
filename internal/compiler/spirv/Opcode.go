@@ -55,6 +55,7 @@ const (
 	OpFOrdGreaterThanEqual Opcode = 190
 	OpBitwiseOr            Opcode = 197
 	OpBitwiseXor           Opcode = 198
+	OpBitwiseAnd           Opcode = 199
 	OpNot                  Opcode = 200
 	OpLabel                Opcode = 248
 	OpReturn               Opcode = 253
@@ -159,6 +160,8 @@ func (op Opcode) String() string {
 		return "OpBitwiseOr"
 	case OpBitwiseXor:
 		return "OpBitwiseXor"
+	case OpBitwiseAnd:
+		return "OpBitwiseAnd"
 	case OpNot:
 		return "OpNot"
 	case OpLabel:

@@ -750,6 +750,17 @@ func (i *BitwiseOrInstruction) Opcode() Opcode {
 	return OpBitwiseOr
 }
 
+type BitwiseAndInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *BitwiseAndInstruction) Opcode() Opcode {
+	return OpBitwiseAnd
+}
+
 type NotInstruction struct {
 	ResultType ID
 	ResultID   ID
