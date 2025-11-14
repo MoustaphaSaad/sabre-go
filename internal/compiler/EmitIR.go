@@ -536,6 +536,42 @@ func (ir *IREmitter) emitBinaryExpr(e *BinaryExpr) spirv.Object {
 		}
 		return result
 
+	case TokenMod:
+		// Modulo/Remainder - need to check operand types
+		lhsType := ir.unit.semanticInfo.TypeOf(e.LHS).Type
+		props := lhsType.Properties()
+
+		if props.Floating {
+			// Floating-point remainder
+			block.Push(&spirv.FRemInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   rhs.ID(),
+			})
+		} else if props.Integral {
+			if props.Signed {
+				// Signed integer remainder
+				block.Push(&spirv.SRemInstruction{
+					ResultType: resultType.ID(),
+					ResultID:   result.ID(),
+					Operand1:   lhs.ID(),
+					Operand2:   rhs.ID(),
+				})
+			} else {
+				// Unsigned integer modulo
+				block.Push(&spirv.UModInstruction{
+					ResultType: resultType.ID(),
+					ResultID:   result.ID(),
+					Operand1:   lhs.ID(),
+					Operand2:   rhs.ID(),
+				})
+			}
+		} else {
+			panic("unsupported type for modulo")
+		}
+		return result
+
 	default:
 		panic("unsupported binary operator")
 	}

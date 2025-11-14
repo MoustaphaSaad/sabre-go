@@ -31,6 +31,9 @@ const (
 	OpUDiv                 Opcode = 134
 	OpSDiv                 Opcode = 135
 	OpFDiv                 Opcode = 136
+	OpUMod                 Opcode = 137
+	OpSRem                 Opcode = 139
+	OpFRem                 Opcode = 141
 	OpLogicalOr            Opcode = 166
 	OpLogicalAnd           Opcode = 167
 	OpLogicalNot           Opcode = 168
@@ -108,6 +111,12 @@ func (op Opcode) String() string {
 		return "OpSDiv"
 	case OpFDiv:
 		return "OpFDiv"
+	case OpUMod:
+		return "OpUMod"
+	case OpSRem:
+		return "OpSRem"
+	case OpFRem:
+		return "OpFRem"
 	case OpLogicalOr:
 		return "OpLogicalOr"
 	case OpLogicalAnd:
