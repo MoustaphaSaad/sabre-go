@@ -137,6 +137,10 @@ func (bp *BinaryPrinter) emitInstruction(inst Instruction) {
 		bp.emitOp(Word(OpINotEqual), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
 	case *FOrdNotEqualInstruction:
 		bp.emitOp(Word(OpFOrdNotEqual), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
+	case *IAddInstruction:
+		bp.emitOp(Word(OpIAdd), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
+	case *FAddInstruction:
+		bp.emitOp(Word(OpFAdd), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
 	case *NotInstruction:
 		bp.emitOp(Word(OpNot), Word(i.ResultType), Word(i.ResultID), Word(i.Operand))
 	default:
