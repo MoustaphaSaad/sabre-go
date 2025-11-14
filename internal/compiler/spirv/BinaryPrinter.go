@@ -149,6 +149,12 @@ func (bp *BinaryPrinter) emitInstruction(inst Instruction) {
 		bp.emitOp(Word(OpIMul), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
 	case *FMulInstruction:
 		bp.emitOp(Word(OpFMul), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
+	case *UDivInstruction:
+		bp.emitOp(Word(OpUDiv), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
+	case *SDivInstruction:
+		bp.emitOp(Word(OpSDiv), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
+	case *FDivInstruction:
+		bp.emitOp(Word(OpFDiv), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
 	case *BitwiseXorInstruction:
 		bp.emitOp(Word(OpBitwiseXor), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
 	case *BitwiseOrInstruction:

@@ -662,6 +662,39 @@ func (i *FMulInstruction) Opcode() Opcode {
 	return OpFMul
 }
 
+type UDivInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *UDivInstruction) Opcode() Opcode {
+	return OpUDiv
+}
+
+type SDivInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *SDivInstruction) Opcode() Opcode {
+	return OpSDiv
+}
+
+type FDivInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *FDivInstruction) Opcode() Opcode {
+	return OpFDiv
+}
+
 type BitwiseXorInstruction struct {
 	ResultType ID
 	ResultID   ID

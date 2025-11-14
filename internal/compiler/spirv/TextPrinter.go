@@ -177,6 +177,15 @@ func (tp *TextPrinter) emitInstruction(inst Instruction) {
 	case *FMulInstruction:
 		resultObj := tp.module.GetObject(i.ResultID)
 		tp.emitWithObject(resultObj, OpFMul, tp.nameOfByID(i.ResultType), tp.nameOfByID(i.Operand1), tp.nameOfByID(i.Operand2))
+	case *UDivInstruction:
+		resultObj := tp.module.GetObject(i.ResultID)
+		tp.emitWithObject(resultObj, OpUDiv, tp.nameOfByID(i.ResultType), tp.nameOfByID(i.Operand1), tp.nameOfByID(i.Operand2))
+	case *SDivInstruction:
+		resultObj := tp.module.GetObject(i.ResultID)
+		tp.emitWithObject(resultObj, OpSDiv, tp.nameOfByID(i.ResultType), tp.nameOfByID(i.Operand1), tp.nameOfByID(i.Operand2))
+	case *FDivInstruction:
+		resultObj := tp.module.GetObject(i.ResultID)
+		tp.emitWithObject(resultObj, OpFDiv, tp.nameOfByID(i.ResultType), tp.nameOfByID(i.Operand1), tp.nameOfByID(i.Operand2))
 	case *BitwiseXorInstruction:
 		resultObj := tp.module.GetObject(i.ResultID)
 		tp.emitWithObject(resultObj, OpBitwiseXor, tp.nameOfByID(i.ResultType), tp.nameOfByID(i.Operand1), tp.nameOfByID(i.Operand2))

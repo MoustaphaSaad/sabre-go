@@ -500,6 +500,42 @@ func (ir *IREmitter) emitBinaryExpr(e *BinaryExpr) spirv.Object {
 		}
 		return result
 
+	case TokenDiv:
+		// Division - need to check operand types
+		lhsType := ir.unit.semanticInfo.TypeOf(e.LHS).Type
+		props := lhsType.Properties()
+
+		if props.Floating {
+			// Floating-point division
+			block.Push(&spirv.FDivInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   rhs.ID(),
+			})
+		} else if props.Integral {
+			if props.Signed {
+				// Signed integer division
+				block.Push(&spirv.SDivInstruction{
+					ResultType: resultType.ID(),
+					ResultID:   result.ID(),
+					Operand1:   lhs.ID(),
+					Operand2:   rhs.ID(),
+				})
+			} else {
+				// Unsigned integer division
+				block.Push(&spirv.UDivInstruction{
+					ResultType: resultType.ID(),
+					ResultID:   result.ID(),
+					Operand1:   lhs.ID(),
+					Operand2:   rhs.ID(),
+				})
+			}
+		} else {
+			panic("unsupported type for division")
+		}
+		return result
+
 	default:
 		panic("unsupported binary operator")
 	}
