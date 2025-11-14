@@ -438,6 +438,42 @@ func (ir *IREmitter) emitBinaryExpr(e *BinaryExpr) spirv.Object {
 		}
 		return result
 
+	case TokenXor:
+		// Bitwise XOR - only for integers
+		lhsType := ir.unit.semanticInfo.TypeOf(e.LHS).Type
+		props := lhsType.Properties()
+
+		if props.Integral {
+			// Bitwise XOR (same for signed and unsigned)
+			block.Push(&spirv.BitwiseXorInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   rhs.ID(),
+			})
+		} else {
+			panic("unsupported type for bitwise XOR")
+		}
+		return result
+
+	case TokenOr:
+		// Bitwise OR - only for integers
+		lhsType := ir.unit.semanticInfo.TypeOf(e.LHS).Type
+		props := lhsType.Properties()
+
+		if props.Integral {
+			// Bitwise OR (same for signed and unsigned)
+			block.Push(&spirv.BitwiseOrInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   rhs.ID(),
+			})
+		} else {
+			panic("unsupported type for bitwise OR")
+		}
+		return result
+
 	default:
 		panic("unsupported binary operator")
 	}

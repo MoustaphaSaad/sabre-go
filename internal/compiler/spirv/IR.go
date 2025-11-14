@@ -640,6 +640,28 @@ func (i *FSubInstruction) Opcode() Opcode {
 	return OpFSub
 }
 
+type BitwiseXorInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *BitwiseXorInstruction) Opcode() Opcode {
+	return OpBitwiseXor
+}
+
+type BitwiseOrInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *BitwiseOrInstruction) Opcode() Opcode {
+	return OpBitwiseOr
+}
+
 type NotInstruction struct {
 	ResultType ID
 	ResultID   ID
