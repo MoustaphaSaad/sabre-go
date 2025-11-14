@@ -388,6 +388,17 @@ func (i *FNegateInstruction) Opcode() Opcode {
 	return OpFNegate
 }
 
+type LogicalOrInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *LogicalOrInstruction) Opcode() Opcode {
+	return OpLogicalOr
+}
+
 type LogicalNotInstruction struct {
 	ResultType ID
 	ResultID   ID

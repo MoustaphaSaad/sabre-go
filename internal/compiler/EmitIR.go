@@ -88,6 +88,8 @@ func (ir *IREmitter) emitExpression(expr Expr) spirv.Object {
 		return ir.emitLiteralExpr(e)
 	case *UnaryExpr:
 		return ir.emitUnaryExpr(e)
+	case *BinaryExpr:
+		return ir.emitBinaryExpr(e)
 	default:
 		panic("unsupported expression")
 	}
@@ -160,6 +162,30 @@ func (ir *IREmitter) emitUnaryExpr(e *UnaryExpr) spirv.Object {
 		return result
 	default:
 		panic("unsupported unary operator")
+	}
+}
+
+func (ir *IREmitter) emitBinaryExpr(e *BinaryExpr) spirv.Object {
+	lhs := ir.emitExpression(e.LHS)
+	rhs := ir.emitExpression(e.RHS)
+	tav := ir.unit.semanticInfo.TypeOf(e)
+	resultType := ir.emitType(tav.Type)
+	result := ir.module.NewValue(resultType)
+	block := ir.currentBlock()
+
+	switch e.Operator.Kind() {
+	case TokenLOr:
+		// Logical OR - only for boolean types
+		block.Push(&spirv.LogicalOrInstruction{
+			ResultType: resultType.ID(),
+			ResultID:   result.ID(),
+			Operand1:   lhs.ID(),
+			Operand2:   rhs.ID(),
+		})
+		return result
+
+	default:
+		panic("unsupported binary operator")
 	}
 }
 

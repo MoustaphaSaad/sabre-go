@@ -22,6 +22,7 @@ const (
 	OpFunctionEnd   Opcode = 56
 	OpSNegate       Opcode = 126
 	OpFNegate       Opcode = 127
+	OpLogicalOr     Opcode = 166
 	OpLogicalNot    Opcode = 168
 	OpNot           Opcode = 200
 	OpLabel         Opcode = 248
@@ -61,6 +62,8 @@ func (op Opcode) String() string {
 		return "OpSNegate"
 	case OpFNegate:
 		return "OpFNegate"
+	case OpLogicalOr:
+		return "OpLogicalOr"
 	case OpLogicalNot:
 		return "OpLogicalNot"
 	case OpNot:
