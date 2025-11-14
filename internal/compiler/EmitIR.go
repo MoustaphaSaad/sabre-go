@@ -334,6 +334,32 @@ func (ir *IREmitter) emitBinaryExpr(e *BinaryExpr) spirv.Object {
 		}
 		return result
 
+	case TokenEQ:
+		// Equality comparison - need to check operand types
+		lhsType := ir.unit.semanticInfo.TypeOf(e.LHS).Type
+		props := lhsType.Properties()
+
+		if props.Floating {
+			// Floating-point ordered equal
+			block.Push(&spirv.FOrdEqualInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   rhs.ID(),
+			})
+		} else if props.Integral {
+			// Integer equal (same for signed and unsigned)
+			block.Push(&spirv.IEqualInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   rhs.ID(),
+			})
+		} else {
+			panic("unsupported type for equality comparison")
+		}
+		return result
+
 	default:
 		panic("unsupported binary operator")
 	}

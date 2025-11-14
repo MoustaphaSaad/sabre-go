@@ -552,6 +552,28 @@ func (i *FOrdGreaterThanEqualInstruction) Opcode() Opcode {
 	return OpFOrdGreaterThanEqual
 }
 
+type IEqualInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *IEqualInstruction) Opcode() Opcode {
+	return OpIEqual
+}
+
+type FOrdEqualInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *FOrdEqualInstruction) Opcode() Opcode {
+	return OpFOrdEqual
+}
+
 type NotInstruction struct {
 	ResultType ID
 	ResultID   ID
