@@ -88,6 +88,8 @@ func (ir *IREmitter) emitExpression(expr Expr) spirv.Object {
 		return ir.emitLiteralExpr(e)
 	case *UnaryExpr:
 		return ir.emitUnaryExpr(e)
+	case *BinaryExpr:
+		return ir.emitBinaryExpr(e)
 	default:
 		panic("unsupported expression")
 	}
@@ -163,6 +165,525 @@ func (ir *IREmitter) emitUnaryExpr(e *UnaryExpr) spirv.Object {
 	}
 }
 
+func (ir *IREmitter) emitBinaryExpr(e *BinaryExpr) spirv.Object {
+	lhs := ir.emitExpression(e.LHS)
+	rhs := ir.emitExpression(e.RHS)
+	tav := ir.unit.semanticInfo.TypeOf(e)
+	resultType := ir.emitType(tav.Type)
+	result := ir.module.NewValue(resultType)
+	block := ir.currentBlock()
+
+	switch e.Operator.Kind() {
+	case TokenLOr:
+		// Logical OR - only for boolean types
+		block.Push(&spirv.LogicalOrInstruction{
+			ResultType: resultType.ID(),
+			ResultID:   result.ID(),
+			Operand1:   lhs.ID(),
+			Operand2:   rhs.ID(),
+		})
+		return result
+	case TokenLAnd:
+		// Logical AND - only for boolean types
+		block.Push(&spirv.LogicalAndInstruction{
+			ResultType: resultType.ID(),
+			ResultID:   result.ID(),
+			Operand1:   lhs.ID(),
+			Operand2:   rhs.ID(),
+		})
+		return result
+	case TokenLT:
+		// Less than comparison - need to check operand types
+		lhsType := ir.unit.semanticInfo.TypeOf(e.LHS).Type
+		props := lhsType.Properties()
+
+		if props.Floating {
+			// Floating-point ordered less than
+			block.Push(&spirv.FOrdLessThanInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   rhs.ID(),
+			})
+		} else if props.Integral {
+			if props.Signed {
+				// Signed integer less than
+				block.Push(&spirv.SLessThanInstruction{
+					ResultType: resultType.ID(),
+					ResultID:   result.ID(),
+					Operand1:   lhs.ID(),
+					Operand2:   rhs.ID(),
+				})
+			} else {
+				// Unsigned integer less than
+				block.Push(&spirv.ULessThanInstruction{
+					ResultType: resultType.ID(),
+					ResultID:   result.ID(),
+					Operand1:   lhs.ID(),
+					Operand2:   rhs.ID(),
+				})
+			}
+		} else {
+			panic("unsupported type for less than comparison")
+		}
+		return result
+	case TokenGT:
+		// Greater than comparison - need to check operand types
+		lhsType := ir.unit.semanticInfo.TypeOf(e.LHS).Type
+		props := lhsType.Properties()
+
+		if props.Floating {
+			// Floating-point ordered greater than
+			block.Push(&spirv.FOrdGreaterThanInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   rhs.ID(),
+			})
+		} else if props.Integral {
+			if props.Signed {
+				// Signed integer greater than
+				block.Push(&spirv.SGreaterThanInstruction{
+					ResultType: resultType.ID(),
+					ResultID:   result.ID(),
+					Operand1:   lhs.ID(),
+					Operand2:   rhs.ID(),
+				})
+			} else {
+				// Unsigned integer greater than
+				block.Push(&spirv.UGreaterThanInstruction{
+					ResultType: resultType.ID(),
+					ResultID:   result.ID(),
+					Operand1:   lhs.ID(),
+					Operand2:   rhs.ID(),
+				})
+			}
+		} else {
+			panic("unsupported type for greater than comparison")
+		}
+		return result
+	case TokenLE:
+		// Less than or equal comparison - need to check operand types
+		lhsType := ir.unit.semanticInfo.TypeOf(e.LHS).Type
+		props := lhsType.Properties()
+
+		if props.Floating {
+			// Floating-point ordered less than or equal
+			block.Push(&spirv.FOrdLessThanEqualInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   rhs.ID(),
+			})
+		} else if props.Integral {
+			if props.Signed {
+				// Signed integer less than or equal
+				block.Push(&spirv.SLessThanEqualInstruction{
+					ResultType: resultType.ID(),
+					ResultID:   result.ID(),
+					Operand1:   lhs.ID(),
+					Operand2:   rhs.ID(),
+				})
+			} else {
+				// Unsigned integer less than or equal
+				block.Push(&spirv.ULessThanEqualInstruction{
+					ResultType: resultType.ID(),
+					ResultID:   result.ID(),
+					Operand1:   lhs.ID(),
+					Operand2:   rhs.ID(),
+				})
+			}
+		} else {
+			panic("unsupported type for less than or equal comparison")
+		}
+		return result
+
+	case TokenGE:
+		// Greater than or equal comparison - need to check operand types
+		lhsType := ir.unit.semanticInfo.TypeOf(e.LHS).Type
+		props := lhsType.Properties()
+
+		if props.Floating {
+			// Floating-point ordered greater than or equal
+			block.Push(&spirv.FOrdGreaterThanEqualInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   rhs.ID(),
+			})
+		} else if props.Integral {
+			if props.Signed {
+				// Signed integer greater than or equal
+				block.Push(&spirv.SGreaterThanEqualInstruction{
+					ResultType: resultType.ID(),
+					ResultID:   result.ID(),
+					Operand1:   lhs.ID(),
+					Operand2:   rhs.ID(),
+				})
+			} else {
+				// Unsigned integer greater than or equal
+				block.Push(&spirv.UGreaterThanEqualInstruction{
+					ResultType: resultType.ID(),
+					ResultID:   result.ID(),
+					Operand1:   lhs.ID(),
+					Operand2:   rhs.ID(),
+				})
+			}
+		} else {
+			panic("unsupported type for greater than or equal comparison")
+		}
+		return result
+
+	case TokenEQ:
+		// Equality comparison - need to check operand types
+		lhsType := ir.unit.semanticInfo.TypeOf(e.LHS).Type
+		props := lhsType.Properties()
+
+		if props.Floating {
+			// Floating-point ordered equal
+			block.Push(&spirv.FOrdEqualInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   rhs.ID(),
+			})
+		} else if props.Integral {
+			// Integer equal (same for signed and unsigned)
+			block.Push(&spirv.IEqualInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   rhs.ID(),
+			})
+		} else if props.HasEquality && props.HasLogicOps {
+			// Bool equal (logical equal)
+			block.Push(&spirv.LogicalEqualInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   rhs.ID(),
+			})
+		} else {
+			panic("unsupported type for equality comparison")
+		}
+		return result
+
+	case TokenNE:
+		// Not equal comparison - need to check operand types
+		lhsType := ir.unit.semanticInfo.TypeOf(e.LHS).Type
+		props := lhsType.Properties()
+
+		if props.Floating {
+			// Floating-point ordered not equal
+			block.Push(&spirv.FOrdNotEqualInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   rhs.ID(),
+			})
+		} else if props.Integral {
+			// Integer not equal (same for signed and unsigned)
+			block.Push(&spirv.INotEqualInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   rhs.ID(),
+			})
+		} else if props.HasEquality && props.HasLogicOps {
+			// Bool not equal (logical not equal)
+			block.Push(&spirv.LogicalNotEqualInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   rhs.ID(),
+			})
+		} else {
+			panic("unsupported type for not equal comparison")
+		}
+		return result
+
+	case TokenAdd:
+		// Addition - need to check operand types
+		lhsType := ir.unit.semanticInfo.TypeOf(e.LHS).Type
+		props := lhsType.Properties()
+
+		if props.Floating {
+			// Floating-point addition
+			block.Push(&spirv.FAddInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   rhs.ID(),
+			})
+		} else if props.Integral {
+			// Integer addition (same for signed and unsigned)
+			block.Push(&spirv.IAddInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   rhs.ID(),
+			})
+		} else {
+			panic("unsupported type for addition")
+		}
+		return result
+
+	case TokenSub:
+		// Subtraction - need to check operand types
+		lhsType := ir.unit.semanticInfo.TypeOf(e.LHS).Type
+		props := lhsType.Properties()
+
+		if props.Floating {
+			// Floating-point subtraction
+			block.Push(&spirv.FSubInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   rhs.ID(),
+			})
+		} else if props.Integral {
+			// Integer subtraction (same for signed and unsigned)
+			block.Push(&spirv.ISubInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   rhs.ID(),
+			})
+		} else {
+			panic("unsupported type for subtraction")
+		}
+		return result
+
+	case TokenXor:
+		// Bitwise XOR - only for integers
+		lhsType := ir.unit.semanticInfo.TypeOf(e.LHS).Type
+		props := lhsType.Properties()
+
+		if props.Integral {
+			// Bitwise XOR (same for signed and unsigned)
+			block.Push(&spirv.BitwiseXorInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   rhs.ID(),
+			})
+		} else {
+			panic("unsupported type for bitwise XOR")
+		}
+		return result
+
+	case TokenOr:
+		// Bitwise OR - only for integers
+		lhsType := ir.unit.semanticInfo.TypeOf(e.LHS).Type
+		props := lhsType.Properties()
+
+		if props.Integral {
+			// Bitwise OR (same for signed and unsigned)
+			block.Push(&spirv.BitwiseOrInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   rhs.ID(),
+			})
+		} else {
+			panic("unsupported type for bitwise OR")
+		}
+		return result
+
+	case TokenMul:
+		// Multiplication - need to check operand types
+		lhsType := ir.unit.semanticInfo.TypeOf(e.LHS).Type
+		props := lhsType.Properties()
+
+		if props.Floating {
+			// Floating-point multiplication
+			block.Push(&spirv.FMulInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   rhs.ID(),
+			})
+		} else if props.Integral {
+			// Integer multiplication (same for signed and unsigned)
+			block.Push(&spirv.IMulInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   rhs.ID(),
+			})
+		} else {
+			panic("unsupported type for multiplication")
+		}
+		return result
+
+	case TokenDiv:
+		// Division - need to check operand types
+		lhsType := ir.unit.semanticInfo.TypeOf(e.LHS).Type
+		props := lhsType.Properties()
+
+		if props.Floating {
+			// Floating-point division
+			block.Push(&spirv.FDivInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   rhs.ID(),
+			})
+		} else if props.Integral {
+			if props.Signed {
+				// Signed integer division
+				block.Push(&spirv.SDivInstruction{
+					ResultType: resultType.ID(),
+					ResultID:   result.ID(),
+					Operand1:   lhs.ID(),
+					Operand2:   rhs.ID(),
+				})
+			} else {
+				// Unsigned integer division
+				block.Push(&spirv.UDivInstruction{
+					ResultType: resultType.ID(),
+					ResultID:   result.ID(),
+					Operand1:   lhs.ID(),
+					Operand2:   rhs.ID(),
+				})
+			}
+		} else {
+			panic("unsupported type for division")
+		}
+		return result
+
+	case TokenMod:
+		// Modulo/Remainder - need to check operand types
+		lhsType := ir.unit.semanticInfo.TypeOf(e.LHS).Type
+		props := lhsType.Properties()
+
+		if props.Floating {
+			// Floating-point remainder
+			block.Push(&spirv.FRemInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   rhs.ID(),
+			})
+		} else if props.Integral {
+			if props.Signed {
+				// Signed integer remainder
+				block.Push(&spirv.SRemInstruction{
+					ResultType: resultType.ID(),
+					ResultID:   result.ID(),
+					Operand1:   lhs.ID(),
+					Operand2:   rhs.ID(),
+				})
+			} else {
+				// Unsigned integer modulo
+				block.Push(&spirv.UModInstruction{
+					ResultType: resultType.ID(),
+					ResultID:   result.ID(),
+					Operand1:   lhs.ID(),
+					Operand2:   rhs.ID(),
+				})
+			}
+		} else {
+			panic("unsupported type for modulo")
+		}
+		return result
+
+	case TokenAnd:
+		// Bitwise AND - only for integers
+		lhsType := ir.unit.semanticInfo.TypeOf(e.LHS).Type
+		props := lhsType.Properties()
+
+		if props.Integral {
+			// Bitwise AND (same for signed and unsigned)
+			block.Push(&spirv.BitwiseAndInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   rhs.ID(),
+			})
+		} else {
+			panic("unsupported type for bitwise AND")
+		}
+		return result
+
+	case TokenAndNot:
+		// Bitwise AND NOT - only for integers
+		// In Go, a &^ b is equivalent to a & (^b) - clear bits in a that are set in b
+		lhsType := ir.unit.semanticInfo.TypeOf(e.LHS).Type
+		props := lhsType.Properties()
+
+		if props.Integral {
+			// First, compute NOT of rhs: ^b
+			notRhs := ir.module.NewValue(resultType)
+			block.Push(&spirv.NotInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   notRhs.ID(),
+				Operand:    rhs.ID(),
+			})
+
+			// Then, compute AND with lhs: a & (^b)
+			block.Push(&spirv.BitwiseAndInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Operand1:   lhs.ID(),
+				Operand2:   notRhs.ID(),
+			})
+		} else {
+			panic("unsupported type for bitwise AND NOT")
+		}
+		return result
+
+	case TokenShl:
+		// Shift left logical - only for integers
+		lhsType := ir.unit.semanticInfo.TypeOf(e.LHS).Type
+		props := lhsType.Properties()
+
+		if props.Integral {
+			// Shift left logical
+			block.Push(&spirv.ShiftLeftLogicalInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   result.ID(),
+				Base:       lhs.ID(),
+				Shift:      rhs.ID(),
+			})
+		} else {
+			panic("unsupported type for shift left")
+		}
+		return result
+
+	case TokenShr:
+		// Shift right - only for integers
+		// Use arithmetic shift for signed integers, logical shift for unsigned
+		lhsType := ir.unit.semanticInfo.TypeOf(e.LHS).Type
+		props := lhsType.Properties()
+
+		if props.Integral {
+			if props.Signed {
+				// Arithmetic shift right (preserves sign bit)
+				block.Push(&spirv.ShiftRightArithmeticInstruction{
+					ResultType: resultType.ID(),
+					ResultID:   result.ID(),
+					Base:       lhs.ID(),
+					Shift:      rhs.ID(),
+				})
+			} else {
+				// Logical shift right (shifts in zeros)
+				block.Push(&spirv.ShiftRightLogicalInstruction{
+					ResultType: resultType.ID(),
+					ResultID:   result.ID(),
+					Base:       lhs.ID(),
+					Shift:      rhs.ID(),
+				})
+			}
+		} else {
+			panic("unsupported type for shift right")
+		}
+		return result
+
+	default:
+		panic("unsupported binary operator")
+	}
+}
 func (ir *IREmitter) emitType(Type Type) spirv.Type {
 	switch t := Type.(type) {
 	case *VoidType:

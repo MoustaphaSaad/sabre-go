@@ -6,27 +6,65 @@ import "strings"
 type Opcode int
 
 const (
-	OpNone          Opcode = 0
-	OpMemoryModel   Opcode = 14
-	OpCapability    Opcode = 17
-	OpTypeVoid      Opcode = 19
-	OpTypeBool      Opcode = 20
-	OpTypeInt       Opcode = 21
-	OpTypeFloat     Opcode = 22
-	OpTypePointer   Opcode = 32
-	OpTypeFunction  Opcode = 33
-	OpConstantTrue  Opcode = 41
-	OpConstantFalse Opcode = 42
-	OpConstant      Opcode = 43
-	OpFunction      Opcode = 54
-	OpFunctionEnd   Opcode = 56
-	OpSNegate       Opcode = 126
-	OpFNegate       Opcode = 127
-	OpLogicalNot    Opcode = 168
-	OpNot           Opcode = 200
-	OpLabel         Opcode = 248
-	OpReturn        Opcode = 253
-	OpReturnValue   Opcode = 254
+	OpNone                 Opcode = 0
+	OpMemoryModel          Opcode = 14
+	OpCapability           Opcode = 17
+	OpTypeVoid             Opcode = 19
+	OpTypeBool             Opcode = 20
+	OpTypeInt              Opcode = 21
+	OpTypeFloat            Opcode = 22
+	OpTypePointer          Opcode = 32
+	OpTypeFunction         Opcode = 33
+	OpConstantTrue         Opcode = 41
+	OpConstantFalse        Opcode = 42
+	OpConstant             Opcode = 43
+	OpFunction             Opcode = 54
+	OpFunctionEnd          Opcode = 56
+	OpSNegate              Opcode = 126
+	OpFNegate              Opcode = 127
+	OpIAdd                 Opcode = 128
+	OpFAdd                 Opcode = 129
+	OpISub                 Opcode = 130
+	OpFSub                 Opcode = 131
+	OpIMul                 Opcode = 132
+	OpFMul                 Opcode = 133
+	OpUDiv                 Opcode = 134
+	OpSDiv                 Opcode = 135
+	OpFDiv                 Opcode = 136
+	OpUMod                 Opcode = 137
+	OpSRem                 Opcode = 139
+	OpFRem                 Opcode = 141
+	OpLogicalEqual         Opcode = 164
+	OpLogicalNotEqual      Opcode = 165
+	OpLogicalOr            Opcode = 166
+	OpLogicalAnd           Opcode = 167
+	OpLogicalNot           Opcode = 168
+	OpIEqual               Opcode = 170
+	OpINotEqual            Opcode = 171
+	OpUGreaterThan         Opcode = 172
+	OpSGreaterThan         Opcode = 173
+	OpUGreaterThanEqual    Opcode = 174
+	OpSGreaterThanEqual    Opcode = 175
+	OpULessThan            Opcode = 176
+	OpSLessThan            Opcode = 177
+	OpULessThanEqual       Opcode = 178
+	OpSLessThanEqual       Opcode = 179
+	OpFOrdEqual            Opcode = 180
+	OpFOrdNotEqual         Opcode = 182
+	OpFOrdLessThan         Opcode = 184
+	OpFOrdGreaterThan      Opcode = 186
+	OpFOrdLessThanEqual    Opcode = 188
+	OpFOrdGreaterThanEqual Opcode = 190
+	OpShiftRightLogical    Opcode = 194
+	OpShiftRightArithmetic Opcode = 195
+	OpShiftLeftLogical     Opcode = 196
+	OpBitwiseOr            Opcode = 197
+	OpBitwiseXor           Opcode = 198
+	OpBitwiseAnd           Opcode = 199
+	OpNot                  Opcode = 200
+	OpLabel                Opcode = 248
+	OpReturn               Opcode = 253
+	OpReturnValue          Opcode = 254
 )
 
 func (op Opcode) String() string {
@@ -61,10 +99,86 @@ func (op Opcode) String() string {
 		return "OpSNegate"
 	case OpFNegate:
 		return "OpFNegate"
+	case OpIAdd:
+		return "OpIAdd"
+	case OpFAdd:
+		return "OpFAdd"
+	case OpISub:
+		return "OpISub"
+	case OpFSub:
+		return "OpFSub"
+	case OpIMul:
+		return "OpIMul"
+	case OpFMul:
+		return "OpFMul"
+	case OpUDiv:
+		return "OpUDiv"
+	case OpSDiv:
+		return "OpSDiv"
+	case OpFDiv:
+		return "OpFDiv"
+	case OpUMod:
+		return "OpUMod"
+	case OpSRem:
+		return "OpSRem"
+	case OpFRem:
+		return "OpFRem"
+	case OpLogicalEqual:
+		return "OpLogicalEqual"
+	case OpLogicalNotEqual:
+		return "OpLogicalNotEqual"
+	case OpLogicalOr:
+		return "OpLogicalOr"
+	case OpLogicalAnd:
+		return "OpLogicalAnd"
 	case OpLogicalNot:
 		return "OpLogicalNot"
+	case OpIEqual:
+		return "OpIEqual"
+	case OpINotEqual:
+		return "OpINotEqual"
+	case OpUGreaterThan:
+		return "OpUGreaterThan"
+	case OpSGreaterThan:
+		return "OpSGreaterThan"
+	case OpUGreaterThanEqual:
+		return "OpUGreaterThanEqual"
+	case OpSGreaterThanEqual:
+		return "OpSGreaterThanEqual"
+	case OpULessThan:
+		return "OpULessThan"
+	case OpSLessThan:
+		return "OpSLessThan"
+	case OpULessThanEqual:
+		return "OpULessThanEqual"
+	case OpSLessThanEqual:
+		return "OpSLessThanEqual"
+	case OpFOrdEqual:
+		return "OpFOrdEqual"
+	case OpFOrdNotEqual:
+		return "OpFOrdNotEqual"
+	case OpFOrdLessThan:
+		return "OpFOrdLessThan"
+	case OpFOrdGreaterThan:
+		return "OpFOrdGreaterThan"
+	case OpFOrdLessThanEqual:
+		return "OpFOrdLessThanEqual"
+	case OpFOrdGreaterThanEqual:
+		return "OpFOrdGreaterThanEqual"
+	case OpShiftRightLogical:
+		return "OpShiftRightLogical"
+	case OpShiftRightArithmetic:
+		return "OpShiftRightArithmetic"
+	case OpBitwiseOr:
+		return "OpBitwiseOr"
+	case OpBitwiseXor:
+		return "OpBitwiseXor"
+	case OpBitwiseAnd:
+		return "OpBitwiseAnd"
 	case OpNot:
 		return "OpNot"
+	case OpShiftLeftLogical:
+		return "OpShiftLeftLogical"
 	case OpLabel:
 		return "OpLabel"
 	case OpReturn:

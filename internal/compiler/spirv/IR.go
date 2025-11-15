@@ -388,6 +388,28 @@ func (i *FNegateInstruction) Opcode() Opcode {
 	return OpFNegate
 }
 
+type LogicalOrInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *LogicalOrInstruction) Opcode() Opcode {
+	return OpLogicalOr
+}
+
+type LogicalAndInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *LogicalAndInstruction) Opcode() Opcode {
+	return OpLogicalAnd
+}
+
 type LogicalNotInstruction struct {
 	ResultType ID
 	ResultID   ID
@@ -398,6 +420,369 @@ func (i *LogicalNotInstruction) Opcode() Opcode {
 	return OpLogicalNot
 }
 
+type LogicalEqualInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *LogicalEqualInstruction) Opcode() Opcode {
+	return OpLogicalEqual
+}
+
+type LogicalNotEqualInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *LogicalNotEqualInstruction) Opcode() Opcode {
+	return OpLogicalNotEqual
+}
+
+type UGreaterThanInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *UGreaterThanInstruction) Opcode() Opcode {
+	return OpUGreaterThan
+}
+
+type SGreaterThanInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *SGreaterThanInstruction) Opcode() Opcode {
+	return OpSGreaterThan
+}
+
+type ULessThanInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *ULessThanInstruction) Opcode() Opcode {
+	return OpULessThan
+}
+
+type SLessThanInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *SLessThanInstruction) Opcode() Opcode {
+	return OpSLessThan
+}
+
+type ULessThanEqualInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *ULessThanEqualInstruction) Opcode() Opcode {
+	return OpULessThanEqual
+}
+
+type SLessThanEqualInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *SLessThanEqualInstruction) Opcode() Opcode {
+	return OpSLessThanEqual
+}
+
+type FOrdLessThanInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *FOrdLessThanInstruction) Opcode() Opcode {
+	return OpFOrdLessThan
+}
+
+type FOrdGreaterThanInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *FOrdGreaterThanInstruction) Opcode() Opcode {
+	return OpFOrdGreaterThan
+}
+
+type FOrdLessThanEqualInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *FOrdLessThanEqualInstruction) Opcode() Opcode {
+	return OpFOrdLessThanEqual
+}
+
+type UGreaterThanEqualInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *UGreaterThanEqualInstruction) Opcode() Opcode {
+	return OpUGreaterThanEqual
+}
+
+type SGreaterThanEqualInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *SGreaterThanEqualInstruction) Opcode() Opcode {
+	return OpSGreaterThanEqual
+}
+
+type FOrdGreaterThanEqualInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *FOrdGreaterThanEqualInstruction) Opcode() Opcode {
+	return OpFOrdGreaterThanEqual
+}
+
+type IEqualInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *IEqualInstruction) Opcode() Opcode {
+	return OpIEqual
+}
+
+type FOrdEqualInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *FOrdEqualInstruction) Opcode() Opcode {
+	return OpFOrdEqual
+}
+
+type INotEqualInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *INotEqualInstruction) Opcode() Opcode {
+	return OpINotEqual
+}
+
+type FOrdNotEqualInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *FOrdNotEqualInstruction) Opcode() Opcode {
+	return OpFOrdNotEqual
+}
+
+type IAddInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *IAddInstruction) Opcode() Opcode {
+	return OpIAdd
+}
+
+type FAddInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *FAddInstruction) Opcode() Opcode {
+	return OpFAdd
+}
+
+type ISubInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *ISubInstruction) Opcode() Opcode {
+	return OpISub
+}
+
+type FSubInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *FSubInstruction) Opcode() Opcode {
+	return OpFSub
+}
+
+type IMulInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *IMulInstruction) Opcode() Opcode {
+	return OpIMul
+}
+
+type FMulInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *FMulInstruction) Opcode() Opcode {
+	return OpFMul
+}
+
+type UDivInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *UDivInstruction) Opcode() Opcode {
+	return OpUDiv
+}
+
+type SDivInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *SDivInstruction) Opcode() Opcode {
+	return OpSDiv
+}
+
+type FDivInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *FDivInstruction) Opcode() Opcode {
+	return OpFDiv
+}
+
+type UModInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *UModInstruction) Opcode() Opcode {
+	return OpUMod
+}
+
+type SRemInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *SRemInstruction) Opcode() Opcode {
+	return OpSRem
+}
+
+type FRemInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *FRemInstruction) Opcode() Opcode {
+	return OpFRem
+}
+
+type BitwiseXorInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *BitwiseXorInstruction) Opcode() Opcode {
+	return OpBitwiseXor
+}
+
+type BitwiseOrInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *BitwiseOrInstruction) Opcode() Opcode {
+	return OpBitwiseOr
+}
+
+type BitwiseAndInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Operand1   ID
+	Operand2   ID
+}
+
+func (i *BitwiseAndInstruction) Opcode() Opcode {
+	return OpBitwiseAnd
+}
+
 type NotInstruction struct {
 	ResultType ID
 	ResultID   ID
@@ -406,4 +791,37 @@ type NotInstruction struct {
 
 func (i *NotInstruction) Opcode() Opcode {
 	return OpNot
+}
+
+type ShiftLeftLogicalInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Base       ID
+	Shift      ID
+}
+
+func (i *ShiftLeftLogicalInstruction) Opcode() Opcode {
+	return OpShiftLeftLogical
+}
+
+type ShiftRightLogicalInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Base       ID
+	Shift      ID
+}
+
+func (i *ShiftRightLogicalInstruction) Opcode() Opcode {
+	return OpShiftRightLogical
+}
+
+type ShiftRightArithmeticInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Base       ID
+	Shift      ID
+}
+
+func (i *ShiftRightArithmeticInstruction) Opcode() Opcode {
+	return OpShiftRightArithmetic
 }

@@ -99,10 +99,86 @@ func (bp *BinaryPrinter) emitInstruction(inst Instruction) {
 		bp.emitOp(Word(OpSNegate), Word(i.ResultType), Word(i.ResultID), Word(i.Operand))
 	case *FNegateInstruction:
 		bp.emitOp(Word(OpFNegate), Word(i.ResultType), Word(i.ResultID), Word(i.Operand))
+	case *LogicalOrInstruction:
+		bp.emitOp(Word(OpLogicalOr), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
+	case *LogicalAndInstruction:
+		bp.emitOp(Word(OpLogicalAnd), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
 	case *LogicalNotInstruction:
 		bp.emitOp(Word(OpLogicalNot), Word(i.ResultType), Word(i.ResultID), Word(i.Operand))
+	case *LogicalEqualInstruction:
+		bp.emitOp(Word(OpLogicalEqual), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
+	case *LogicalNotEqualInstruction:
+		bp.emitOp(Word(OpLogicalNotEqual), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
+	case *UGreaterThanInstruction:
+		bp.emitOp(Word(OpUGreaterThan), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
+	case *SGreaterThanInstruction:
+		bp.emitOp(Word(OpSGreaterThan), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
+	case *ULessThanInstruction:
+		bp.emitOp(Word(OpULessThan), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
+	case *SLessThanInstruction:
+		bp.emitOp(Word(OpSLessThan), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
+	case *ULessThanEqualInstruction:
+		bp.emitOp(Word(OpULessThanEqual), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
+	case *SLessThanEqualInstruction:
+		bp.emitOp(Word(OpSLessThanEqual), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
+	case *FOrdLessThanInstruction:
+		bp.emitOp(Word(OpFOrdLessThan), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
+	case *FOrdGreaterThanInstruction:
+		bp.emitOp(Word(OpFOrdGreaterThan), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
+	case *FOrdLessThanEqualInstruction:
+		bp.emitOp(Word(OpFOrdLessThanEqual), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
+	case *UGreaterThanEqualInstruction:
+		bp.emitOp(Word(OpUGreaterThanEqual), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
+	case *SGreaterThanEqualInstruction:
+		bp.emitOp(Word(OpSGreaterThanEqual), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
+	case *FOrdGreaterThanEqualInstruction:
+		bp.emitOp(Word(OpFOrdGreaterThanEqual), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
+	case *IEqualInstruction:
+		bp.emitOp(Word(OpIEqual), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
+	case *FOrdEqualInstruction:
+		bp.emitOp(Word(OpFOrdEqual), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
+	case *INotEqualInstruction:
+		bp.emitOp(Word(OpINotEqual), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
+	case *FOrdNotEqualInstruction:
+		bp.emitOp(Word(OpFOrdNotEqual), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
+	case *IAddInstruction:
+		bp.emitOp(Word(OpIAdd), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
+	case *FAddInstruction:
+		bp.emitOp(Word(OpFAdd), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
+	case *ISubInstruction:
+		bp.emitOp(Word(OpISub), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
+	case *FSubInstruction:
+		bp.emitOp(Word(OpFSub), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
+	case *IMulInstruction:
+		bp.emitOp(Word(OpIMul), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
+	case *FMulInstruction:
+		bp.emitOp(Word(OpFMul), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
+	case *UDivInstruction:
+		bp.emitOp(Word(OpUDiv), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
+	case *SDivInstruction:
+		bp.emitOp(Word(OpSDiv), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
+	case *FDivInstruction:
+		bp.emitOp(Word(OpFDiv), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
+	case *UModInstruction:
+		bp.emitOp(Word(OpUMod), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
+	case *SRemInstruction:
+		bp.emitOp(Word(OpSRem), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
+	case *FRemInstruction:
+		bp.emitOp(Word(OpFRem), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
+	case *BitwiseXorInstruction:
+		bp.emitOp(Word(OpBitwiseXor), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
+	case *BitwiseOrInstruction:
+		bp.emitOp(Word(OpBitwiseOr), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
+	case *BitwiseAndInstruction:
+		bp.emitOp(Word(OpBitwiseAnd), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
 	case *NotInstruction:
 		bp.emitOp(Word(OpNot), Word(i.ResultType), Word(i.ResultID), Word(i.Operand))
+	case *ShiftLeftLogicalInstruction:
+		bp.emitOp(Word(OpShiftLeftLogical), Word(i.ResultType), Word(i.ResultID), Word(i.Base), Word(i.Shift))
+	case *ShiftRightLogicalInstruction:
+		bp.emitOp(Word(OpShiftRightLogical), Word(i.ResultType), Word(i.ResultID), Word(i.Base), Word(i.Shift))
+	case *ShiftRightArithmeticInstruction:
+		bp.emitOp(Word(OpShiftRightArithmetic), Word(i.ResultType), Word(i.ResultID), Word(i.Base), Word(i.Shift))
 	default:
 		panic("unsupported instruction")
 	}
