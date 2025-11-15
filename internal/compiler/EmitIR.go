@@ -734,13 +734,14 @@ func (ir *IREmitter) emitCallExpr(e *CallExpr) spirv.Object {
 		resultType = ir.module.InternVoid()
 	}
 
+	resultValue := ir.module.NewValue(resultType)
 	block.Push(&spirv.FunctionCallInstruction{
 		ResultType: resultType.ID(),
-		ResultID:   ir.module.NewValue(resultType).ID(),
+		ResultID:   resultValue.ID(),
 		FunctionID: base.ID(),
 		Args:       args,
 	})
-	return resultType
+	return resultValue
 }
 
 func (ir *IREmitter) emitType(Type Type) spirv.Type {
