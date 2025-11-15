@@ -1,6 +1,7 @@
 package compiler
 
 import (
+	"fmt"
 	"go/constant"
 
 	"github.com/MoustaphaSaad/sabre-go/internal/compiler/spirv"
@@ -80,16 +81,36 @@ func (ir *IREmitter) emitFunc(sym *FuncSymbol) {
 	for _, stmt := range funcDecl.Body.Stmts {
 		ir.emitStatement(stmt, spirvBlock)
 	}
+
+	// Ensure block is properly terminated
+	// Check if last instruction is already a return
+	if len(spirvBlock.Instructions) > 0 {
+		lastInst := spirvBlock.Instructions[len(spirvBlock.Instructions)-1]
+		switch lastInst.(type) {
+		case *spirv.ReturnInstruction, *spirv.ReturnValueInstruction:
+			// Already has terminator
+			return
+		}
+	}
+
+	// No terminator found - add one for void functions
+	if len(funcType.ReturnTypes) == 0 {
+		spirvBlock.Push(&spirv.ReturnInstruction{})
+	}
 }
 
 func (ir *IREmitter) emitExpression(expr Expr) spirv.Object {
 	switch e := expr.(type) {
 	case *LiteralExpr:
 		return ir.emitLiteralExpr(e)
+	case *IdentifierExpr:
+		return ir.emitIdentifierExpr(e)
 	case *UnaryExpr:
 		return ir.emitUnaryExpr(e)
 	case *BinaryExpr:
 		return ir.emitBinaryExpr(e)
+	case *CallExpr:
+		return ir.emitCallExpr(e)
 	default:
 		panic("unsupported expression")
 	}
@@ -110,6 +131,13 @@ func (ir *IREmitter) emitLiteralExpr(e *LiteralExpr) spirv.Object {
 	default:
 		panic("unsupported literal type")
 	}
+}
+
+func (ir *IREmitter) emitIdentifierExpr(e *IdentifierExpr) spirv.Object {
+	if obj := ir.module.GetObjectByName(e.Token.Value()); obj != nil {
+		return obj
+	}
+	panic(fmt.Sprintf("undefined identifier: %v", e.Token.Value()))
 }
 
 func (ir *IREmitter) emitUnaryExpr(e *UnaryExpr) spirv.Object {
@@ -684,6 +712,37 @@ func (ir *IREmitter) emitBinaryExpr(e *BinaryExpr) spirv.Object {
 		panic("unsupported binary operator")
 	}
 }
+
+func (ir *IREmitter) emitCallExpr(e *CallExpr) spirv.Object {
+	base := ir.emitExpression(e.Base)
+	args := make([]spirv.ID, len(e.Args))
+	for i, argExpr := range e.Args {
+		emittedExpr := ir.emitExpression(argExpr)
+		args[i] = emittedExpr.ID()
+	}
+
+	block := ir.currentBlock()
+
+	tav := ir.unit.semanticInfo.TypeOf(e.Base)
+	funcType := tav.Type.(*FuncType)
+
+	// TODO: Handle multiple return types
+	var resultType spirv.Type
+	if len(funcType.ReturnTypes) > 0 {
+		resultType = ir.emitType(funcType.ReturnTypes[0])
+	} else {
+		resultType = ir.module.InternVoid()
+	}
+
+	block.Push(&spirv.FunctionCallInstruction{
+		ResultType: resultType.ID(),
+		ResultID:   ir.module.NewValue(resultType).ID(),
+		FunctionID: base.ID(),
+		Args:       args,
+	})
+	return resultType
+}
+
 func (ir *IREmitter) emitType(Type Type) spirv.Type {
 	switch t := Type.(type) {
 	case *VoidType:
@@ -720,6 +779,8 @@ func (ir *IREmitter) emitStatement(stmt Stmt, block *spirv.Block) {
 	switch s := stmt.(type) {
 	case *ReturnStmt:
 		ir.emitReturnStmt(s, block)
+	case *ExprStmt:
+		ir.emitExpression(s.Expr)
 	default:
 		panic("unsupported statement")
 	}
