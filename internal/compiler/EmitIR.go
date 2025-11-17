@@ -113,6 +113,8 @@ func (ir *IREmitter) emitExpression(expr Expr) spirv.Object {
 		return ir.emitBinaryExpr(e)
 	case *CallExpr:
 		return ir.emitCallExpr(e)
+	case *ParenExpr:
+		return ir.emitExpression(e.Base)
 	default:
 		panic("unsupported expression")
 	}
