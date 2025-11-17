@@ -8,17 +8,19 @@ import (
 )
 
 type IREmitter struct {
-	unit       *Unit
-	module     *spirv.Module
-	blockStack []*spirv.Block
+	unit         *Unit
+	module       *spirv.Module
+	objectByDecl map[Decl]spirv.Object
+	blockStack   []*spirv.Block
 }
 
 func NewIREmitter(u *Unit) *IREmitter {
 	return &IREmitter{
 		unit: u,
 		// we set the addressing and memory model to default values for now
-		module:     spirv.NewModule(spirv.AddressingModelLogical, spirv.MemoryModelGLSL450),
-		blockStack: make([]*spirv.Block, 0),
+		module:       spirv.NewModule(spirv.AddressingModelLogical, spirv.MemoryModelGLSL450),
+		objectByDecl: make(map[Decl]spirv.Object),
+		blockStack:   make([]*spirv.Block, 0),
 	}
 }
 
@@ -69,6 +71,8 @@ func (ir *IREmitter) emitFunc(sym *FuncSymbol) {
 		return
 	}
 
+	ir.objectByDecl[funcDecl] = spirvFunction
+
 	spirvBlock := spirvFunction.NewBlock(sym.Name())
 	ir.enterBlock(spirvBlock)
 	defer ir.leaveBlock()
@@ -82,13 +86,11 @@ func (ir *IREmitter) emitFunc(sym *FuncSymbol) {
 		ir.emitStatement(stmt, spirvBlock)
 	}
 
-	// Ensure block is properly terminated
 	// Check if last instruction is already a return
 	if len(spirvBlock.Instructions) > 0 {
 		lastInst := spirvBlock.Instructions[len(spirvBlock.Instructions)-1]
 		switch lastInst.(type) {
 		case *spirv.ReturnInstruction, *spirv.ReturnValueInstruction:
-			// Already has terminator
 			return
 		}
 	}
@@ -134,10 +136,12 @@ func (ir *IREmitter) emitLiteralExpr(e *LiteralExpr) spirv.Object {
 }
 
 func (ir *IREmitter) emitIdentifierExpr(e *IdentifierExpr) spirv.Object {
-	if obj := ir.module.GetObjectByName(e.Token.Value()); obj != nil {
-		return obj
+	if sym, ok := ir.unit.semanticInfo.symbolByIdentifier[e]; ok {
+		if obj, ok := ir.objectByDecl[sym.Decl()]; ok {
+			return obj
+		}
 	}
-	panic(fmt.Sprintf("undefined identifier: %v", e.Token.Value()))
+	panic(fmt.Sprintf("identifier not emitted: %v", e.Token.Value()))
 }
 
 func (ir *IREmitter) emitUnaryExpr(e *UnaryExpr) spirv.Object {

@@ -70,7 +70,6 @@ func (v *RuntimeValue) GetType() Type {
 type Module struct {
 	idGenerator     int
 	objectsByID     map[ID]Object
-	objectsByName   map[string]Object
 	typesByKey      map[string]Type
 	constantsByKey  map[string]Constant
 	capabilities    []Capability
@@ -82,7 +81,6 @@ func NewModule(addressingModel AddressingModel, memoryModel MemoryModel) *Module
 	return &Module{
 		idGenerator:     0,
 		objectsByID:     make(map[ID]Object),
-		objectsByName:   make(map[string]Object),
 		typesByKey:      make(map[string]Type),
 		constantsByKey:  make(map[string]Constant),
 		capabilities:    make([]Capability, 0),
@@ -103,13 +101,6 @@ func (m *Module) GetObject(id ID) Object {
 	return nil
 }
 
-func (m *Module) GetObjectByName(name string) Object {
-	if obj, ok := m.objectsByName[name]; ok {
-		return obj
-	}
-	return nil
-}
-
 func (m *Module) NewFunction(name string, functionType *FuncType) *Function {
 	f := &Function{
 		BaseObject: BaseObject{
@@ -121,7 +112,6 @@ func (m *Module) NewFunction(name string, functionType *FuncType) *Function {
 		Blocks: make([]*Block, 0),
 	}
 	m.objectsByID[f.ObjectID] = f
-	m.objectsByName[name] = f
 	return f
 }
 
@@ -134,7 +124,6 @@ func (m *Module) InternVoid() *VoidType {
 	t.ObjectName = t.HashKey()
 	t.Module = m
 	m.objectsByID[t.ObjectID] = t
-	m.objectsByName[t.ObjectName] = t
 	m.typesByKey[t.HashKey()] = t
 	return t
 }
@@ -148,7 +137,6 @@ func (m *Module) InternBool() *BoolType {
 	t.ObjectName = t.HashKey()
 	t.Module = m
 	m.objectsByID[t.ObjectID] = t
-	m.objectsByName[t.ObjectName] = t
 	m.typesByKey[t.HashKey()] = t
 	return t
 }
@@ -165,7 +153,6 @@ func (m *Module) InternInt(bitWidth int, isSigned bool) *IntType {
 	t.ObjectName = t.HashKey()
 	t.Module = m
 	m.objectsByID[t.ObjectID] = t
-	m.objectsByName[t.ObjectName] = t
 	m.typesByKey[t.HashKey()] = t
 	return t
 }
@@ -181,7 +168,6 @@ func (m *Module) InternFloat(bitWidth int) *FloatType {
 	t.ObjectName = t.HashKey()
 	t.Module = m
 	m.objectsByID[t.ObjectID] = t
-	m.objectsByName[t.ObjectName] = t
 	m.typesByKey[t.HashKey()] = t
 	return t
 }
@@ -198,7 +184,6 @@ func (m *Module) InternPtr(to Type, sc StorageClass) *PtrType {
 	t.ObjectName = t.HashKey()
 	t.Module = m
 	m.objectsByID[t.ObjectID] = t
-	m.objectsByName[t.ObjectName] = t
 	m.typesByKey[t.HashKey()] = t
 	return t
 }
@@ -215,7 +200,6 @@ func (m *Module) InternFunc(returnType Type, args []Type) *FuncType {
 	t.ObjectName = t.TypeName()
 	t.Module = m
 	m.objectsByID[t.ObjectID] = t
-	m.objectsByName[t.ObjectName] = t
 	m.typesByKey[t.HashKey()] = t
 	return t
 }
@@ -250,7 +234,6 @@ func (m *Module) InternBoolConstant(value bool, t *BoolType) *BoolConstant {
 	}
 
 	m.objectsByID[id] = constant
-	m.objectsByName[key] = constant
 	m.constantsByKey[key] = constant
 	return constant
 }
@@ -270,7 +253,6 @@ func (m *Module) InternIntConstant(value int64, t *IntType) *IntConstant {
 		Value: value,
 	}
 	m.objectsByID[id] = constant
-	m.objectsByName[key] = constant
 	m.constantsByKey[key] = constant
 	return constant
 }
@@ -293,7 +275,6 @@ func (m *Module) InternFloatConstant(value float64, t *FloatType) *FloatConstant
 		Value: value,
 	}
 	m.objectsByID[id] = constant
-	m.objectsByName[key] = constant
 	m.constantsByKey[key] = constant
 	return constant
 }
@@ -309,7 +290,6 @@ func (m *Module) NewNamedValue(name string, valueType Type) *RuntimeValue {
 		Type: valueType,
 	}
 	m.objectsByID[id] = value
-	m.objectsByName[name] = value
 	return value
 }
 
