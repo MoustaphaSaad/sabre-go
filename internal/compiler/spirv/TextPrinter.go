@@ -229,12 +229,8 @@ func (tp *TextPrinter) emitInstruction(inst Instruction) {
 		for _, arg := range i.Args {
 			args = append(args, tp.nameOfByID(arg))
 		}
-		if i.ResultID != 0 {
-			resultObj := tp.module.GetObject(i.ResultID)
-			tp.emitWithObject(resultObj, OpFunctionCall, args...)
-		} else {
-			tp.emit(OpFunctionCall, args...)
-		}
+		resultObj := tp.module.GetObject(i.ResultID)
+		tp.emitWithObject(resultObj, OpFunctionCall, args...)
 	default:
 		panic(fmt.Sprintf("unsupported instruction: %T", inst))
 	}

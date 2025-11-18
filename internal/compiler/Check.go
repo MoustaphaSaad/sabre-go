@@ -9,7 +9,7 @@ import (
 type SemanticInfo struct {
 	Types              map[any]*TypeAndValue
 	Scopes             map[any]*Scope
-	symbolByIdentifier map[*IdentifierExpr]Symbol
+	SymbolByIdentifier map[*IdentifierExpr]Symbol
 	TypeInterner       *TypeInterner
 	ReachableSymbols   []Symbol
 }
@@ -18,7 +18,7 @@ func NewSemanticInfo() *SemanticInfo {
 	return &SemanticInfo{
 		Types:              make(map[any]*TypeAndValue),
 		Scopes:             make(map[any]*Scope),
-		symbolByIdentifier: make(map[*IdentifierExpr]Symbol),
+		SymbolByIdentifier: make(map[*IdentifierExpr]Symbol),
 		TypeInterner:       NewTypeInterner(),
 		ReachableSymbols:   make([]Symbol, 0),
 	}
@@ -49,6 +49,17 @@ func (info *SemanticInfo) createScopeFor(n any, parent *Scope, name string) *Sco
 	scope := NewScope(parent, name)
 	info.Scopes[n] = scope
 	return scope
+}
+
+func (info *SemanticInfo) SetSymbolOfIdentifier(e *IdentifierExpr, s Symbol) {
+	info.SymbolByIdentifier[e] = s
+}
+
+func (info *SemanticInfo) SymbolOfIdentifier(e *IdentifierExpr) Symbol {
+	if symbol, ok := info.SymbolByIdentifier[e]; ok {
+		return symbol
+	}
+	return nil
 }
 
 type ResolveStmtProperties struct {
@@ -657,7 +668,7 @@ func (checker *Checker) resolveIdentifierExpr(e *IdentifierExpr) *TypeAndValue {
 		}
 	}
 
-	checker.unit.semanticInfo.symbolByIdentifier[e] = symbol
+	checker.unit.semanticInfo.SetSymbolOfIdentifier(e, symbol)
 
 	return checker.resolveSymbol(symbol)
 }

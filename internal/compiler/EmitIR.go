@@ -41,6 +41,17 @@ func (ir *IREmitter) currentBlock() *spirv.Block {
 	return nil
 }
 
+func (ir *IREmitter) objectOfDecl(decl Decl) spirv.Object {
+	if obj, ok := ir.objectByDecl[decl]; ok {
+		return obj
+	}
+	return nil
+}
+
+func (ir *IREmitter) setObjectOfDecl(decl Decl, obj spirv.Object) {
+	ir.objectByDecl[decl] = obj
+}
+
 func (ir *IREmitter) Emit() *spirv.Module {
 	// we add this hardcoded capabilities for now
 	ir.module.AddCapability(spirv.CapabilityShader)
@@ -53,25 +64,25 @@ func (ir *IREmitter) Emit() *spirv.Module {
 }
 
 func (ir *IREmitter) emitSymbol(sym Symbol) {
+	var obj spirv.Object
 	switch s := sym.(type) {
 	case *FuncSymbol:
-		ir.emitFunc(s)
+		obj = ir.emitFunc(s)
 	default:
 		panic("unsupported symbol")
 	}
+	ir.setObjectOfDecl(sym.Decl(), obj)
 }
 
-func (ir *IREmitter) emitFunc(sym *FuncSymbol) {
+func (ir *IREmitter) emitFunc(sym *FuncSymbol) spirv.Object {
 	funcType := ir.unit.semanticInfo.TypeOf(sym).Type.(*FuncType)
 	spirvFuncType := ir.emitType(funcType).(*spirv.FuncType)
 	spirvFunction := ir.module.NewFunction(sym.Name(), spirvFuncType)
 
 	funcDecl := sym.Decl().(*FuncDecl)
 	if funcDecl.Body == nil {
-		return
+		return spirvFunction
 	}
-
-	ir.objectByDecl[funcDecl] = spirvFunction
 
 	spirvBlock := spirvFunction.NewBlock(sym.Name())
 	ir.enterBlock(spirvBlock)
@@ -79,7 +90,7 @@ func (ir *IREmitter) emitFunc(sym *FuncSymbol) {
 
 	if len(funcDecl.Body.Stmts) == 0 {
 		spirvBlock.Push(&spirv.ReturnInstruction{})
-		return
+		return spirvFunction
 	}
 
 	for _, stmt := range funcDecl.Body.Stmts {
@@ -91,7 +102,7 @@ func (ir *IREmitter) emitFunc(sym *FuncSymbol) {
 		lastInst := spirvBlock.Instructions[len(spirvBlock.Instructions)-1]
 		switch lastInst.(type) {
 		case *spirv.ReturnInstruction, *spirv.ReturnValueInstruction:
-			return
+			return spirvFunction
 		}
 	}
 
@@ -99,6 +110,8 @@ func (ir *IREmitter) emitFunc(sym *FuncSymbol) {
 	if len(funcType.ReturnTypes) == 0 {
 		spirvBlock.Push(&spirv.ReturnInstruction{})
 	}
+
+	return spirvFunction
 }
 
 func (ir *IREmitter) emitExpression(expr Expr) spirv.Object {
@@ -138,12 +151,16 @@ func (ir *IREmitter) emitLiteralExpr(e *LiteralExpr) spirv.Object {
 }
 
 func (ir *IREmitter) emitIdentifierExpr(e *IdentifierExpr) spirv.Object {
-	if sym, ok := ir.unit.semanticInfo.symbolByIdentifier[e]; ok {
-		if obj, ok := ir.objectByDecl[sym.Decl()]; ok {
-			return obj
-		}
+	symbol := ir.unit.semanticInfo.SymbolOfIdentifier(e)
+	if symbol == nil {
+		panic(fmt.Sprintf("unable to find symbol for identifier: %v", e.Token.Value()))
 	}
-	panic(fmt.Sprintf("identifier not emitted: %v", e.Token.Value()))
+
+	if symbol.Decl() == nil {
+		panic(fmt.Sprintf("identifier has no declaration: %v", e.Token.Value()))
+	}
+
+	return ir.objectOfDecl(symbol.Decl())
 }
 
 func (ir *IREmitter) emitUnaryExpr(e *UnaryExpr) spirv.Object {
