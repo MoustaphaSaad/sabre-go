@@ -1,0 +1,7 @@
+package main
+
+func testWithNames(x int, y, z float32, b bool) {
+}
+
+func testWithoutNames(int, float32, bool) {
+}

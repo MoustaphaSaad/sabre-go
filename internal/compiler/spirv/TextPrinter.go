@@ -77,6 +77,9 @@ func (tp *TextPrinter) emitFunction(f *Function) {
 		FunctionControlNone,
 		tp.nameOf(f.Type),
 	)
+	for _, p := range f.Params {
+		tp.emitWithObject(p, OpFunctionParameter, tp.nameOf(p.Type))
+	}
 	for _, bb := range f.Blocks {
 		tp.emitBlock(bb)
 	}
