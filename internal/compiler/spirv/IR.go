@@ -101,7 +101,19 @@ func (m *Module) GetObject(id ID) Object {
 	return nil
 }
 
-func (m *Module) NewFunction(name string, functionType *FuncType) *Function {
+func (m *Module) NewFuncParam(name string, paramType Type) *FuncParam {
+	p := &FuncParam{
+		BaseObject: BaseObject{
+			ObjectID:   m.NewID(),
+			ObjectName: name,
+		},
+		Type: paramType,
+	}
+	m.objectsByID[p.ObjectID] = p
+	return p
+}
+
+func (m *Module) NewFunction(name string, functionType *FuncType, params []*FuncParam) *Function {
 	f := &Function{
 		BaseObject: BaseObject{
 			ObjectID:   m.NewID(),
@@ -109,6 +121,7 @@ func (m *Module) NewFunction(name string, functionType *FuncType) *Function {
 		},
 		Module: m,
 		Type:   functionType,
+		Params: params,
 		Blocks: make([]*Block, 0),
 	}
 	m.objectsByID[f.ObjectID] = f
@@ -298,11 +311,17 @@ func (m *Module) NewValue(valueType Type) *RuntimeValue {
 	return m.NewNamedValue("", valueType)
 }
 
+type FuncParam struct {
+	BaseObject
+	Type Type
+}
+
 // Function represents a SPIR-V function containing a sequence of basic blocks.
 type Function struct {
 	BaseObject
 	Module *Module
 	Type   *FuncType
+	Params []*FuncParam
 	Blocks []*Block
 }
 

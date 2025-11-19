@@ -75,9 +75,35 @@ func (ir *IREmitter) emitSymbol(sym Symbol) {
 }
 
 func (ir *IREmitter) emitFunc(sym *FuncSymbol) spirv.Object {
+	paramNames := func() (names []string) {
+		funcDecl := sym.Decl().(*FuncDecl)
+		for i, f := range funcDecl.Type.Parameters.Fields {
+			if len(f.Names) == 0 {
+				names = append(names, fmt.Sprintf("UnnamedParam%v", i))
+			} else {
+				for _, idExpr := range f.Names {
+					names = append(names, idExpr.Token.Value())
+				}
+			}
+		}
+		return
+	}()
+
 	funcType := ir.unit.semanticInfo.TypeOf(sym).Type.(*FuncType)
 	spirvFuncType := ir.emitType(funcType).(*spirv.FuncType)
-	spirvFunction := ir.module.NewFunction(sym.Name(), spirvFuncType)
+
+	if len(paramNames) != len(spirvFuncType.ArgTypes) {
+		panic(fmt.Sprintf(
+			"Function parameters names count (%v) mismatches arguments types count (%v)",
+			len(paramNames),
+			len(spirvFuncType.ArgTypes)),
+		)
+	}
+	params := make([]*spirv.FuncParam, len(spirvFuncType.ArgTypes))
+	for i := range spirvFuncType.ArgTypes {
+		params[i] = ir.module.NewFuncParam(paramNames[i], spirvFuncType.ArgTypes[i])
+	}
+	spirvFunction := ir.module.NewFunction(sym.Name(), spirvFuncType, params)
 
 	funcDecl := sym.Decl().(*FuncDecl)
 	if funcDecl.Body == nil {
