@@ -825,3 +825,14 @@ type ShiftRightArithmeticInstruction struct {
 func (i *ShiftRightArithmeticInstruction) Opcode() Opcode {
 	return OpShiftRightArithmetic
 }
+
+type FunctionCallInstruction struct {
+	ResultType ID
+	ResultID   ID
+	FunctionID ID
+	Args       []ID
+}
+
+func (i *FunctionCallInstruction) Opcode() Opcode {
+	return OpFunctionCall
+}

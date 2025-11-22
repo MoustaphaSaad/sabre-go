@@ -20,6 +20,7 @@ const (
 	OpConstant             Opcode = 43
 	OpFunction             Opcode = 54
 	OpFunctionEnd          Opcode = 56
+	OpFunctionCall         Opcode = 57
 	OpSNegate              Opcode = 126
 	OpFNegate              Opcode = 127
 	OpIAdd                 Opcode = 128
@@ -95,6 +96,8 @@ func (op Opcode) String() string {
 		return "OpFunction"
 	case OpFunctionEnd:
 		return "OpFunctionEnd"
+	case OpFunctionCall:
+		return "OpFunctionCall"
 	case OpSNegate:
 		return "OpSNegate"
 	case OpFNegate:
