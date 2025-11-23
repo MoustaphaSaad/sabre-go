@@ -1118,6 +1118,7 @@ func (checker *Checker) resolveFuncTypeExpr(e *FuncTypeExpr) *TypeAndValue {
 					v.SetResolveState(ResolveStateResolved)
 					checker.unit.semanticInfo.SetTypeOf(v, fieldType)
 					checker.addSymbol(v)
+					checker.unit.semanticInfo.SetSymbolOfIdentifier(name, v)
 					types = append(types, fieldType.Type)
 				}
 			} else {

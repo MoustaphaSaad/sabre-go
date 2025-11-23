@@ -8,19 +8,19 @@ import (
 )
 
 type IREmitter struct {
-	unit         *Unit
-	module       *spirv.Module
-	objectByDecl map[Decl]spirv.Object
-	blockStack   []*spirv.Block
+	unit           *Unit
+	module         *spirv.Module
+	objectBySymbol map[Symbol]spirv.Object
+	blockStack     []*spirv.Block
 }
 
 func NewIREmitter(u *Unit) *IREmitter {
 	return &IREmitter{
 		unit: u,
 		// we set the addressing and memory model to default values for now
-		module:       spirv.NewModule(spirv.AddressingModelLogical, spirv.MemoryModelGLSL450),
-		objectByDecl: make(map[Decl]spirv.Object),
-		blockStack:   make([]*spirv.Block, 0),
+		module:         spirv.NewModule(spirv.AddressingModelLogical, spirv.MemoryModelGLSL450),
+		objectBySymbol: make(map[Symbol]spirv.Object),
+		blockStack:     make([]*spirv.Block, 0),
 	}
 }
 
@@ -41,15 +41,15 @@ func (ir *IREmitter) currentBlock() *spirv.Block {
 	return nil
 }
 
-func (ir *IREmitter) objectOfDecl(decl Decl) spirv.Object {
-	if obj, ok := ir.objectByDecl[decl]; ok {
+func (ir *IREmitter) objectOfSymbol(sym Symbol) spirv.Object {
+	if obj, ok := ir.objectBySymbol[sym]; ok {
 		return obj
 	}
 	return nil
 }
 
-func (ir *IREmitter) setObjectOfDecl(decl Decl, obj spirv.Object) {
-	ir.objectByDecl[decl] = obj
+func (ir *IREmitter) setObjectOfSymbol(sym Symbol, obj spirv.Object) {
+	ir.objectBySymbol[sym] = obj
 }
 
 func (ir *IREmitter) Emit() *spirv.Module {
@@ -71,40 +71,42 @@ func (ir *IREmitter) emitSymbol(sym Symbol) {
 	default:
 		panic("unsupported symbol")
 	}
-	ir.setObjectOfDecl(sym.Decl(), obj)
+	ir.setObjectOfSymbol(sym, obj)
 }
 
 func (ir *IREmitter) emitFunc(sym *FuncSymbol) spirv.Object {
-<<<<<<< HEAD
-	paramNames := func() (names []string) {
+	paramSymbols := func() (syms []Symbol) {
 		funcDecl := sym.Decl().(*FuncDecl)
-		for i, f := range funcDecl.Type.Parameters.Fields {
+		for _, f := range funcDecl.Type.Parameters.Fields {
 			if len(f.Names) == 0 {
-				names = append(names, fmt.Sprintf("UnnamedParam%v", i))
+				syms = append(syms, nil)
 			} else {
 				for _, idExpr := range f.Names {
-					names = append(names, idExpr.Token.Value())
+					syms = append(syms, ir.unit.semanticInfo.SymbolOfIdentifier(idExpr))
 				}
 			}
 		}
 		return
 	}()
 
-=======
->>>>>>> master
 	funcType := ir.unit.semanticInfo.TypeOf(sym).Type.(*FuncType)
 	spirvFuncType := ir.emitType(funcType).(*spirv.FuncType)
 
-	if len(paramNames) != len(spirvFuncType.ArgTypes) {
+	if len(paramSymbols) != len(spirvFuncType.ArgTypes) {
 		panic(fmt.Sprintf(
 			"Function parameters names count (%v) mismatches arguments types count (%v)",
-			len(paramNames),
+			len(paramSymbols),
 			len(spirvFuncType.ArgTypes)),
 		)
 	}
 	params := make([]*spirv.FuncParam, len(spirvFuncType.ArgTypes))
 	for i := range spirvFuncType.ArgTypes {
-		params[i] = ir.module.NewFuncParam(paramNames[i], spirvFuncType.ArgTypes[i])
+		if paramSymbols[i] == nil {
+			params[i] = ir.module.NewFuncParam(fmt.Sprintf("UnnamedParam%v", i), spirvFuncType.ArgTypes[i])
+		} else {
+			params[i] = ir.module.NewFuncParam(paramSymbols[i].Name(), spirvFuncType.ArgTypes[i])
+			ir.setObjectOfSymbol(paramSymbols[i], params[i])
+		}
 	}
 	spirvFunction := ir.module.NewFunction(sym.Name(), spirvFuncType, params)
 
@@ -185,11 +187,7 @@ func (ir *IREmitter) emitIdentifierExpr(e *IdentifierExpr) spirv.Object {
 		panic(fmt.Sprintf("unable to find symbol for identifier: %v", e.Token.Value()))
 	}
 
-	if symbol.Decl() == nil {
-		panic(fmt.Sprintf("identifier has no declaration: %v", e.Token.Value()))
-	}
-
-	return ir.objectOfDecl(symbol.Decl())
+	return ir.objectOfSymbol(symbol)
 }
 
 func (ir *IREmitter) emitUnaryExpr(e *UnaryExpr) spirv.Object {
