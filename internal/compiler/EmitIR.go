@@ -75,6 +75,7 @@ func (ir *IREmitter) emitSymbol(sym Symbol) {
 }
 
 func (ir *IREmitter) emitFunc(sym *FuncSymbol) spirv.Object {
+<<<<<<< HEAD
 	paramNames := func() (names []string) {
 		funcDecl := sym.Decl().(*FuncDecl)
 		for i, f := range funcDecl.Type.Parameters.Fields {
@@ -89,6 +90,8 @@ func (ir *IREmitter) emitFunc(sym *FuncSymbol) spirv.Object {
 		return
 	}()
 
+=======
+>>>>>>> master
 	funcType := ir.unit.semanticInfo.TypeOf(sym).Type.(*FuncType)
 	spirvFuncType := ir.emitType(funcType).(*spirv.FuncType)
 
