@@ -72,6 +72,9 @@ func (bp *BinaryPrinter) emitFunction(f *Function) {
 		Word(FunctionControlNone),
 		Word(f.Type.ID()),
 	)
+	for _, p := range f.Params {
+		bp.emitOp(Word(OpFunctionParameter), Word(p.Type.ID()), Word(p.ID()))
+	}
 	for _, block := range f.Blocks {
 		bp.emitBlock(block)
 	}

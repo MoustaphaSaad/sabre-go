@@ -1,0 +1,20 @@
+package main
+
+func testWithNamesIntX(x int, y, z float32, b bool) int {
+	return x
+}
+
+func testWithNamesFloatY(x int, y, z float32, b bool) float32 {
+	return y
+}
+
+func testWithNamesFloatZ(x int, y, z float32, b bool) float32 {
+	return z
+}
+
+func testWithNamesBoolB(x int, y, z float32, b bool) bool {
+	return b
+}
+
+func testWithoutNames(int, float32, bool) {
+}
