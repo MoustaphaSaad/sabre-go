@@ -98,6 +98,10 @@ func (bp *BinaryPrinter) emitInstruction(inst Instruction) {
 		bp.emitOp(Word(OpReturn))
 	case *ReturnValueInstruction:
 		bp.emitOp(Word(OpReturnValue), Word(i.Value))
+	case *LoadInstruction:
+		bp.emitOp(Word(OpLoad), Word(i.ResultType), Word(i.ResultID), Word(i.Pointer))
+	case *StoreInstruction:
+		bp.emitOp(Word(OpStore), Word(i.Pointer), Word(i.Object))
 	case *SNegateInstruction:
 		bp.emitOp(Word(OpSNegate), Word(i.ResultType), Word(i.ResultID), Word(i.Operand))
 	case *FNegateInstruction:

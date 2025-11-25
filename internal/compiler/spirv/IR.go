@@ -855,3 +855,22 @@ type FunctionCallInstruction struct {
 func (i *FunctionCallInstruction) Opcode() Opcode {
 	return OpFunctionCall
 }
+
+type LoadInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Pointer    ID // TODO: Rename to Source for consistency
+}
+
+func (i *LoadInstruction) Opcode() Opcode {
+	return OpLoad
+}
+
+type StoreInstruction struct {
+	Pointer ID // TODO: Rename to Target for consistency
+	Object  ID // TODO: Rename to Value for consistency
+}
+
+func (i *StoreInstruction) Opcode() Opcode {
+	return OpStore
+}
