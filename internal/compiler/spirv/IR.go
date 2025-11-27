@@ -128,6 +128,20 @@ func (m *Module) NewFunction(name string, functionType *FuncType, params []*Func
 	return f
 }
 
+func (m *Module) NewVariable(name string, varType Type, sc StorageClass) *Variable {
+	ptrType := m.InternPtr(varType, sc)
+	v := &Variable{
+		BaseObject: BaseObject{
+			ObjectID:   m.NewID(),
+			ObjectName: name,
+		},
+		Type:         ptrType,
+		StorageClass: sc,
+	}
+	m.objectsByID[v.ObjectID] = v
+	return v
+}
+
 func (m *Module) InternVoid() *VoidType {
 	t := &VoidType{}
 	if existingType, ok := m.typesByKey[t.HashKey()]; ok {
@@ -194,7 +208,7 @@ func (m *Module) InternPtr(to Type, sc StorageClass) *PtrType {
 		return existingType.(*PtrType)
 	}
 	t.ObjectID = m.NewID()
-	t.ObjectName = t.HashKey()
+	t.ObjectName = t.TypeName()
 	t.Module = m
 	m.objectsByID[t.ObjectID] = t
 	m.typesByKey[t.HashKey()] = t
@@ -348,6 +362,12 @@ type Block struct {
 
 func (b *Block) Push(instr Instruction) {
 	b.Instructions = append(b.Instructions, instr)
+}
+
+type Variable struct {
+	BaseObject
+	Type         *PtrType
+	StorageClass StorageClass
 }
 
 // Instruction represents a single SPIR-V instruction with an opcode.
@@ -854,4 +874,34 @@ type FunctionCallInstruction struct {
 
 func (i *FunctionCallInstruction) Opcode() Opcode {
 	return OpFunctionCall
+}
+
+type VariableInstruction struct {
+	ResultType   ID
+	ResultID     ID
+	StorageClass StorageClass
+	Initializer  ID
+}
+
+func (i *VariableInstruction) Opcode() Opcode {
+	return OpVariable
+}
+
+type LoadInstruction struct {
+	ResultType ID
+	ResultID   ID
+	Pointer    ID
+}
+
+func (i *LoadInstruction) Opcode() Opcode {
+	return OpLoad
+}
+
+type StoreInstruction struct {
+	Pointer ID
+	Object  ID
+}
+
+func (i *StoreInstruction) Opcode() Opcode {
+	return OpStore
 }
