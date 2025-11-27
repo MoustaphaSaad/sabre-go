@@ -1,0 +1,14 @@
+OpCapability Shader
+OpCapability Linkage
+OpMemoryModel Logical GLSL450
+%type_void_1 = OpTypeVoid
+%type_func_ret_void_2 = OpTypeFunction %type_void_1
+%type_int32_5 = OpTypeInt 32 1
+%type_ptr_int32_7_6 = OpTypePointer Function %type_int32_5
+%const_int32_1_8 = OpConstant %type_int32_5 1
+%func_main_3 = OpFunction %type_void_1 None %type_func_ret_void_2
+%block_main_4 = OpLabel
+%x_7 = OpVariable %type_ptr_int32_7_6 Function %const_int32_1_8
+OpStore %x_7 %const_int32_1_8
+OpReturn
+OpFunctionEnd
