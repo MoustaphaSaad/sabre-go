@@ -1712,7 +1712,7 @@ func (checker *Checker) resolveDeclStmt(s *DeclStmt) {
 		return true
 	}
 
-	resolveValueSymbol := func(d *GenericDecl, symbolFunc func(name Token, decl Decl, sourceRange SourceRange, specIndex, exprIndex int)) {
+	resolveValueSymbol := func(d *GenericDecl, symbolFunc func(name Token, decl Decl, sourceRange SourceRange, specIndex, exprIndex int) Symbol) {
 		for si, spec := range d.Specs {
 			spec := spec.(*ValueSpec)
 			rhs, _ := checker.resolveAndUnpackTypesFromExprList(spec.RHS)
@@ -1723,30 +1723,34 @@ func (checker *Checker) resolveDeclStmt(s *DeclStmt) {
 			}
 
 			for ei, name := range spec.LHS {
-				symbolFunc(name.Token, d, d.SourceRange(), si, ei)
+				sym := symbolFunc(name.Token, d, d.SourceRange(), si, ei)
+				checker.unit.semanticInfo.SetSymbolOfIdentifier(name, sym)
 			}
 		}
 	}
 
 	switch d := s.Decl.(*GenericDecl); d.DeclToken.Kind() {
 	case TokenVar:
-		resolveValueSymbol(d, func(name Token, decl Decl, sourceRange SourceRange, specIndex, exprIndex int) {
+		resolveValueSymbol(d, func(name Token, decl Decl, sourceRange SourceRange, specIndex, exprIndex int) Symbol {
 			sym := NewVarSymbol(name, decl, sourceRange, specIndex, exprIndex)
 			checker.addSymbol(sym)
-			checker.resolveVarSymbol(sym)
+			checker.resolveSymbol(sym)
+			return sym
 		})
 	case TokenConst:
-		resolveValueSymbol(d, func(name Token, decl Decl, sourceRange SourceRange, specIndex, exprIndex int) {
+		resolveValueSymbol(d, func(name Token, decl Decl, sourceRange SourceRange, specIndex, exprIndex int) Symbol {
 			sym := NewConstSymbol(name, decl, sourceRange, specIndex, exprIndex)
 			checker.addSymbol(sym)
-			checker.resolveConstSymbol(sym)
+			checker.resolveSymbol(sym)
+			return sym
 		})
 	case TokenType:
 		for _, s := range d.Specs {
 			spec := s.(*TypeSpec)
 			sym := NewTypeSymbol(spec.Name.Token, d, spec.Name.SourceRange(), spec.Type, !spec.Assign.valid())
 			checker.addSymbol(sym)
-			checker.resolveTypeSymbol(sym)
+			checker.resolveSymbol(sym)
+			checker.unit.semanticInfo.SetSymbolOfIdentifier(spec.Name, sym)
 		}
 	default:
 		panic("unexpected decl type")
