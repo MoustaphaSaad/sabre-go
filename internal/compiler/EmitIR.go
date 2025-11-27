@@ -832,6 +832,8 @@ func (ir *IREmitter) emitStatement(stmt Stmt, block *spirv.Block) {
 		ir.emitReturnStmt(s, block)
 	case *ExprStmt:
 		ir.emitExpression(s.Expr)
+	case *DeclStmt:
+		ir.emitDeclStmt(s, block)
 	default:
 		panic("unsupported statement")
 	}
@@ -843,5 +845,54 @@ func (ir *IREmitter) emitReturnStmt(s *ReturnStmt, block *spirv.Block) {
 		block.Push(&spirv.ReturnValueInstruction{Value: ir.emitExpression(s.Exprs[0]).ID()})
 	} else {
 		block.Push(&spirv.ReturnInstruction{})
+	}
+}
+
+func (ir *IREmitter) emitDeclStmt(s *DeclStmt, block *spirv.Block) {
+	d := s.Decl.(*GenericDecl)
+	switch d.DeclToken.Kind() {
+	case TokenVar:
+		ir.emitVarDecl(d, block)
+	default:
+		panic("unsupported declaration in DeclStmt")
+	}
+}
+
+func (ir *IREmitter) emitVarDecl(d *GenericDecl, block *spirv.Block) {
+	for _, spec := range d.Specs {
+		ir.emitValueSpec(spec.(*ValueSpec), block, spirv.StorageClassFunction, true)
+	}
+}
+
+func (ir *IREmitter) emitValueSpec(v *ValueSpec, block *spirv.Block, sc spirv.StorageClass, isVariable bool) {
+	for i, name := range v.LHS {
+		symbol := ir.unit.semanticInfo.SymbolOfIdentifier(name)
+		tav := ir.unit.semanticInfo.TypeOf(symbol)
+		spirvType := ir.emitType(tav.Type)
+
+		if isVariable {
+			variable := ir.module.NewVariable(symbol.Name(), spirvType, sc)
+
+			var initValue spirv.Object
+			if v.RHS != nil && i < len(v.RHS) {
+				initValue = ir.emitExpression(v.RHS[i])
+			}
+
+			block.Push(&spirv.VariableInstruction{
+				ResultType:   variable.Type.ID(),
+				ResultID:     variable.ID(),
+				StorageClass: variable.StorageClass,
+				Initializer:  initValue.ID(),
+			})
+
+			if initValue != nil {
+				block.Push(&spirv.StoreInstruction{
+					Pointer: variable.ID(),
+					Object:  initValue.ID(),
+				})
+			}
+
+			ir.setObjectOfSymbol(symbol, variable)
+		}
 	}
 }

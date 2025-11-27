@@ -234,6 +234,18 @@ func (tp *TextPrinter) emitInstruction(inst Instruction) {
 		}
 		resultObj := tp.module.GetObject(i.ResultID)
 		tp.emitWithObject(resultObj, OpFunctionCall, args...)
+	case *VariableInstruction:
+		resultObj := tp.module.GetObject(i.ResultID)
+		if i.Initializer != 0 {
+			tp.emitWithObject(resultObj, OpVariable, tp.nameOfByID(i.ResultType), i.StorageClass, tp.nameOfByID(i.Initializer))
+		} else {
+			tp.emitWithObject(resultObj, OpVariable, tp.nameOfByID(i.ResultType), i.StorageClass)
+		}
+	case *LoadInstruction:
+		resultObj := tp.module.GetObject(i.ResultID)
+		tp.emitWithObject(resultObj, OpLoad, tp.nameOfByID(i.ResultType), tp.nameOfByID(i.Pointer))
+	case *StoreInstruction:
+		tp.emit(OpStore, tp.nameOfByID(i.Pointer), tp.nameOfByID(i.Object))
 	default:
 		panic(fmt.Sprintf("unsupported instruction: %T", inst))
 	}
