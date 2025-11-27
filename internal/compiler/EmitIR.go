@@ -852,25 +852,20 @@ func (ir *IREmitter) emitDeclStmt(s *DeclStmt, block *spirv.Block) {
 	d := s.Decl.(*GenericDecl)
 	switch d.DeclToken.Kind() {
 	case TokenVar:
-		ir.emitVarDecl(d, block)
+		ir.emitVarDecl(d, spirv.StorageClassFunction, block)
 	default:
 		panic("unsupported declaration in DeclStmt")
 	}
 }
 
-func (ir *IREmitter) emitVarDecl(d *GenericDecl, block *spirv.Block) {
+func (ir *IREmitter) emitVarDecl(d *GenericDecl, sc spirv.StorageClass, block *spirv.Block) {
 	for _, spec := range d.Specs {
-		ir.emitValueSpec(spec.(*ValueSpec), block, spirv.StorageClassFunction, true)
-	}
-}
+		v := spec.(*ValueSpec)
+		for i, name := range v.LHS {
+			symbol := ir.unit.semanticInfo.SymbolOfIdentifier(name)
+			tav := ir.unit.semanticInfo.TypeOf(symbol)
+			spirvType := ir.emitType(tav.Type)
 
-func (ir *IREmitter) emitValueSpec(v *ValueSpec, block *spirv.Block, sc spirv.StorageClass, isVariable bool) {
-	for i, name := range v.LHS {
-		symbol := ir.unit.semanticInfo.SymbolOfIdentifier(name)
-		tav := ir.unit.semanticInfo.TypeOf(symbol)
-		spirvType := ir.emitType(tav.Type)
-
-		if isVariable {
 			variable := ir.module.NewVariable(symbol.Name(), spirvType, sc)
 
 			var initValue spirv.Object
