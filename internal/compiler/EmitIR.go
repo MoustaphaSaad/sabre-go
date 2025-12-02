@@ -124,8 +124,17 @@ func (ir *IREmitter) emitFunc(sym *FuncSymbol) spirv.Object {
 		return spirvFunction
 	}
 
+	// All OpVariable instructions in a function must be the first instructions in the first block.
 	for _, stmt := range funcDecl.Body.Stmts {
-		ir.emitStatement(stmt, spirvBlock)
+		if s, ok := stmt.(*DeclStmt); ok {
+			ir.emitStatement(s, spirvBlock)
+		}
+	}
+
+	for _, stmt := range funcDecl.Body.Stmts {
+		if s, ok := stmt.(*DeclStmt); !ok {
+			ir.emitStatement(s, spirvBlock)
+		}
 	}
 
 	// Check if last instruction is already a return
@@ -868,12 +877,15 @@ func (ir *IREmitter) emitVarDecl(d *GenericDecl, sc spirv.StorageClass, block *s
 			ptrType := ir.module.InternPtr(spirvType, sc)
 			variable := ir.module.NewVariable(symbol.Name(), ptrType, sc)
 
-			initValueID := spirv.ID(0)
+			var initValueID spirv.ID
 			if v.RHS != nil {
 				if i < len(v.RHS) {
-					initValueID = ir.emitExpression(v.RHS[i]).ID()
+					switch rhsExpr := v.RHS[i].(type) {
+					case *LiteralExpr, *IdentifierExpr:
+						initValueID = ir.emitExpression(rhsExpr).ID()
+					}
 				} else {
-					panic("Variable initialization from tuple types is not supported yet")
+					panic("variable initialization from tuple types is not supported yet")
 				}
 			}
 
@@ -885,6 +897,22 @@ func (ir *IREmitter) emitVarDecl(d *GenericDecl, sc spirv.StorageClass, block *s
 			})
 
 			ir.setObjectOfSymbol(symbol, variable)
+
+			if v.RHS != nil {
+				if i < len(v.RHS) {
+					switch rhsExpr := v.RHS[i].(type) {
+					case *LiteralExpr:
+					case *IdentifierExpr:
+					default:
+						block.Push(&spirv.StoreInstruction{
+							Pointer: variable.ID(),
+							Object:  ir.emitExpression(rhsExpr).ID(),
+						})
+					}
+				} else {
+					panic("variable initialization from tuple types is not supported yet")
+				}
+			}
 		}
 	}
 }
