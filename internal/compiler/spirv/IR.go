@@ -128,8 +128,7 @@ func (m *Module) NewFunction(name string, functionType *FuncType, params []*Func
 	return f
 }
 
-func (m *Module) NewVariable(name string, varType Type, sc StorageClass) *Variable {
-	ptrType := m.InternPtr(varType, sc)
+func (m *Module) NewVariable(name string, ptrType *PtrType, sc StorageClass) *Variable {
 	v := &Variable{
 		BaseObject: BaseObject{
 			ObjectID:   m.NewID(),

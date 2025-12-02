@@ -865,27 +865,24 @@ func (ir *IREmitter) emitVarDecl(d *GenericDecl, sc spirv.StorageClass, block *s
 			symbol := ir.unit.semanticInfo.SymbolOfIdentifier(name)
 			tav := ir.unit.semanticInfo.TypeOf(symbol)
 			spirvType := ir.emitType(tav.Type)
+			ptrType := ir.module.InternPtr(spirvType, sc)
+			variable := ir.module.NewVariable(symbol.Name(), ptrType, sc)
 
-			variable := ir.module.NewVariable(symbol.Name(), spirvType, sc)
-
-			var initValue spirv.Object
-			if v.RHS != nil && i < len(v.RHS) {
-				initValue = ir.emitExpression(v.RHS[i])
+			initValueID := spirv.ID(0)
+			if v.RHS != nil {
+				if i < len(v.RHS) {
+					initValueID = ir.emitExpression(v.RHS[i]).ID()
+				} else {
+					panic("Variable initialization from tuple types is not supported yet")
+				}
 			}
 
 			block.Push(&spirv.VariableInstruction{
 				ResultType:   variable.Type.ID(),
 				ResultID:     variable.ID(),
 				StorageClass: variable.StorageClass,
-				Initializer:  initValue.ID(),
+				Initializer:  initValueID,
 			})
-
-			if initValue != nil {
-				block.Push(&spirv.StoreInstruction{
-					Pointer: variable.ID(),
-					Object:  initValue.ID(),
-				})
-			}
 
 			ir.setObjectOfSymbol(symbol, variable)
 		}
