@@ -132,8 +132,8 @@ func (ir *IREmitter) emitFunc(sym *FuncSymbol) spirv.Object {
 	}
 
 	for _, stmt := range funcDecl.Body.Stmts {
-		if s, ok := stmt.(*DeclStmt); !ok {
-			ir.emitStatement(s, spirvBlock)
+		if _, ok := stmt.(*DeclStmt); !ok {
+			ir.emitStatement(stmt, spirvBlock)
 		}
 	}
 
