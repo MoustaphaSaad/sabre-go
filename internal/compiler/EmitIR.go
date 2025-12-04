@@ -41,6 +41,22 @@ func (ir *IREmitter) currentBlock() *spirv.Block {
 	return nil
 }
 
+func (ir *IREmitter) isTerminated(block *spirv.Block) bool {
+	if block == nil || len(block.Instructions) == 0 {
+		return false
+	}
+	return ir.isTerminator(block.Instructions[len(block.Instructions)-1])
+}
+
+func (ir *IREmitter) isTerminator(inst spirv.Instruction) bool {
+	switch inst.(type) {
+	case *spirv.ReturnInstruction, *spirv.ReturnValueInstruction, *spirv.UnreachableInstruction:
+		return true
+	default:
+		return false
+	}
+}
+
 func (ir *IREmitter) objectOfSymbol(sym Symbol) spirv.Object {
 	if obj, ok := ir.objectBySymbol[sym]; ok {
 		return obj
@@ -119,27 +135,19 @@ func (ir *IREmitter) emitFunc(sym *FuncSymbol) spirv.Object {
 	ir.enterBlock(spirvBlock)
 	defer ir.leaveBlock()
 
-	if len(funcDecl.Body.Stmts) == 0 {
-		spirvBlock.Push(&spirv.ReturnInstruction{})
-		return spirvFunction
-	}
-
 	for _, stmt := range funcDecl.Body.Stmts {
-		ir.emitStatement(stmt, spirvBlock)
+		ir.emitStatement(stmt)
 	}
 
-	// Check if last instruction is already a return
-	if len(spirvBlock.Instructions) > 0 {
-		lastInst := spirvBlock.Instructions[len(spirvBlock.Instructions)-1]
-		switch lastInst.(type) {
-		case *spirv.ReturnInstruction, *spirv.ReturnValueInstruction:
-			return spirvFunction
+	currentBlock := ir.currentBlock()
+	if !ir.isTerminated(currentBlock) && len(funcType.ReturnTypes) == 0 {
+		currentBlock.Push(&spirv.ReturnInstruction{})
+	}
+
+	for _, block := range spirvFunction.Blocks {
+		if !ir.isTerminated(block) {
+			block.Push(&spirv.UnreachableInstruction{})
 		}
-	}
-
-	// No terminator found - add one for void functions
-	if len(funcType.ReturnTypes) == 0 {
-		spirvBlock.Push(&spirv.ReturnInstruction{})
 	}
 
 	return spirvFunction
@@ -826,22 +834,35 @@ func (ir *IREmitter) emitType(Type Type) spirv.Type {
 	}
 }
 
-func (ir *IREmitter) emitStatement(stmt Stmt, block *spirv.Block) {
+func (ir *IREmitter) emitStatement(stmt Stmt) {
 	switch s := stmt.(type) {
 	case *ReturnStmt:
-		ir.emitReturnStmt(s, block)
+		ir.emitReturnStmt(s)
 	case *ExprStmt:
 		ir.emitExpression(s.Expr)
+	case *BlockStmt:
+		ir.emitBlockStmt(s)
 	default:
 		panic("unsupported statement")
 	}
 }
 
-func (ir *IREmitter) emitReturnStmt(s *ReturnStmt, block *spirv.Block) {
+func (ir *IREmitter) emitReturnStmt(s *ReturnStmt) {
+	block := ir.currentBlock()
 	if len(s.Exprs) > 0 {
 		// TODO: Multiple return values
-		block.Push(&spirv.ReturnValueInstruction{Value: ir.emitExpression(s.Exprs[0]).ID()})
-	} else {
+		if !ir.isTerminated(block) {
+			block.Push(&spirv.ReturnValueInstruction{Value: ir.emitExpression(s.Exprs[0]).ID()})
+		}
+		return
+	}
+	if !ir.isTerminated(block) {
 		block.Push(&spirv.ReturnInstruction{})
+	}
+}
+
+func (ir *IREmitter) emitBlockStmt(s *BlockStmt) {
+	for _, stmt := range s.Stmts {
+		ir.emitStatement(stmt)
 	}
 }

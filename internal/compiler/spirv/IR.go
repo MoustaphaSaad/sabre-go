@@ -387,6 +387,12 @@ func (r *ReturnValueInstruction) Opcode() Opcode {
 	return OpReturnValue
 }
 
+type UnreachableInstruction struct{}
+
+func (u *UnreachableInstruction) Opcode() Opcode {
+	return OpUnreachable
+}
+
 type SNegateInstruction struct {
 	ResultType ID
 	ResultID   ID
