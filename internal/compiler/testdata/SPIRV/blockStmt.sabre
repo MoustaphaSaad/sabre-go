@@ -1,0 +1,18 @@
+package main
+
+func empty() {
+	{}
+}
+
+func returnBlock() int {
+	{
+		return 1 + 2
+	}
+}
+
+func doubleReturn() int {
+	{
+		return 1
+	}
+	return 2
+}

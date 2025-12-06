@@ -99,6 +99,8 @@ func (tp *TextPrinter) emitInstruction(inst Instruction) {
 		tp.emit(OpReturn)
 	case *ReturnValueInstruction:
 		tp.emit(OpReturnValue, tp.nameOfByID(i.Value))
+	case *UnreachableInstruction:
+		tp.emit(OpUnreachable)
 	case *SNegateInstruction:
 		resultObj := tp.module.GetObject(i.ResultID)
 		tp.emitWithObject(resultObj, OpSNegate, tp.nameOfByID(i.ResultType), tp.nameOfByID(i.Operand))
