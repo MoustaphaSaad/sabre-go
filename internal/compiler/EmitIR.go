@@ -175,6 +175,10 @@ func (ir *IREmitter) emitExpression(expr Expr) spirv.Object {
 
 func (ir *IREmitter) emitLiteralExpr(e *LiteralExpr) spirv.Object {
 	tav := ir.unit.semanticInfo.TypeOf(e)
+	return ir.emitConstantValue(tav)
+}
+
+func (ir *IREmitter) emitConstantValue(tav *TypeAndValue) spirv.Object {
 	switch t := ir.emitType(tav.Type).(type) {
 	case *spirv.BoolType:
 		val := constant.BoolVal(tav.Value)
