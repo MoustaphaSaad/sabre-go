@@ -882,8 +882,8 @@ func (ir *IREmitter) emitVarDecl(d *GenericDecl, sc spirv.StorageClass, block *s
 			variable := ir.module.NewVariable(symbol.Name(), ptrType, sc)
 
 			var initValueID spirv.ID
-			if tav.Mode == AddressModeConstant {
-				initValueID = ir.emitConstantValue(tav).ID()
+			if initTAV := symbol.(*VarSymbol).InitTypeAndValue; initTAV != nil {
+				initValueID = ir.emitConstantValue(initTAV).ID()
 			}
 
 			block.Push(&spirv.VariableInstruction{
