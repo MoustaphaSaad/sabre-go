@@ -314,7 +314,7 @@ func (checker *Checker) shallowWalkGenericDecl(d *GenericDecl) {
 		for si, s := range d.Specs {
 			spec := s.(*ValueSpec)
 			for ei, name := range spec.LHS {
-				sym := NewVarSymbol(name.Token, d, d.SourceRange(), si, ei)
+				sym := NewVarSymbol(name.Token, d, d.SourceRange(), si, ei, nil)
 				checker.addSymbol(sym)
 			}
 		}
@@ -1114,7 +1114,7 @@ func (checker *Checker) resolveFuncTypeExpr(e *FuncTypeExpr) *TypeAndValue {
 			fieldType := checker.resolveExpr(field.Type)
 			if len(field.Names) > 0 {
 				for _, name := range field.Names {
-					v := NewVarSymbol(name.Token, nil, name.SourceRange(), 0, 0)
+					v := NewVarSymbol(name.Token, nil, name.SourceRange(), -1, -1, nil)
 					v.SetResolveState(ResolveStateResolved)
 					checker.unit.semanticInfo.SetTypeOf(v, fieldType)
 					checker.addSymbol(v)
@@ -1466,7 +1466,7 @@ func (checker *Checker) resolveAssignStmt(s *AssignStmt) {
 		for i := range s.LHS {
 			lhs := s.LHS[i]
 			name := lhs.(*IdentifierExpr).Token
-			v := NewVarSymbol(name, nil, name.SourceRange(), 0, 0)
+			v := NewVarSymbol(name, nil, name.SourceRange(), -1, -1, rhsTypes[i])
 			v.SetResolveState(ResolveStateResolved)
 			checker.unit.semanticInfo.SetTypeOf(v, &TypeAndValue{Mode: AddressModeVariable, Type: rhsTypes[i].Type})
 			checker.addSymbol(v)
@@ -1712,7 +1712,8 @@ func (checker *Checker) resolveDeclStmt(s *DeclStmt) {
 		return true
 	}
 
-	resolveValueSymbol := func(d *GenericDecl, symbolFunc func(name Token, decl Decl, sourceRange SourceRange, specIndex, exprIndex int)) {
+	type SymbolFunc func(name Token, decl Decl, sourceRange SourceRange, specIndex, exprIndex int, initTAV *TypeAndValue) Symbol
+	resolveValueSymbol := func(d *GenericDecl, symbolFunc SymbolFunc) {
 		for si, spec := range d.Specs {
 			spec := spec.(*ValueSpec)
 			rhs, _ := checker.resolveAndUnpackTypesFromExprList(spec.RHS)
@@ -1723,30 +1724,38 @@ func (checker *Checker) resolveDeclStmt(s *DeclStmt) {
 			}
 
 			for ei, name := range spec.LHS {
-				symbolFunc(name.Token, d, d.SourceRange(), si, ei)
+				var initTAV *TypeAndValue = nil
+				if ei < len(rhs) {
+					initTAV = rhs[ei]
+				}
+				sym := symbolFunc(name.Token, d, d.SourceRange(), si, ei, initTAV)
+				checker.unit.semanticInfo.SetSymbolOfIdentifier(name, sym)
 			}
 		}
 	}
 
 	switch d := s.Decl.(*GenericDecl); d.DeclToken.Kind() {
 	case TokenVar:
-		resolveValueSymbol(d, func(name Token, decl Decl, sourceRange SourceRange, specIndex, exprIndex int) {
-			sym := NewVarSymbol(name, decl, sourceRange, specIndex, exprIndex)
+		resolveValueSymbol(d, func(name Token, decl Decl, sourceRange SourceRange, specIndex, exprIndex int, initTAV *TypeAndValue) Symbol {
+			sym := NewVarSymbol(name, decl, sourceRange, specIndex, exprIndex, initTAV)
 			checker.addSymbol(sym)
-			checker.resolveVarSymbol(sym)
+			checker.resolveSymbol(sym)
+			return sym
 		})
 	case TokenConst:
-		resolveValueSymbol(d, func(name Token, decl Decl, sourceRange SourceRange, specIndex, exprIndex int) {
+		resolveValueSymbol(d, func(name Token, decl Decl, sourceRange SourceRange, specIndex, exprIndex int, _ *TypeAndValue) Symbol {
 			sym := NewConstSymbol(name, decl, sourceRange, specIndex, exprIndex)
 			checker.addSymbol(sym)
-			checker.resolveConstSymbol(sym)
+			checker.resolveSymbol(sym)
+			return sym
 		})
 	case TokenType:
 		for _, s := range d.Specs {
 			spec := s.(*TypeSpec)
 			sym := NewTypeSymbol(spec.Name.Token, d, spec.Name.SourceRange(), spec.Type, !spec.Assign.valid())
 			checker.addSymbol(sym)
-			checker.resolveTypeSymbol(sym)
+			checker.resolveSymbol(sym)
+			checker.unit.semanticInfo.SetSymbolOfIdentifier(spec.Name, sym)
 		}
 	default:
 		panic("unexpected decl type")

@@ -166,6 +166,10 @@ func (ir *IREmitter) emitExpression(expr Expr) spirv.Object {
 
 func (ir *IREmitter) emitLiteralExpr(e *LiteralExpr) spirv.Object {
 	tav := ir.unit.semanticInfo.TypeOf(e)
+	return ir.emitConstantValue(tav)
+}
+
+func (ir *IREmitter) emitConstantValue(tav *TypeAndValue) spirv.Object {
 	switch t := ir.emitType(tav.Type).(type) {
 	case *spirv.BoolType:
 		val := constant.BoolVal(tav.Value)
@@ -832,6 +836,8 @@ func (ir *IREmitter) emitStatement(stmt Stmt, block *spirv.Block) {
 		ir.emitReturnStmt(s, block)
 	case *ExprStmt:
 		ir.emitExpression(s.Expr)
+	case *DeclStmt:
+		ir.emitDeclStmt(s, block)
 	default:
 		panic("unsupported statement")
 	}
@@ -843,5 +849,58 @@ func (ir *IREmitter) emitReturnStmt(s *ReturnStmt, block *spirv.Block) {
 		block.Push(&spirv.ReturnValueInstruction{Value: ir.emitExpression(s.Exprs[0]).ID()})
 	} else {
 		block.Push(&spirv.ReturnInstruction{})
+	}
+}
+
+func (ir *IREmitter) emitDeclStmt(s *DeclStmt, block *spirv.Block) {
+	d := s.Decl.(*GenericDecl)
+	switch d.DeclToken.Kind() {
+	case TokenVar:
+		ir.emitVarDecl(d, spirv.StorageClassFunction, block)
+	default:
+		panic("unsupported declaration in DeclStmt")
+	}
+}
+
+func (ir *IREmitter) emitVarDecl(d *GenericDecl, sc spirv.StorageClass, block *spirv.Block) {
+	for _, spec := range d.Specs {
+		v := spec.(*ValueSpec)
+		for i, name := range v.LHS {
+			symbol := ir.unit.semanticInfo.SymbolOfIdentifier(name)
+			tav := ir.unit.semanticInfo.TypeOf(symbol)
+			spirvType := ir.emitType(tav.Type)
+			ptrType := ir.module.InternPtr(spirvType, sc)
+			variable := ir.module.NewVariable(symbol.Name(), ptrType, sc)
+
+			var initValueID spirv.ID
+			if initTAV := symbol.(*VarSymbol).InitTypeAndValue; initTAV != nil && initTAV.Mode == AddressModeConstant {
+				initValueID = ir.emitConstantValue(initTAV).ID()
+			}
+
+			block.Push(&spirv.VariableInstruction{
+				ResultType:   variable.Type.ID(),
+				ResultID:     variable.ID(),
+				StorageClass: variable.StorageClass,
+				Initializer:  initValueID,
+			})
+
+			ir.setObjectOfSymbol(symbol, variable)
+
+			if v.RHS != nil {
+				if i < len(v.RHS) {
+					switch rhsExpr := v.RHS[i].(type) {
+					case *LiteralExpr:
+					case *IdentifierExpr:
+					default:
+						block.Push(&spirv.StoreInstruction{
+							Pointer: variable.ID(),
+							Object:  ir.emitExpression(rhsExpr).ID(),
+						})
+					}
+				} else {
+					panic("variable initialization from tuple types is not supported yet")
+				}
+			}
+		}
 	}
 }

@@ -191,6 +191,16 @@ func (bp *BinaryPrinter) emitInstruction(inst Instruction) {
 			words = append(words, Word(arg))
 		}
 		bp.emitOp(Word(OpFunctionCall), words...)
+	case *VariableInstruction:
+		if i.Initializer != 0 {
+			bp.emitOp(Word(OpVariable), Word(i.ResultType), Word(i.ResultID), Word(i.StorageClass), Word(i.Initializer))
+		} else {
+			bp.emitOp(Word(OpVariable), Word(i.ResultType), Word(i.ResultID), Word(i.StorageClass))
+		}
+	case *LoadInstruction:
+		bp.emitOp(Word(OpLoad), Word(i.ResultType), Word(i.ResultID), Word(i.Pointer))
+	case *StoreInstruction:
+		bp.emitOp(Word(OpStore), Word(i.Pointer), Word(i.Object))
 	default:
 		panic("unsupported instruction")
 	}

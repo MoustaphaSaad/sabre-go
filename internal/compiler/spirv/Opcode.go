@@ -22,6 +22,9 @@ const (
 	OpFunctionParameter    Opcode = 55
 	OpFunctionEnd          Opcode = 56
 	OpFunctionCall         Opcode = 57
+	OpVariable             Opcode = 59
+	OpLoad                 Opcode = 61
+	OpStore                Opcode = 62
 	OpSNegate              Opcode = 126
 	OpFNegate              Opcode = 127
 	OpIAdd                 Opcode = 128
@@ -101,6 +104,12 @@ func (op Opcode) String() string {
 		return "OpFunctionEnd"
 	case OpFunctionCall:
 		return "OpFunctionCall"
+	case OpVariable:
+		return "OpVariable"
+	case OpLoad:
+		return "OpLoad"
+	case OpStore:
+		return "OpStore"
 	case OpSNegate:
 		return "OpSNegate"
 	case OpFNegate:
