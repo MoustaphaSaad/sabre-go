@@ -60,6 +60,14 @@ func cleanString(s string) string {
 	return strings.TrimSpace(strings.ReplaceAll(s, "\r\n", "\n"))
 }
 
+func compareOutput(a, b []byte, outputIsBinary bool) int {
+	if outputIsBinary {
+		return bytes.Compare(a, b)
+	} else {
+		return strings.Compare(cleanString(string(a)), cleanString(string(b)))
+	}
+}
+
 func scan(args []string, out io.Writer) error {
 	if len(args) < 1 {
 		return fmt.Errorf("no file provided\n%v", helpString())
@@ -90,7 +98,7 @@ func scan(args []string, out io.Writer) error {
 	return nil
 }
 
-func testFunc(f func([]string, io.Writer) error, args []string, out io.Writer, outputExt string) error {
+func testFunc(f func([]string, io.Writer) error, args []string, out io.Writer, outputExt string, outputIsBinary bool) error {
 	flagSet := flag.NewFlagSet("test-func", flag.ContinueOnError)
 	update := flagSet.Bool("update", false, "updates test outputs")
 	err := flagSet.Parse(args)
@@ -122,7 +130,7 @@ func testFunc(f func([]string, io.Writer) error, args []string, out io.Writer, o
 		if err != nil {
 			return fmt.Errorf("failed to read test file '%v': %v", testFile, err)
 		}
-		expectedOutput := cleanString(string(expectedBytes))
+		expectedOutputBytes := expectedBytes
 
 		fmt.Fprintf(out, "%v/%v) testing %v\n", i, len(goldenFiles), testFile)
 
@@ -131,9 +139,9 @@ func testFunc(f func([]string, io.Writer) error, args []string, out io.Writer, o
 		if err != nil {
 			return err
 		}
-		actualOutput := cleanString(actualOutputBuffer.String())
+		actualOutputBytes := actualOutputBuffer.Bytes()
 
-		if expectedOutput != actualOutput {
+		if compareOutput(expectedOutputBytes, actualOutputBytes, outputIsBinary) != 0 {
 			if *update {
 				f, err := os.Create(goldenFile)
 				if err != nil {
@@ -141,7 +149,11 @@ func testFunc(f func([]string, io.Writer) error, args []string, out io.Writer, o
 				}
 				defer f.Close()
 
-				fmt.Fprintf(f, "%s\n", actualOutput)
+				if outputIsBinary {
+					io.Copy(f, bytes.NewReader(actualOutputBytes))
+				} else {
+					fmt.Fprintf(f, "%s\n", string(actualOutputBytes))
+				}
 				fmt.Fprintln(out, "UPDATED")
 			} else {
 				fmt.Fprintln(out, "FAILURE")
@@ -331,31 +343,31 @@ func main() {
 	case "scan":
 		err = scan(subArgs, os.Stdout)
 	case "test-scan":
-		err = testFunc(scan, subArgs, os.Stdout, ".golden")
+		err = testFunc(scan, subArgs, os.Stdout, ".golden", false)
 	case "parse-expr":
 		err = parseExpr(subArgs, os.Stdout)
 	case "test-parse-expr":
-		err = testFunc(parseExpr, subArgs, os.Stdout, ".golden")
+		err = testFunc(parseExpr, subArgs, os.Stdout, ".golden", false)
 	case "parse-stmt":
 		err = parseStmt(subArgs, os.Stdout)
 	case "test-parse-stmt":
-		err = testFunc(parseStmt, subArgs, os.Stdout, ".golden")
+		err = testFunc(parseStmt, subArgs, os.Stdout, ".golden", false)
 	case "parse-decl":
 		err = parseDecl(subArgs, os.Stdout)
 	case "test-parse-decl":
-		err = testFunc(parseDecl, subArgs, os.Stdout, ".golden")
+		err = testFunc(parseDecl, subArgs, os.Stdout, ".golden", false)
 	case "check":
 		err = check(subArgs, os.Stdout)
 	case "test-check":
-		err = testFunc(check, subArgs, os.Stdout, ".golden")
+		err = testFunc(check, subArgs, os.Stdout, ".golden", false)
 	case "spirv":
 		err = emitSPIRVText(subArgs, os.Stdout)
 	case "test-spirv":
-		err = testFunc(emitSPIRVText, subArgs, os.Stdout, ".golden")
+		err = testFunc(emitSPIRVText, subArgs, os.Stdout, ".golden", false)
 	case "spirv-bin":
 		err = emitSPIRVBin(subArgs, os.Stdout)
 	case "test-spirv-bin":
-		err = testFunc(emitSPIRVBin, subArgs, os.Stdout, ".golden.bin")
+		err = testFunc(emitSPIRVBin, subArgs, os.Stdout, ".golden.bin", true)
 	default:
 		fmt.Fprintf(os.Stderr, "Error: unknown command '%s'\n", os.Args[1])
 		help()
