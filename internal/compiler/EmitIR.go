@@ -135,9 +135,7 @@ func (ir *IREmitter) emitFunc(sym *FuncSymbol) spirv.Object {
 	ir.enterBlock(spirvBlock)
 	defer ir.leaveBlock()
 
-	for _, stmt := range funcDecl.Body.Stmts {
-		ir.emitStatement(stmt)
-	}
+	ir.emitStatement(funcDecl.Body)
 
 	currentBlock := ir.currentBlock()
 	if !ir.isTerminated(currentBlock) && len(funcType.ReturnTypes) == 0 {
@@ -851,12 +849,8 @@ func (ir *IREmitter) emitReturnStmt(s *ReturnStmt) {
 	block := ir.currentBlock()
 	if len(s.Exprs) > 0 {
 		// TODO: Multiple return values
-		if !ir.isTerminated(block) {
-			block.Push(&spirv.ReturnValueInstruction{Value: ir.emitExpression(s.Exprs[0]).ID()})
-		}
-		return
-	}
-	if !ir.isTerminated(block) {
+		block.Push(&spirv.ReturnValueInstruction{Value: ir.emitExpression(s.Exprs[0]).ID()})
+	} else {
 		block.Push(&spirv.ReturnInstruction{})
 	}
 }
