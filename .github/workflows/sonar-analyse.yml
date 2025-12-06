@@ -63,7 +63,7 @@ jobs:
           ./sabre test-parse-decl ./internal/compiler/testdata/Parse/decl
           ./sabre test-check ./internal/compiler/testdata/Check
           ./sabre test-spirv ./internal/compiler/testdata/SPIRV
-          ./sabre test-spirv -ext .golden.bin -test-func-args "-binary" ./internal/compiler/testdata/SPIRV
+          ./sabre test-spirv-bin ./internal/compiler/testdata/SPIRV
           go tool covdata textfmt -i=cov -o sabre-cov.out
 
       - name: SonarQube Scan

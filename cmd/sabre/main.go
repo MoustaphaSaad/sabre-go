@@ -38,10 +38,14 @@ Commands:
                    "sabre check <file>"
   test-check       tests the type checking against golden output
                    "sabre test-check <test-data-dir>
-  spirv            emits SPIR-V bytecode
+  spirv            emits SPIR-V bytecode in text
                    "sabre spirv <file>"
   test-spirv       tests the SPIR-V emission against golden output
                    "sabre test-spirv <test-data-dir>"
+  spirv-bin        emits SPIR-V bytecode in binary
+                   "sabre spirv-bin <file>"
+  test-spirv-bin   tests the SPIR-V emission against golden binary output
+                   "sabre test-spirv-bin <test-data-dir>"
 `
 
 func helpString() string {
@@ -86,11 +90,9 @@ func scan(args []string, out io.Writer) error {
 	return nil
 }
 
-func testFunc(f func([]string, io.Writer) error, args []string, out io.Writer) error {
-	flagSet := flag.NewFlagSet("test-scan", flag.ContinueOnError)
+func testFunc(f func([]string, io.Writer) error, args []string, out io.Writer, outputExt string) error {
+	flagSet := flag.NewFlagSet("test-func", flag.ContinueOnError)
 	update := flagSet.Bool("update", false, "updates test outputs")
-	goldenExt := flagSet.String("ext", ".golden", "the extension of golden files")
-	testFuncArgs := flagSet.String("test-func-args", "", "Send args flag to test function")
 	err := flagSet.Parse(args)
 	if err != nil {
 		return err
@@ -103,7 +105,7 @@ func testFunc(f func([]string, io.Writer) error, args []string, out io.Writer) e
 	dir := flagSet.Arg(0)
 	var goldenFiles []string
 	err = filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
-		if !d.IsDir() && strings.HasSuffix(path, *goldenExt) {
+		if !d.IsDir() && strings.HasSuffix(path, outputExt) {
 			goldenFiles = append(goldenFiles, path)
 		}
 		return nil
@@ -115,7 +117,7 @@ func testFunc(f func([]string, io.Writer) error, args []string, out io.Writer) e
 	var failedTests []string
 
 	for i, goldenFile := range goldenFiles {
-		testFile := strings.TrimSuffix(goldenFile, *goldenExt)
+		testFile := strings.TrimSuffix(goldenFile, outputExt)
 		expectedBytes, err := os.ReadFile(goldenFile)
 		if err != nil {
 			return fmt.Errorf("failed to read test file '%v': %v", testFile, err)
@@ -125,13 +127,7 @@ func testFunc(f func([]string, io.Writer) error, args []string, out io.Writer) e
 		fmt.Fprintf(out, "%v/%v) testing %v\n", i, len(goldenFiles), testFile)
 
 		var actualOutputBuffer bytes.Buffer
-		var args []string
-		if *testFuncArgs != "" {
-			splitArgs := strings.Split(*testFuncArgs, " ")
-			args = append(args, splitArgs...)
-		}
-		args = append(args, testFile)
-		err = f(args, &actualOutputBuffer)
+		err = f([]string{testFile}, &actualOutputBuffer)
 		if err != nil {
 			return err
 		}
@@ -268,9 +264,8 @@ func check(args []string, out io.Writer) error {
 	return nil
 }
 
-func emitSPIRV(args []string, out io.Writer) error {
+func emitSPIRV(args []string, out io.Writer, binary bool) error {
 	flagSet := flag.NewFlagSet("emit-spirv", flag.ContinueOnError)
-	binary := flagSet.Bool("binary", false, "emit SPIR-V in binary format")
 	err := flagSet.Parse(args)
 	if err != nil {
 		return err
@@ -302,7 +297,7 @@ func emitSPIRV(args []string, out io.Writer) error {
 	}
 
 	module := unit.EmitSPIRV()
-	if *binary {
+	if binary {
 		printer := spirv.NewBinaryPrinter(out, module)
 		printer.Emit()
 	} else {
@@ -311,6 +306,14 @@ func emitSPIRV(args []string, out io.Writer) error {
 	}
 
 	return nil
+}
+
+func emitSPIRVText(args []string, out io.Writer) error {
+	return emitSPIRV(args, out, false)
+}
+
+func emitSPIRVBin(args []string, out io.Writer) error {
+	return emitSPIRV(args, out, true)
 }
 
 func main() {
@@ -328,27 +331,31 @@ func main() {
 	case "scan":
 		err = scan(subArgs, os.Stdout)
 	case "test-scan":
-		err = testFunc(scan, subArgs, os.Stdout)
+		err = testFunc(scan, subArgs, os.Stdout, ".golden")
 	case "parse-expr":
 		err = parseExpr(subArgs, os.Stdout)
 	case "test-parse-expr":
-		err = testFunc(parseExpr, subArgs, os.Stdout)
+		err = testFunc(parseExpr, subArgs, os.Stdout, ".golden")
 	case "parse-stmt":
 		err = parseStmt(subArgs, os.Stdout)
 	case "test-parse-stmt":
-		err = testFunc(parseStmt, subArgs, os.Stdout)
+		err = testFunc(parseStmt, subArgs, os.Stdout, ".golden")
 	case "parse-decl":
 		err = parseDecl(subArgs, os.Stdout)
 	case "test-parse-decl":
-		err = testFunc(parseDecl, subArgs, os.Stdout)
+		err = testFunc(parseDecl, subArgs, os.Stdout, ".golden")
 	case "check":
 		err = check(subArgs, os.Stdout)
 	case "test-check":
-		err = testFunc(check, subArgs, os.Stdout)
+		err = testFunc(check, subArgs, os.Stdout, ".golden")
 	case "spirv":
-		err = emitSPIRV(subArgs, os.Stdout)
+		err = emitSPIRVText(subArgs, os.Stdout)
 	case "test-spirv":
-		err = testFunc(emitSPIRV, subArgs, os.Stdout)
+		err = testFunc(emitSPIRVText, subArgs, os.Stdout, ".golden")
+	case "spirv-bin":
+		err = emitSPIRVBin(subArgs, os.Stdout)
+	case "test-spirv-bin":
+		err = testFunc(emitSPIRVBin, subArgs, os.Stdout, ".golden.bin")
 	default:
 		fmt.Fprintf(os.Stderr, "Error: unknown command '%s'\n", os.Args[1])
 		help()
