@@ -1114,7 +1114,7 @@ func (checker *Checker) resolveFuncTypeExpr(e *FuncTypeExpr) *TypeAndValue {
 			fieldType := checker.resolveExpr(field.Type)
 			if len(field.Names) > 0 {
 				for _, name := range field.Names {
-					v := NewVarSymbol(name.Token, nil, name.SourceRange(), 0, 0)
+					v := NewVarSymbol(name.Token, nil, name.SourceRange(), -1, -1)
 					v.SetResolveState(ResolveStateResolved)
 					checker.unit.semanticInfo.SetTypeOf(v, fieldType)
 					checker.addSymbol(v)
@@ -1466,7 +1466,7 @@ func (checker *Checker) resolveAssignStmt(s *AssignStmt) {
 		for i := range s.LHS {
 			lhs := s.LHS[i]
 			name := lhs.(*IdentifierExpr).Token
-			v := NewVarSymbol(name, nil, name.SourceRange(), 0, 0)
+			v := NewVarSymbol(name, nil, name.SourceRange(), -1, -1)
 			v.SetResolveState(ResolveStateResolved)
 			checker.unit.semanticInfo.SetTypeOf(v, &TypeAndValue{Mode: AddressModeVariable, Type: rhsTypes[i].Type})
 			checker.addSymbol(v)
