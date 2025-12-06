@@ -124,17 +124,8 @@ func (ir *IREmitter) emitFunc(sym *FuncSymbol) spirv.Object {
 		return spirvFunction
 	}
 
-	// All OpVariable instructions in a function must be the first instructions in the first block.
 	for _, stmt := range funcDecl.Body.Stmts {
-		if s, ok := stmt.(*DeclStmt); ok {
-			ir.emitStatement(s, spirvBlock)
-		}
-	}
-
-	for _, stmt := range funcDecl.Body.Stmts {
-		if _, ok := stmt.(*DeclStmt); !ok {
-			ir.emitStatement(stmt, spirvBlock)
-		}
+		ir.emitStatement(stmt, spirvBlock)
 	}
 
 	// Check if last instruction is already a return
@@ -882,7 +873,7 @@ func (ir *IREmitter) emitVarDecl(d *GenericDecl, sc spirv.StorageClass, block *s
 			variable := ir.module.NewVariable(symbol.Name(), ptrType, sc)
 
 			var initValueID spirv.ID
-			if initTAV := symbol.(*VarSymbol).InitTypeAndValue; initTAV != nil {
+			if initTAV := symbol.(*VarSymbol).InitTypeAndValue; initTAV != nil && initTAV.Mode == AddressModeConstant {
 				initValueID = ir.emitConstantValue(initTAV).ID()
 			}
 

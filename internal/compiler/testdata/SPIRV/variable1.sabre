@@ -3,3 +3,8 @@ package main
 func main() {
 	var x = 1
 }
+
+func varAfterExpr() {
+	main()
+	var y = 1
+}

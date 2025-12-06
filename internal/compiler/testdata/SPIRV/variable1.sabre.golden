@@ -11,4 +11,10 @@ OpMemoryModel Logical GLSL450
 %x_7 = OpVariable %type_ptr_int32_7_6 Function %const_int32_1_8
 OpReturn
 OpFunctionEnd
+%func_varAfterExpr_9 = OpFunction %type_void_1 None %type_func_ret_void_2
+%block_varAfterExpr_10 = OpLabel
+%_11 = OpFunctionCall %type_void_1 %func_main_3
+%y_12 = OpVariable %type_ptr_int32_7_6 Function %const_int32_1_8
+OpReturn
+OpFunctionEnd
 
