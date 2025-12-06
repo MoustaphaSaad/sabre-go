@@ -882,15 +882,8 @@ func (ir *IREmitter) emitVarDecl(d *GenericDecl, sc spirv.StorageClass, block *s
 			variable := ir.module.NewVariable(symbol.Name(), ptrType, sc)
 
 			var initValueID spirv.ID
-			if v.RHS != nil {
-				if i < len(v.RHS) {
-					switch rhsExpr := v.RHS[i].(type) {
-					case *LiteralExpr, *IdentifierExpr:
-						initValueID = ir.emitExpression(rhsExpr).ID()
-					}
-				} else {
-					panic("variable initialization from tuple types is not supported yet")
-				}
+			if tav.Mode == AddressModeConstant {
+				initValueID = ir.emitConstantValue(tav).ID()
 			}
 
 			block.Push(&spirv.VariableInstruction{
