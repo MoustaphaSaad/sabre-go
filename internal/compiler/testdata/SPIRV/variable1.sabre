@@ -1,10 +1,19 @@
 package main
 
-func main() {
+func varNoType() {
 	var x = 1
 }
 
-func varAfterExpr() {
-	main()
+func varNoInit() {
+	var x int
+}
+
+func varAfterExpr() int {
+	varNoType()
 	var y = 1
+	var z = getInt()
+}
+
+func getInt() int {
+	return 1
 }

@@ -60,6 +60,9 @@ func (ir *IREmitter) Emit() *spirv.Module {
 	for _, sym := range ir.unit.semanticInfo.ReachableSymbols {
 		ir.emitSymbol(sym)
 	}
+
+	RewriteIR(ir.module)
+
 	return ir.module
 }
 
