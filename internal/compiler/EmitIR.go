@@ -866,14 +866,14 @@ func (ir *IREmitter) emitVarDecl(d *GenericDecl, sc spirv.StorageClass, block *s
 	for _, spec := range d.Specs {
 		v := spec.(*ValueSpec)
 		for i, name := range v.LHS {
-			symbol := ir.unit.semanticInfo.SymbolOfIdentifier(name)
+			symbol := ir.unit.semanticInfo.SymbolOfIdentifier(name).(*VarSymbol)
 			tav := ir.unit.semanticInfo.TypeOf(symbol)
 			spirvType := ir.emitType(tav.Type)
 			ptrType := ir.module.InternPtr(spirvType, sc)
 			variable := ir.module.NewVariable(symbol.Name(), ptrType, sc)
 
 			var initValueID spirv.ID
-			if initTAV := symbol.(*VarSymbol).InitTypeAndValue; initTAV != nil && initTAV.Mode == AddressModeConstant {
+			if initTAV := symbol.InitTypeAndValue; initTAV != nil && initTAV.Mode == AddressModeConstant {
 				initValueID = ir.emitConstantValue(initTAV).ID()
 			}
 
@@ -885,6 +885,10 @@ func (ir *IREmitter) emitVarDecl(d *GenericDecl, sc spirv.StorageClass, block *s
 			})
 
 			ir.setObjectOfSymbol(symbol, variable)
+
+			if i != symbol.ExprIndex {
+				panic(fmt.Sprintf("LHS index %v mismatches ExprIndex %v", i, symbol.ExprIndex))
+			}
 
 			if v.RHS != nil {
 				if i < len(v.RHS) {
