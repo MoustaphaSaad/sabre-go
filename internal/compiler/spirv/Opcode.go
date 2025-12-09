@@ -70,6 +70,7 @@ const (
 	OpLabel                Opcode = 248
 	OpReturn               Opcode = 253
 	OpReturnValue          Opcode = 254
+	OpUnreachable          Opcode = 255
 )
 
 func (op Opcode) String() string {
@@ -200,6 +201,8 @@ func (op Opcode) String() string {
 		return "OpReturn"
 	case OpReturnValue:
 		return "OpReturnValue"
+	case OpUnreachable:
+		return "OpUnreachable"
 	default:
 		panic("unknown opcode")
 	}

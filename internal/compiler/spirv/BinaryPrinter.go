@@ -194,6 +194,8 @@ func (bp *BinaryPrinter) emitInstruction(inst Instruction) {
 		bp.emitOp(Word(OpLoad), Word(i.ResultType), Word(i.ResultID), Word(i.Pointer))
 	case *StoreInstruction:
 		bp.emitOp(Word(OpStore), Word(i.Pointer), Word(i.Object))
+	case *UnreachableInstruction:
+		bp.emitOp(Word(OpUnreachable))
 	default:
 		panic("unsupported instruction")
 	}

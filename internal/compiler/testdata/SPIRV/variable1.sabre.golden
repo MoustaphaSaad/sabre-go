@@ -21,12 +21,13 @@ OpFunctionEnd
 %block_getInt_14 = OpLabel
 OpReturnValue %const_int32_1_8
 OpFunctionEnd
-%func_varAfterExpr_15 = OpFunction %type_int32_5 None %type_func_ret_int32_12
+%func_varAfterExpr_15 = OpFunction %type_void_1 None %type_func_ret_void_2
 %block_varAfterExpr_16 = OpLabel
 %y_18 = OpVariable %type_ptr_int32_7_6 Function %const_int32_1_8
 %z_19 = OpVariable %type_ptr_int32_7_6 Function
 %_17 = OpFunctionCall %type_void_1 %func_varNoType_3
 %_20 = OpFunctionCall %type_int32_5 %func_getInt_13
 OpStore %z_19 %_20
+OpReturn
 OpFunctionEnd
 

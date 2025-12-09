@@ -8,7 +8,7 @@ func varNoInit() {
 	var x int
 }
 
-func varAfterExpr() int {
+func varAfterExpr() {
 	varNoType()
 	var y = 1
 	var z = getInt()

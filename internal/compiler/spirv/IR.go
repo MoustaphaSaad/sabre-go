@@ -916,3 +916,9 @@ type StoreInstruction struct {
 func (i *StoreInstruction) Opcode() Opcode {
 	return OpStore
 }
+
+type UnreachableInstruction struct{}
+
+func (r *UnreachableInstruction) Opcode() Opcode {
+	return OpUnreachable
+}

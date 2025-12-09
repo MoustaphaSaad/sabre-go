@@ -131,20 +131,6 @@ func (ir *IREmitter) emitFunc(sym *FuncSymbol) spirv.Object {
 		ir.emitStatement(stmt, spirvBlock)
 	}
 
-	// Check if last instruction is already a return
-	if len(spirvBlock.Instructions) > 0 {
-		lastInst := spirvBlock.Instructions[len(spirvBlock.Instructions)-1]
-		switch lastInst.(type) {
-		case *spirv.ReturnInstruction, *spirv.ReturnValueInstruction:
-			return spirvFunction
-		}
-	}
-
-	// No terminator found - add one for void functions
-	if len(funcType.ReturnTypes) == 0 {
-		spirvBlock.Push(&spirv.ReturnInstruction{})
-	}
-
 	return spirvFunction
 }
 

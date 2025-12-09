@@ -239,6 +239,8 @@ func (tp *TextPrinter) emitInstruction(inst Instruction) {
 		tp.emitWithObject(resultObj, OpLoad, tp.nameOfByID(i.ResultType), tp.nameOfByID(i.Pointer))
 	case *StoreInstruction:
 		tp.emit(OpStore, tp.nameOfByID(i.Pointer), tp.nameOfByID(i.Object))
+	case *UnreachableInstruction:
+		tp.emit(OpUnreachable)
 	default:
 		panic(fmt.Sprintf("unsupported instruction: %T", inst))
 	}
