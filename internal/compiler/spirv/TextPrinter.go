@@ -3,7 +3,6 @@ package spirv
 import (
 	"fmt"
 	"io"
-	"sort"
 )
 
 type TextPrinter struct {
@@ -22,26 +21,20 @@ func (tp *TextPrinter) Emit() {
 	tp.emitCapabilities()
 	tp.emitMemoryModel()
 
-	objs := make([]Object, 0, len(tp.module.objectsByID))
-	for _, obj := range tp.module.objectsByID {
-		objs = append(objs, obj)
-	}
-	sort.Slice(objs, func(i, j int) bool { return objs[i].ID() < objs[j].ID() })
-
-	for _, obj := range objs {
+	for _, obj := range tp.module.Objects {
 		if _, isType := obj.(Type); isType {
 			tp.emitObject(obj)
 		}
 	}
 
-	for _, obj := range objs {
+	for _, obj := range tp.module.Objects {
 		switch obj.(type) {
-		case Constant:
+		case ConstantValue:
 			tp.emitObject(obj)
 		}
 	}
 
-	for _, obj := range objs {
+	for _, obj := range tp.module.Objects {
 		if _, isFunction := obj.(*Function); isFunction {
 			tp.emitObject(obj)
 		}
@@ -64,7 +57,7 @@ func (tp *TextPrinter) emitObject(obj Object) {
 		tp.emitFunction(v)
 	case Type:
 		tp.emitType(v)
-	case Constant:
+	case ConstantValue:
 		tp.emitConstant(v)
 	}
 }
@@ -270,7 +263,7 @@ func (tp *TextPrinter) emitType(abstractType Type) {
 	}
 }
 
-func (tp *TextPrinter) emitConstant(constant Constant) {
+func (tp *TextPrinter) emitConstant(constant ConstantValue) {
 	switch c := constant.(type) {
 	case *BoolConstant:
 		tp.emitBoolConstant(c)

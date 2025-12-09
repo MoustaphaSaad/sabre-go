@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"math"
-	"sort"
 )
 
 type Word = uint32
@@ -27,26 +26,20 @@ func (bp *BinaryPrinter) Emit() {
 	bp.emitCapabilities()
 	bp.emitMemoryModel()
 
-	objs := make([]Object, 0, len(bp.module.objectsByID))
-	for _, obj := range bp.module.objectsByID {
-		objs = append(objs, obj)
-	}
-	sort.Slice(objs, func(i, j int) bool { return objs[i].ID() < objs[j].ID() })
-
-	for _, obj := range objs {
+	for _, obj := range bp.module.Objects {
 		if _, isType := obj.(Type); isType {
 			bp.emitObject(obj)
 		}
 	}
 
-	for _, obj := range objs {
+	for _, obj := range bp.module.Objects {
 		switch obj.(type) {
-		case Constant:
+		case ConstantValue:
 			bp.emitObject(obj)
 		}
 	}
 
-	for _, obj := range objs {
+	for _, obj := range bp.module.Objects {
 		if _, isFunction := obj.(*Function); isFunction {
 			bp.emitObject(obj)
 		}
@@ -59,7 +52,7 @@ func (bp *BinaryPrinter) emitObject(obj Object) {
 		bp.emitFunction(v)
 	case Type:
 		bp.emitType(v)
-	case Constant:
+	case ConstantValue:
 		bp.emitConstant(v)
 	}
 }
@@ -225,7 +218,7 @@ func (bp *BinaryPrinter) emitType(abstractType Type) {
 	}
 }
 
-func (bp *BinaryPrinter) emitConstant(constant Constant) {
+func (bp *BinaryPrinter) emitConstant(constant ConstantValue) {
 	switch c := constant.(type) {
 	case *BoolConstant:
 		bp.emitBoolConstant(c)
