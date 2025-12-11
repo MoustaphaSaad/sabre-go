@@ -27,9 +27,15 @@ func (o BaseObject) Name() string {
 	return o.ObjectName
 }
 
-// Constant represents a SPIR-V constant value.
-type Constant interface {
-	isConstant()
+type Value interface {
+	Object
+	GetType() Type
+}
+
+// ConstantValue represents a SPIR-V constant value.
+type ConstantValue interface {
+	Value
+	isConstantValue()
 }
 
 type BoolConstant struct {
@@ -38,7 +44,8 @@ type BoolConstant struct {
 	Value bool
 }
 
-func (c *BoolConstant) isConstant() {}
+func (c *BoolConstant) GetType() Type    { return c.Type }
+func (c *BoolConstant) isConstantValue() {}
 
 type IntConstant struct {
 	BaseObject
@@ -46,7 +53,8 @@ type IntConstant struct {
 	Value int64
 }
 
-func (c *IntConstant) isConstant() {}
+func (c *IntConstant) GetType() Type    { return c.Type }
+func (c *IntConstant) isConstantValue() {}
 
 type FloatConstant struct {
 	BaseObject
@@ -54,7 +62,8 @@ type FloatConstant struct {
 	Value float64
 }
 
-func (c *FloatConstant) isConstant() {}
+func (c *FloatConstant) GetType() Type    { return c.Type }
+func (c *FloatConstant) isConstantValue() {}
 
 // RuntimeValue represents a value produced by an instruction at runtime.
 type RuntimeValue struct {
@@ -62,16 +71,15 @@ type RuntimeValue struct {
 	Type Type
 }
 
-func (v *RuntimeValue) GetType() Type {
-	return v.Type
-}
+func (v *RuntimeValue) GetType() Type { return v.Type }
 
 // Module represents a SPIR-V module containing functions.
 type Module struct {
 	idGenerator     int
-	objectsByID     map[ID]Object
-	typesByKey      map[string]Type
-	constantsByKey  map[string]Constant
+	Objects         []Object
+	objectsByID     map[ID]int
+	typesByKey      map[string]int
+	constantsByKey  map[string]int
 	capabilities    []Capability
 	AddressingModel AddressingModel
 	MemoryModel     MemoryModel
@@ -80,9 +88,10 @@ type Module struct {
 func NewModule(addressingModel AddressingModel, memoryModel MemoryModel) *Module {
 	return &Module{
 		idGenerator:     0,
-		objectsByID:     make(map[ID]Object),
-		typesByKey:      make(map[string]Type),
-		constantsByKey:  make(map[string]Constant),
+		Objects:         make([]Object, 0),
+		objectsByID:     make(map[ID]int),
+		typesByKey:      make(map[string]int),
+		constantsByKey:  make(map[string]int),
 		capabilities:    make([]Capability, 0),
 		AddressingModel: addressingModel,
 		MemoryModel:     memoryModel,
@@ -95,10 +104,22 @@ func (m *Module) NewID() ID {
 }
 
 func (m *Module) GetObject(id ID) Object {
-	if obj, ok := m.objectsByID[id]; ok {
-		return obj
+	if index, ok := m.objectsByID[id]; ok {
+		return m.Objects[index]
 	}
 	return nil
+}
+
+func (m *Module) addObject(obj Object) {
+	index := len(m.Objects)
+	m.objectsByID[obj.ID()] = index
+	if t, ok := obj.(Type); ok {
+		m.typesByKey[t.HashKey()] = index
+	}
+	if c, ok := obj.(ConstantValue); ok {
+		m.constantsByKey[c.Name()] = index
+	}
+	m.Objects = append(m.Objects, obj)
 }
 
 func (m *Module) NewFuncParam(name string, paramType Type) *FuncParam {
@@ -109,7 +130,7 @@ func (m *Module) NewFuncParam(name string, paramType Type) *FuncParam {
 		},
 		Type: paramType,
 	}
-	m.objectsByID[p.ObjectID] = p
+	m.addObject(p)
 	return p
 }
 
@@ -124,33 +145,44 @@ func (m *Module) NewFunction(name string, functionType *FuncType, params []*Func
 		Params: params,
 		Blocks: make([]*Block, 0),
 	}
-	m.objectsByID[f.ObjectID] = f
+	m.addObject(f)
 	return f
+}
+
+func (m *Module) NewVariable(name string, ptrType *PtrType, sc StorageClass) *Variable {
+	v := &Variable{
+		BaseObject: BaseObject{
+			ObjectID:   m.NewID(),
+			ObjectName: name,
+		},
+		Type:         ptrType,
+		StorageClass: sc,
+	}
+	m.addObject(v)
+	return v
 }
 
 func (m *Module) InternVoid() *VoidType {
 	t := &VoidType{}
-	if existingType, ok := m.typesByKey[t.HashKey()]; ok {
-		return existingType.(*VoidType)
+	if index, ok := m.typesByKey[t.HashKey()]; ok {
+		return m.Objects[index].(*VoidType)
 	}
 	t.ObjectID = m.NewID()
 	t.ObjectName = t.HashKey()
 	t.Module = m
-	m.objectsByID[t.ObjectID] = t
-	m.typesByKey[t.HashKey()] = t
+	m.addObject(t)
 	return t
 }
 
 func (m *Module) InternBool() *BoolType {
 	t := &BoolType{}
-	if existingType, ok := m.typesByKey[t.HashKey()]; ok {
-		return existingType.(*BoolType)
+	if index, ok := m.typesByKey[t.HashKey()]; ok {
+		return m.Objects[index].(*BoolType)
 	}
 	t.ObjectID = m.NewID()
 	t.ObjectName = t.HashKey()
 	t.Module = m
-	m.objectsByID[t.ObjectID] = t
-	m.typesByKey[t.HashKey()] = t
+	m.addObject(t)
 	return t
 }
 
@@ -159,14 +191,13 @@ func (m *Module) InternInt(bitWidth int, isSigned bool) *IntType {
 		BitWidth: bitWidth,
 		IsSigned: isSigned,
 	}
-	if existingType, ok := m.typesByKey[t.HashKey()]; ok {
-		return existingType.(*IntType)
+	if index, ok := m.typesByKey[t.HashKey()]; ok {
+		return m.Objects[index].(*IntType)
 	}
 	t.ObjectID = m.NewID()
 	t.ObjectName = t.HashKey()
 	t.Module = m
-	m.objectsByID[t.ObjectID] = t
-	m.typesByKey[t.HashKey()] = t
+	m.addObject(t)
 	return t
 }
 
@@ -174,14 +205,13 @@ func (m *Module) InternFloat(bitWidth int) *FloatType {
 	t := &FloatType{
 		BitWidth: bitWidth,
 	}
-	if existingType, ok := m.typesByKey[t.HashKey()]; ok {
-		return existingType.(*FloatType)
+	if index, ok := m.typesByKey[t.HashKey()]; ok {
+		return m.Objects[index].(*FloatType)
 	}
 	t.ObjectID = m.NewID()
 	t.ObjectName = t.HashKey()
 	t.Module = m
-	m.objectsByID[t.ObjectID] = t
-	m.typesByKey[t.HashKey()] = t
+	m.addObject(t)
 	return t
 }
 
@@ -190,14 +220,13 @@ func (m *Module) InternPtr(to Type, sc StorageClass) *PtrType {
 		To:           to,
 		StorageClass: sc,
 	}
-	if existingType, ok := m.typesByKey[t.HashKey()]; ok {
-		return existingType.(*PtrType)
+	if index, ok := m.typesByKey[t.HashKey()]; ok {
+		return m.Objects[index].(*PtrType)
 	}
 	t.ObjectID = m.NewID()
-	t.ObjectName = t.HashKey()
+	t.ObjectName = t.TypeName()
 	t.Module = m
-	m.objectsByID[t.ObjectID] = t
-	m.typesByKey[t.HashKey()] = t
+	m.addObject(t)
 	return t
 }
 
@@ -206,14 +235,13 @@ func (m *Module) InternFunc(returnType Type, args []Type) *FuncType {
 		ReturnType: returnType,
 		ArgTypes:   args,
 	}
-	if existingType, ok := m.typesByKey[t.HashKey()]; ok {
-		return existingType.(*FuncType)
+	if index, ok := m.typesByKey[t.HashKey()]; ok {
+		return m.Objects[index].(*FuncType)
 	}
 	t.ObjectID = m.NewID()
 	t.ObjectName = t.TypeName()
 	t.Module = m
-	m.objectsByID[t.ObjectID] = t
-	m.typesByKey[t.HashKey()] = t
+	m.addObject(t)
 	return t
 }
 
@@ -232,8 +260,8 @@ func (m *Module) Capabilities() []Capability {
 
 func (m *Module) InternBoolConstant(value bool, t *BoolType) *BoolConstant {
 	key := fmt.Sprintf("const_%v_%v", t.HashKey(), value)
-	if existing, ok := m.constantsByKey[key]; ok {
-		return existing.(*BoolConstant)
+	if index, ok := m.constantsByKey[key]; ok {
+		return m.Objects[index].(*BoolConstant)
 	}
 
 	id := m.NewID()
@@ -246,15 +274,14 @@ func (m *Module) InternBoolConstant(value bool, t *BoolType) *BoolConstant {
 		Value: value,
 	}
 
-	m.objectsByID[id] = constant
-	m.constantsByKey[key] = constant
+	m.addObject(constant)
 	return constant
 }
 
 func (m *Module) InternIntConstant(value int64, t *IntType) *IntConstant {
 	key := fmt.Sprintf("const_%v_%v", t.HashKey(), value)
-	if existing, ok := m.constantsByKey[key]; ok {
-		return existing.(*IntConstant)
+	if index, ok := m.constantsByKey[key]; ok {
+		return m.Objects[index].(*IntConstant)
 	}
 	id := m.NewID()
 	constant := &IntConstant{
@@ -265,8 +292,7 @@ func (m *Module) InternIntConstant(value int64, t *IntType) *IntConstant {
 		Type:  t,
 		Value: value,
 	}
-	m.objectsByID[id] = constant
-	m.constantsByKey[key] = constant
+	m.addObject(constant)
 	return constant
 }
 
@@ -275,8 +301,8 @@ func (m *Module) InternFloatConstant(value float64, t *FloatType) *FloatConstant
 	valueName := strings.ReplaceAll(valueFmt, ".", "_")
 
 	key := fmt.Sprintf("const_%v_%v", t.HashKey(), valueName)
-	if existing, ok := m.constantsByKey[key]; ok {
-		return existing.(*FloatConstant)
+	if index, ok := m.constantsByKey[key]; ok {
+		return m.Objects[index].(*FloatConstant)
 	}
 	id := m.NewID()
 	constant := &FloatConstant{
@@ -287,8 +313,7 @@ func (m *Module) InternFloatConstant(value float64, t *FloatType) *FloatConstant
 		Type:  t,
 		Value: value,
 	}
-	m.objectsByID[id] = constant
-	m.constantsByKey[key] = constant
+	m.addObject(constant)
 	return constant
 }
 
@@ -302,7 +327,7 @@ func (m *Module) NewNamedValue(name string, valueType Type) *RuntimeValue {
 		},
 		Type: valueType,
 	}
-	m.objectsByID[id] = value
+	m.addObject(value)
 	return value
 }
 
@@ -335,7 +360,7 @@ func (f *Function) NewBlock(name string) *Block {
 		Instructions: make([]Instruction, 0),
 	}
 	f.Blocks = append(f.Blocks, b)
-	f.Module.objectsByID[b.ObjectID] = b
+	f.Module.addObject(b)
 	return b
 }
 
@@ -348,6 +373,12 @@ type Block struct {
 
 func (b *Block) Push(instr Instruction) {
 	b.Instructions = append(b.Instructions, instr)
+}
+
+type Variable struct {
+	BaseObject
+	Type         *PtrType
+	StorageClass StorageClass
 }
 
 // Instruction represents a single SPIR-V instruction with an opcode.
@@ -856,10 +887,21 @@ func (i *FunctionCallInstruction) Opcode() Opcode {
 	return OpFunctionCall
 }
 
+type VariableInstruction struct {
+	ResultType   ID
+	ResultID     ID
+	StorageClass StorageClass
+	Initializer  ID
+}
+
+func (i *VariableInstruction) Opcode() Opcode {
+	return OpVariable
+}
+
 type LoadInstruction struct {
 	ResultType ID
 	ResultID   ID
-	Pointer    ID // TODO: Rename to Source for consistency
+	Pointer    ID
 }
 
 func (i *LoadInstruction) Opcode() Opcode {
@@ -867,10 +909,16 @@ func (i *LoadInstruction) Opcode() Opcode {
 }
 
 type StoreInstruction struct {
-	Pointer ID // TODO: Rename to Target for consistency
-	Object  ID // TODO: Rename to Value for consistency
+	Pointer ID
+	Object  ID
 }
 
 func (i *StoreInstruction) Opcode() Opcode {
 	return OpStore
+}
+
+type UnreachableInstruction struct{}
+
+func (r *UnreachableInstruction) Opcode() Opcode {
+	return OpUnreachable
 }

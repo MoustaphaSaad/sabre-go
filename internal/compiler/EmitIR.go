@@ -60,6 +60,9 @@ func (ir *IREmitter) Emit() *spirv.Module {
 	for _, sym := range ir.unit.semanticInfo.ReachableSymbols {
 		ir.emitSymbol(sym)
 	}
+
+	RewriteIR(ir.module)
+
 	return ir.module
 }
 
@@ -128,20 +131,6 @@ func (ir *IREmitter) emitFunc(sym *FuncSymbol) spirv.Object {
 		ir.emitStatement(stmt, spirvBlock)
 	}
 
-	// Check if last instruction is already a return
-	if len(spirvBlock.Instructions) > 0 {
-		lastInst := spirvBlock.Instructions[len(spirvBlock.Instructions)-1]
-		switch lastInst.(type) {
-		case *spirv.ReturnInstruction, *spirv.ReturnValueInstruction:
-			return spirvFunction
-		}
-	}
-
-	// No terminator found - add one for void functions
-	if len(funcType.ReturnTypes) == 0 {
-		spirvBlock.Push(&spirv.ReturnInstruction{})
-	}
-
 	return spirvFunction
 }
 
@@ -166,6 +155,10 @@ func (ir *IREmitter) emitExpression(expr Expr) spirv.Object {
 
 func (ir *IREmitter) emitLiteralExpr(e *LiteralExpr) spirv.Object {
 	tav := ir.unit.semanticInfo.TypeOf(e)
+	return ir.emitConstantValue(tav)
+}
+
+func (ir *IREmitter) emitConstantValue(tav *TypeAndValue) spirv.Object {
 	switch t := ir.emitType(tav.Type).(type) {
 	case *spirv.BoolType:
 		val := constant.BoolVal(tav.Value)
@@ -834,6 +827,8 @@ func (ir *IREmitter) emitStatement(stmt Stmt, block *spirv.Block) {
 		ir.emitIncDecStmt(s)
 	case *ExprStmt:
 		ir.emitExpression(s.Expr)
+	case *DeclStmt:
+		ir.emitDeclStmt(s, block)
 	default:
 		panic("unsupported statement")
 	}
@@ -919,4 +914,61 @@ func (ir *IREmitter) emitIncDecStmt(s *IncDecStmt) {
 		Pointer: obj.ID(),
 		Object:  resultValue.ID(),
 	})
+}
+
+func (ir *IREmitter) emitDeclStmt(s *DeclStmt, block *spirv.Block) {
+	d := s.Decl.(*GenericDecl)
+	switch d.DeclToken.Kind() {
+	case TokenVar:
+		ir.emitVarDecl(d, spirv.StorageClassFunction, block)
+	default:
+		panic("unsupported declaration in DeclStmt")
+	}
+}
+
+func (ir *IREmitter) emitVarDecl(d *GenericDecl, sc spirv.StorageClass, block *spirv.Block) {
+	for _, spec := range d.Specs {
+		v := spec.(*ValueSpec)
+		for i, name := range v.LHS {
+			symbol := ir.unit.semanticInfo.SymbolOfIdentifier(name).(*VarSymbol)
+			tav := ir.unit.semanticInfo.TypeOf(symbol)
+			spirvType := ir.emitType(tav.Type)
+			ptrType := ir.module.InternPtr(spirvType, sc)
+			variable := ir.module.NewVariable(symbol.Name(), ptrType, sc)
+
+			var initValueID spirv.ID
+			if initTAV := symbol.InitTypeAndValue; initTAV != nil && initTAV.Mode == AddressModeConstant {
+				initValueID = ir.emitConstantValue(initTAV).ID()
+			}
+
+			block.Push(&spirv.VariableInstruction{
+				ResultType:   variable.Type.ID(),
+				ResultID:     variable.ID(),
+				StorageClass: variable.StorageClass,
+				Initializer:  initValueID,
+			})
+
+			ir.setObjectOfSymbol(symbol, variable)
+
+			if i != symbol.ExprIndex {
+				panic(fmt.Sprintf("LHS index %v mismatches ExprIndex %v", i, symbol.ExprIndex))
+			}
+
+			if v.RHS != nil {
+				if i < len(v.RHS) {
+					switch rhsExpr := v.RHS[i].(type) {
+					case *LiteralExpr:
+					case *IdentifierExpr:
+					default:
+						block.Push(&spirv.StoreInstruction{
+							Pointer: variable.ID(),
+							Object:  ir.emitExpression(rhsExpr).ID(),
+						})
+					}
+				} else {
+					panic("variable initialization from tuple types is not supported yet")
+				}
+			}
+		}
+	}
 }
