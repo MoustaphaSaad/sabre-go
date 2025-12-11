@@ -823,6 +823,8 @@ func (ir *IREmitter) emitStatement(stmt Stmt, block *spirv.Block) {
 	switch s := stmt.(type) {
 	case *ReturnStmt:
 		ir.emitReturnStmt(s, block)
+	case *IncDecStmt:
+		ir.emitIncDecStmt(s)
 	case *ExprStmt:
 		ir.emitExpression(s.Expr)
 	case *DeclStmt:
@@ -839,6 +841,79 @@ func (ir *IREmitter) emitReturnStmt(s *ReturnStmt, block *spirv.Block) {
 	} else {
 		block.Push(&spirv.ReturnInstruction{})
 	}
+}
+
+func (ir *IREmitter) emitIncDecStmt(s *IncDecStmt) {
+	tav := ir.unit.semanticInfo.TypeOf(s.Expr)
+	resultType := ir.emitType(tav.Type)
+
+	oneConst := func() spirv.Object {
+		switch t := resultType.(type) {
+		case *spirv.IntType:
+			return ir.module.InternIntConstant(1, t)
+		case *spirv.FloatType:
+			return ir.module.InternFloatConstant(1.0, t)
+		default:
+			panic("unsupported type for inc/dec")
+		}
+	}()
+
+	currentBlock := ir.currentBlock()
+
+	symbol := ir.unit.semanticInfo.SymbolOfIdentifier(s.Expr.(*IdentifierExpr))
+	obj := ir.objectOfSymbol(symbol)
+
+	loadedValue := ir.module.NewValue(resultType)
+	currentBlock.Push(&spirv.LoadInstruction{
+		ResultType: resultType.ID(),
+		ResultID:   loadedValue.ID(),
+		Pointer:    obj.ID(),
+	})
+	resultValue := ir.module.NewValue(resultType)
+	if s.Operator.Kind() == TokenInc {
+		switch resultType.(type) {
+		case *spirv.IntType:
+			currentBlock.Push(&spirv.IAddInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   resultValue.ID(),
+				Operand1:   loadedValue.ID(),
+				Operand2:   oneConst.ID(),
+			})
+		case *spirv.FloatType:
+			currentBlock.Push(&spirv.FAddInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   resultValue.ID(),
+				Operand1:   loadedValue.ID(),
+				Operand2:   oneConst.ID(),
+			})
+		default:
+			panic("unsupported type for increment")
+		}
+	} else {
+		switch resultType.(type) {
+		case *spirv.IntType:
+			currentBlock.Push(&spirv.ISubInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   resultValue.ID(),
+				Operand1:   loadedValue.ID(),
+				Operand2:   oneConst.ID(),
+			})
+		case *spirv.FloatType:
+			currentBlock.Push(&spirv.FSubInstruction{
+				ResultType: resultType.ID(),
+				ResultID:   resultValue.ID(),
+				Operand1:   loadedValue.ID(),
+				Operand2:   oneConst.ID(),
+			})
+		default:
+			panic("unsupported type for decrement")
+		}
+	}
+
+	currentBlock.Push(&spirv.StoreInstruction{
+		Pointer: obj.ID(),
+		Object:  resultValue.ID(),
+	})
 }
 
 func (ir *IREmitter) emitDeclStmt(s *DeclStmt, block *spirv.Block) {
