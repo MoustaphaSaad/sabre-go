@@ -5,46 +5,55 @@ OpMemoryModel Logical GLSL450
 %type_float32_2 = OpTypeFloat 32
 %type_bool_3 = OpTypeBool
 %type_func_int32_float32_float32_bool_ret_int32_4 = OpTypeFunction %type_int32_1 %type_int32_1 %type_float32_2 %type_float32_2 %type_bool_3
-%type_func_int32_float32_float32_bool_ret_float32_11 = OpTypeFunction %type_float32_2 %type_int32_1 %type_float32_2 %type_float32_2 %type_bool_3
-%type_func_int32_float32_float32_bool_ret_bool_24 = OpTypeFunction %type_bool_3 %type_int32_1 %type_float32_2 %type_float32_2 %type_bool_3
-%type_void_31 = OpTypeVoid
-%type_func_int32_float32_bool_ret_void_32 = OpTypeFunction %type_void_31 %type_int32_1 %type_float32_2 %type_bool_3
+%type_func_int32_float32_float32_bool_ret_float32_12 = OpTypeFunction %type_float32_2 %type_int32_1 %type_float32_2 %type_float32_2 %type_bool_3
+%type_func_int32_float32_float32_bool_ret_bool_27 = OpTypeFunction %type_bool_3 %type_int32_1 %type_float32_2 %type_float32_2 %type_bool_3
+%type_void_35 = OpTypeVoid
+%type_func_int32_float32_bool_ret_void_36 = OpTypeFunction %type_void_35 %type_int32_1 %type_float32_2 %type_bool_3
 %func_testWithNamesIntX_9 = OpFunction %type_int32_1 None %type_func_int32_float32_float32_bool_ret_int32_4
 %x_5 = OpFunctionParameter %type_int32_1
 %y_6 = OpFunctionParameter %type_float32_2
 %z_7 = OpFunctionParameter %type_float32_2
 %b_8 = OpFunctionParameter %type_bool_3
-%block_testWithNamesIntX_10 = OpLabel
+%block_entry_testWithNamesIntX_10 = OpLabel
 OpReturnValue %x_5
+%block_testWithNamesIntX_11 = OpLabel
+OpUnreachable
 OpFunctionEnd
-%func_testWithNamesFloatY_16 = OpFunction %type_float32_2 None %type_func_int32_float32_float32_bool_ret_float32_11
-%x_12 = OpFunctionParameter %type_int32_1
-%y_13 = OpFunctionParameter %type_float32_2
-%z_14 = OpFunctionParameter %type_float32_2
-%b_15 = OpFunctionParameter %type_bool_3
-%block_testWithNamesFloatY_17 = OpLabel
-OpReturnValue %y_13
+%func_testWithNamesFloatY_17 = OpFunction %type_float32_2 None %type_func_int32_float32_float32_bool_ret_float32_12
+%x_13 = OpFunctionParameter %type_int32_1
+%y_14 = OpFunctionParameter %type_float32_2
+%z_15 = OpFunctionParameter %type_float32_2
+%b_16 = OpFunctionParameter %type_bool_3
+%block_entry_testWithNamesFloatY_18 = OpLabel
+OpReturnValue %y_14
+%block_testWithNamesFloatY_19 = OpLabel
+OpUnreachable
 OpFunctionEnd
-%func_testWithNamesFloatZ_22 = OpFunction %type_float32_2 None %type_func_int32_float32_float32_bool_ret_float32_11
-%x_18 = OpFunctionParameter %type_int32_1
-%y_19 = OpFunctionParameter %type_float32_2
-%z_20 = OpFunctionParameter %type_float32_2
-%b_21 = OpFunctionParameter %type_bool_3
-%block_testWithNamesFloatZ_23 = OpLabel
-OpReturnValue %z_20
+%func_testWithNamesFloatZ_24 = OpFunction %type_float32_2 None %type_func_int32_float32_float32_bool_ret_float32_12
+%x_20 = OpFunctionParameter %type_int32_1
+%y_21 = OpFunctionParameter %type_float32_2
+%z_22 = OpFunctionParameter %type_float32_2
+%b_23 = OpFunctionParameter %type_bool_3
+%block_entry_testWithNamesFloatZ_25 = OpLabel
+OpReturnValue %z_22
+%block_testWithNamesFloatZ_26 = OpLabel
+OpUnreachable
 OpFunctionEnd
-%func_testWithNamesBoolB_29 = OpFunction %type_bool_3 None %type_func_int32_float32_float32_bool_ret_bool_24
-%x_25 = OpFunctionParameter %type_int32_1
-%y_26 = OpFunctionParameter %type_float32_2
-%z_27 = OpFunctionParameter %type_float32_2
-%b_28 = OpFunctionParameter %type_bool_3
-%block_testWithNamesBoolB_30 = OpLabel
-OpReturnValue %b_28
+%func_testWithNamesBoolB_32 = OpFunction %type_bool_3 None %type_func_int32_float32_float32_bool_ret_bool_27
+%x_28 = OpFunctionParameter %type_int32_1
+%y_29 = OpFunctionParameter %type_float32_2
+%z_30 = OpFunctionParameter %type_float32_2
+%b_31 = OpFunctionParameter %type_bool_3
+%block_entry_testWithNamesBoolB_33 = OpLabel
+OpReturnValue %b_31
+%block_testWithNamesBoolB_34 = OpLabel
+OpUnreachable
 OpFunctionEnd
-%func_testWithoutNames_36 = OpFunction %type_void_31 None %type_func_int32_float32_bool_ret_void_32
-%UnnamedParam0_33 = OpFunctionParameter %type_int32_1
-%UnnamedParam1_34 = OpFunctionParameter %type_float32_2
-%UnnamedParam2_35 = OpFunctionParameter %type_bool_3
-%block_testWithoutNames_37 = OpLabel
+%func_testWithoutNames_40 = OpFunction %type_void_35 None %type_func_int32_float32_bool_ret_void_36
+%UnnamedParam0_37 = OpFunctionParameter %type_int32_1
+%UnnamedParam1_38 = OpFunctionParameter %type_float32_2
+%UnnamedParam2_39 = OpFunctionParameter %type_bool_3
+%block_entry_testWithoutNames_41 = OpLabel
 OpReturn
 OpFunctionEnd
+

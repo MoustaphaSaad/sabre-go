@@ -5,6 +5,9 @@ OpMemoryModel Logical GLSL450
 %type_func_ret_bool_2 = OpTypeFunction %type_bool_1
 %const_const_bool_false_5 = OpConstantFalse %type_bool_1
 %func_main_3 = OpFunction %type_bool_1 None %type_func_ret_bool_2
-%block_main_4 = OpLabel
+%block_entry_main_4 = OpLabel
 OpReturnValue %const_const_bool_false_5
+%block_main_6 = OpLabel
+OpUnreachable
 OpFunctionEnd
+
