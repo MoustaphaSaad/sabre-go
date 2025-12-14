@@ -1,20 +1,31 @@
 package spirv
 
 import (
+	"bytes"
 	"fmt"
 	"io"
+	"strings"
 )
 
 type TextPrinter struct {
-	out    io.Writer
-	module *Module
+	finalOut   io.Writer
+	stagingOut bytes.Buffer
+	module     *Module
 }
 
 func NewTextPrinter(out io.Writer, module *Module) *TextPrinter {
 	return &TextPrinter{
-		out:    out,
-		module: module,
+		finalOut: out,
+		module:   module,
 	}
+}
+
+func (tp *TextPrinter) printf(format string, a ...any) {
+	fmt.Fprintf(&tp.stagingOut, format, a...)
+}
+
+func (tp *TextPrinter) println(a ...any) {
+	fmt.Fprintln(&tp.stagingOut, a...)
 }
 
 func (tp *TextPrinter) Emit() {
@@ -39,16 +50,55 @@ func (tp *TextPrinter) Emit() {
 			tp.emitObject(obj)
 		}
 	}
+
+	tp.flush()
+}
+
+func (tp *TextPrinter) flush() {
+	type SPIRVLine struct {
+		LHS string
+		RHS string
+	}
+
+	lines := make([]SPIRVLine, 0)
+	for line := range strings.Lines(tp.stagingOut.String()) {
+		before, after, eqFound := strings.Cut(line, "=")
+		if eqFound {
+			lines = append(lines, SPIRVLine{
+				LHS: strings.TrimSpace(before),
+				RHS: strings.TrimSpace(after),
+			})
+		} else {
+			lines = append(lines, SPIRVLine{
+				RHS: strings.TrimSpace(before),
+			})
+		}
+	}
+
+	maxLHS := 0
+	for _, l := range lines {
+		if len(l.LHS) > maxLHS {
+			maxLHS = len(l.LHS)
+		}
+	}
+
+	for _, l := range lines {
+		eq := "="
+		if len(l.LHS) == 0 {
+			eq = " "
+		}
+		fmt.Fprintf(tp.finalOut, "%*s %s %s\n", maxLHS, l.LHS, eq, l.RHS)
+	}
 }
 
 func (tp *TextPrinter) emitCapabilities() {
 	for _, c := range tp.module.Capabilities() {
-		fmt.Fprintf(tp.out, "OpCapability %s\n", c)
+		tp.printf("OpCapability %s\n", c)
 	}
 }
 
 func (tp *TextPrinter) emitMemoryModel() {
-	fmt.Fprintf(tp.out, "OpMemoryModel %s %s\n", tp.module.AddressingModel, tp.module.MemoryModel)
+	tp.printf("OpMemoryModel %s %s\n", tp.module.AddressingModel, tp.module.MemoryModel)
 }
 
 func (tp *TextPrinter) emitObject(obj Object) {
@@ -324,19 +374,19 @@ func (tp *TextPrinter) emitFuncType(t *FuncType) {
 }
 
 func (tp *TextPrinter) emitWithObject(obj Object, op Opcode, args ...any) {
-	fmt.Fprintf(tp.out, "%s = %s", tp.nameOf(obj), op)
+	tp.printf("%s = %s", tp.nameOf(obj), op)
 	for _, arg := range args {
-		fmt.Fprintf(tp.out, " %v", arg)
+		tp.printf(" %v", arg)
 	}
-	fmt.Fprintln(tp.out)
+	tp.println()
 }
 
 func (tp *TextPrinter) emit(op Opcode, args ...any) {
-	fmt.Fprintf(tp.out, "%s", op)
+	tp.printf("%s", op)
 	for _, arg := range args {
-		fmt.Fprintf(tp.out, " %v", arg)
+		tp.printf(" %v", arg)
 	}
-	fmt.Fprintln(tp.out)
+	tp.println()
 }
 
 func (tp *TextPrinter) nameOfByID(id ID) string {

@@ -1,10 +1,10 @@
-OpCapability Shader
-OpCapability Linkage
-OpMemoryModel Logical GLSL450
-%type_void_1 = OpTypeVoid
+                        OpCapability Shader
+                        OpCapability Linkage
+                        OpMemoryModel Logical GLSL450
+         %type_void_1 = OpTypeVoid
 %type_func_ret_void_2 = OpTypeFunction %type_void_1
-%func_main_3 = OpFunction %type_void_1 None %type_func_ret_void_2
-%block_entry_main_4 = OpLabel
-OpReturn
-OpFunctionEnd
+         %func_main_3 = OpFunction %type_void_1 None %type_func_ret_void_2
+  %block_entry_main_4 = OpLabel
+                        OpReturn
+                        OpFunctionEnd
 
