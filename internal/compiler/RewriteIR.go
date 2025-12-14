@@ -7,8 +7,9 @@ import (
 )
 
 func RewriteIR(mod *spirv.Module) {
-	PassTerminateBlocks(mod)
 	PassPullLocalVarsToFuncEntry(mod)
+	PassRemoveEmptyBlocks(mod)
+	PassTerminateBlocks(mod)
 }
 
 func PassPullLocalVarsToFuncEntry(mod *spirv.Module) {
@@ -64,4 +65,40 @@ func isBlockTerminated(bb *spirv.Block) bool {
 	default:
 		return false
 	}
+}
+
+func PassRemoveEmptyBlocks(mod *spirv.Module) {
+	var removedBBs []*spirv.Block
+	for _, obj := range mod.Objects {
+		if fn, ok := obj.(*spirv.Function); ok {
+			removedBBs = removeEmptyBlocks(fn)
+		}
+	}
+
+	objs := make([]spirv.ID, len(removedBBs))
+	for i := range removedBBs {
+		objs[i] = removedBBs[i].ID()
+	}
+	mod.RemoveObjects(objs)
+}
+func removeEmptyBlocks(fn *spirv.Function) (res []*spirv.Block) {
+	// skip functions with only the entry block
+	if len(fn.Blocks) <= 1 {
+		return
+	}
+
+	// remove all empty blocks except for entry block
+	entryBlock := fn.Blocks[0]
+	fn.Blocks = slices.DeleteFunc(fn.Blocks, func(bb *spirv.Block) bool {
+		if bb == entryBlock {
+			return false
+		}
+
+		if len(bb.Instructions) == 0 {
+			res = append(res, bb)
+			return true
+		}
+		return false
+	})
+	return
 }

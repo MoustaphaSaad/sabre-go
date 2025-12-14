@@ -118,18 +118,11 @@ func (ir *IREmitter) emitFunc(sym *FuncSymbol) spirv.Object {
 		return spirvFunction
 	}
 
-	spirvBlock := spirvFunction.NewBlock(sym.Name())
+	spirvBlock := spirvFunction.NewBlock(fmt.Sprintf("entry_%v", sym.Name()))
 	ir.enterBlock(spirvBlock)
 	defer ir.leaveBlock()
 
-	if len(funcDecl.Body.Stmts) == 0 {
-		spirvBlock.Push(&spirv.ReturnInstruction{})
-		return spirvFunction
-	}
-
-	for _, stmt := range funcDecl.Body.Stmts {
-		ir.emitStatement(stmt, spirvBlock)
-	}
+	ir.emitStatement(funcDecl.Body)
 
 	return spirvFunction
 }
@@ -819,28 +812,34 @@ func (ir *IREmitter) emitType(Type Type) spirv.Type {
 	}
 }
 
-func (ir *IREmitter) emitStatement(stmt Stmt, block *spirv.Block) {
+func (ir *IREmitter) emitStatement(stmt Stmt) {
 	switch s := stmt.(type) {
 	case *ReturnStmt:
-		ir.emitReturnStmt(s, block)
+		ir.emitReturnStmt(s)
 	case *IncDecStmt:
 		ir.emitIncDecStmt(s)
 	case *ExprStmt:
 		ir.emitExpression(s.Expr)
 	case *DeclStmt:
-		ir.emitDeclStmt(s, block)
+		ir.emitDeclStmt(s)
+	case *BlockStmt:
+		ir.emitBlockStmt(s)
 	default:
 		panic("unsupported statement")
 	}
 }
 
-func (ir *IREmitter) emitReturnStmt(s *ReturnStmt, block *spirv.Block) {
+func (ir *IREmitter) emitReturnStmt(s *ReturnStmt) {
+	block := ir.currentBlock()
 	if len(s.Exprs) > 0 {
 		// TODO: Multiple return values
 		block.Push(&spirv.ReturnValueInstruction{Value: ir.emitExpression(s.Exprs[0]).ID()})
 	} else {
 		block.Push(&spirv.ReturnInstruction{})
 	}
+	ir.leaveBlock()
+	newBlock := block.Function.NewBlock(block.Function.Name())
+	ir.enterBlock(newBlock)
 }
 
 func (ir *IREmitter) emitIncDecStmt(s *IncDecStmt) {
@@ -916,17 +915,17 @@ func (ir *IREmitter) emitIncDecStmt(s *IncDecStmt) {
 	})
 }
 
-func (ir *IREmitter) emitDeclStmt(s *DeclStmt, block *spirv.Block) {
+func (ir *IREmitter) emitDeclStmt(s *DeclStmt) {
 	d := s.Decl.(*GenericDecl)
 	switch d.DeclToken.Kind() {
 	case TokenVar:
-		ir.emitVarDecl(d, spirv.StorageClassFunction, block)
+		ir.emitVarDecl(d, spirv.StorageClassFunction)
 	default:
 		panic("unsupported declaration in DeclStmt")
 	}
 }
 
-func (ir *IREmitter) emitVarDecl(d *GenericDecl, sc spirv.StorageClass, block *spirv.Block) {
+func (ir *IREmitter) emitVarDecl(d *GenericDecl, sc spirv.StorageClass) {
 	for _, spec := range d.Specs {
 		v := spec.(*ValueSpec)
 		for i, name := range v.LHS {
@@ -941,6 +940,7 @@ func (ir *IREmitter) emitVarDecl(d *GenericDecl, sc spirv.StorageClass, block *s
 				initValueID = ir.emitConstantValue(initTAV).ID()
 			}
 
+			block := ir.currentBlock()
 			block.Push(&spirv.VariableInstruction{
 				ResultType:   variable.Type.ID(),
 				ResultID:     variable.ID(),
@@ -970,5 +970,11 @@ func (ir *IREmitter) emitVarDecl(d *GenericDecl, sc spirv.StorageClass, block *s
 				}
 			}
 		}
+	}
+}
+
+func (ir *IREmitter) emitBlockStmt(block *BlockStmt) {
+	for _, s := range block.Stmts {
+		ir.emitStatement(s)
 	}
 }

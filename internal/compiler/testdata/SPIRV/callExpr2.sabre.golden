@@ -4,11 +4,12 @@ OpMemoryModel Logical GLSL450
 %type_void_1 = OpTypeVoid
 %type_func_ret_void_2 = OpTypeFunction %type_void_1
 %func_voidFunc_3 = OpFunction %type_void_1 None %type_func_ret_void_2
-%block_voidFunc_4 = OpLabel
+%block_entry_voidFunc_4 = OpLabel
 OpReturn
 OpFunctionEnd
 %func_main_5 = OpFunction %type_void_1 None %type_func_ret_void_2
-%block_main_6 = OpLabel
+%block_entry_main_6 = OpLabel
 %_7 = OpFunctionCall %type_void_1 %func_voidFunc_3
 OpReturn
 OpFunctionEnd
+

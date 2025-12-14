@@ -3,169 +3,170 @@ OpCapability Linkage
 OpMemoryModel Logical GLSL450
 %type_bool_1 = OpTypeBool
 %type_func_ret_bool_2 = OpTypeFunction %type_bool_1
-%type_int32_13 = OpTypeInt 32 1
-%type_float32_19 = OpTypeFloat 32
-%type_func_ret_int32_59 = OpTypeFunction %type_int32_13
-%type_func_ret_float32_63 = OpTypeFunction %type_float32_19
+%type_int32_15 = OpTypeInt 32 1
+%type_float32_22 = OpTypeFloat 32
+%type_func_ret_int32_75 = OpTypeFunction %type_int32_15
+%type_func_ret_float32_80 = OpTypeFunction %type_float32_22
 %const_const_bool_true_5 = OpConstantTrue %type_bool_1
 %const_const_bool_false_6 = OpConstantFalse %type_bool_1
-%const_int32_2_14 = OpConstant %type_int32_13 2
-%const_int32_3_15 = OpConstant %type_int32_13 3
-%const_float32_4_500000_20 = OpConstant %type_float32_19 4.5
-%const_float32_5_500000_21 = OpConstant %type_float32_19 5.5
+%const_int32_2_16 = OpConstant %type_int32_15 2
+%const_int32_3_17 = OpConstant %type_int32_15 3
+%const_float32_4_500000_23 = OpConstant %type_float32_22 4.5
+%const_float32_5_500000_24 = OpConstant %type_float32_22 5.5
 %func_LOr_3 = OpFunction %type_bool_1 None %type_func_ret_bool_2
-%block_LOr_4 = OpLabel
+%block_entry_LOr_4 = OpLabel
 %_7 = OpLogicalOr %type_bool_1 %const_const_bool_true_5 %const_const_bool_false_6
 OpReturnValue %_7
 OpFunctionEnd
-%func_LAnd_8 = OpFunction %type_bool_1 None %type_func_ret_bool_2
-%block_LAnd_9 = OpLabel
-%_10 = OpLogicalAnd %type_bool_1 %const_const_bool_true_5 %const_const_bool_false_6
-OpReturnValue %_10
+%func_LAnd_9 = OpFunction %type_bool_1 None %type_func_ret_bool_2
+%block_entry_LAnd_10 = OpLabel
+%_11 = OpLogicalAnd %type_bool_1 %const_const_bool_true_5 %const_const_bool_false_6
+OpReturnValue %_11
 OpFunctionEnd
-%func_LTInt_11 = OpFunction %type_bool_1 None %type_func_ret_bool_2
-%block_LTInt_12 = OpLabel
-%_16 = OpSLessThan %type_bool_1 %const_int32_2_14 %const_int32_3_15
-OpReturnValue %_16
+%func_LTInt_13 = OpFunction %type_bool_1 None %type_func_ret_bool_2
+%block_entry_LTInt_14 = OpLabel
+%_18 = OpSLessThan %type_bool_1 %const_int32_2_16 %const_int32_3_17
+OpReturnValue %_18
 OpFunctionEnd
-%func_LTFloat32_17 = OpFunction %type_bool_1 None %type_func_ret_bool_2
-%block_LTFloat32_18 = OpLabel
-%_22 = OpFOrdLessThan %type_bool_1 %const_float32_4_500000_20 %const_float32_5_500000_21
-OpReturnValue %_22
-OpFunctionEnd
-%func_GTInt_23 = OpFunction %type_bool_1 None %type_func_ret_bool_2
-%block_GTInt_24 = OpLabel
-%_25 = OpSGreaterThan %type_bool_1 %const_int32_2_14 %const_int32_3_15
+%func_LTFloat32_20 = OpFunction %type_bool_1 None %type_func_ret_bool_2
+%block_entry_LTFloat32_21 = OpLabel
+%_25 = OpFOrdLessThan %type_bool_1 %const_float32_4_500000_23 %const_float32_5_500000_24
 OpReturnValue %_25
 OpFunctionEnd
-%func_GTFloat32_26 = OpFunction %type_bool_1 None %type_func_ret_bool_2
-%block_GTFloat32_27 = OpLabel
-%_28 = OpFOrdGreaterThan %type_bool_1 %const_float32_4_500000_20 %const_float32_5_500000_21
-OpReturnValue %_28
+%func_GTInt_27 = OpFunction %type_bool_1 None %type_func_ret_bool_2
+%block_entry_GTInt_28 = OpLabel
+%_29 = OpSGreaterThan %type_bool_1 %const_int32_2_16 %const_int32_3_17
+OpReturnValue %_29
 OpFunctionEnd
-%func_LEInt_29 = OpFunction %type_bool_1 None %type_func_ret_bool_2
-%block_LEInt_30 = OpLabel
-%_31 = OpSLessThanEqual %type_bool_1 %const_int32_2_14 %const_int32_3_15
-OpReturnValue %_31
+%func_GTFloat32_31 = OpFunction %type_bool_1 None %type_func_ret_bool_2
+%block_entry_GTFloat32_32 = OpLabel
+%_33 = OpFOrdGreaterThan %type_bool_1 %const_float32_4_500000_23 %const_float32_5_500000_24
+OpReturnValue %_33
 OpFunctionEnd
-%func_LEFloat32_32 = OpFunction %type_bool_1 None %type_func_ret_bool_2
-%block_LEFloat32_33 = OpLabel
-%_34 = OpFOrdLessThanEqual %type_bool_1 %const_float32_4_500000_20 %const_float32_5_500000_21
-OpReturnValue %_34
-OpFunctionEnd
-%func_GEInt_35 = OpFunction %type_bool_1 None %type_func_ret_bool_2
-%block_GEInt_36 = OpLabel
-%_37 = OpSGreaterThanEqual %type_bool_1 %const_int32_2_14 %const_int32_3_15
+%func_LEInt_35 = OpFunction %type_bool_1 None %type_func_ret_bool_2
+%block_entry_LEInt_36 = OpLabel
+%_37 = OpSLessThanEqual %type_bool_1 %const_int32_2_16 %const_int32_3_17
 OpReturnValue %_37
 OpFunctionEnd
-%func_GEFloat32_38 = OpFunction %type_bool_1 None %type_func_ret_bool_2
-%block_GEFloat32_39 = OpLabel
-%_40 = OpFOrdGreaterThanEqual %type_bool_1 %const_float32_4_500000_20 %const_float32_5_500000_21
-OpReturnValue %_40
+%func_LEFloat32_39 = OpFunction %type_bool_1 None %type_func_ret_bool_2
+%block_entry_LEFloat32_40 = OpLabel
+%_41 = OpFOrdLessThanEqual %type_bool_1 %const_float32_4_500000_23 %const_float32_5_500000_24
+OpReturnValue %_41
 OpFunctionEnd
-%func_EQInt_41 = OpFunction %type_bool_1 None %type_func_ret_bool_2
-%block_EQInt_42 = OpLabel
-%_43 = OpIEqual %type_bool_1 %const_int32_2_14 %const_int32_3_15
-OpReturnValue %_43
+%func_GEInt_43 = OpFunction %type_bool_1 None %type_func_ret_bool_2
+%block_entry_GEInt_44 = OpLabel
+%_45 = OpSGreaterThanEqual %type_bool_1 %const_int32_2_16 %const_int32_3_17
+OpReturnValue %_45
 OpFunctionEnd
-%func_EQFloat32_44 = OpFunction %type_bool_1 None %type_func_ret_bool_2
-%block_EQFloat32_45 = OpLabel
-%_46 = OpFOrdEqual %type_bool_1 %const_float32_4_500000_20 %const_float32_5_500000_21
-OpReturnValue %_46
-OpFunctionEnd
-%func_EQBool_47 = OpFunction %type_bool_1 None %type_func_ret_bool_2
-%block_EQBool_48 = OpLabel
-%_49 = OpLogicalEqual %type_bool_1 %const_const_bool_true_5 %const_const_bool_false_6
+%func_GEFloat32_47 = OpFunction %type_bool_1 None %type_func_ret_bool_2
+%block_entry_GEFloat32_48 = OpLabel
+%_49 = OpFOrdGreaterThanEqual %type_bool_1 %const_float32_4_500000_23 %const_float32_5_500000_24
 OpReturnValue %_49
 OpFunctionEnd
-%func_NEInt_50 = OpFunction %type_bool_1 None %type_func_ret_bool_2
-%block_NEInt_51 = OpLabel
-%_52 = OpINotEqual %type_bool_1 %const_int32_2_14 %const_int32_3_15
-OpReturnValue %_52
+%func_EQInt_51 = OpFunction %type_bool_1 None %type_func_ret_bool_2
+%block_entry_EQInt_52 = OpLabel
+%_53 = OpIEqual %type_bool_1 %const_int32_2_16 %const_int32_3_17
+OpReturnValue %_53
 OpFunctionEnd
-%func_NEFloat32_53 = OpFunction %type_bool_1 None %type_func_ret_bool_2
-%block_NEFloat32_54 = OpLabel
-%_55 = OpFOrdNotEqual %type_bool_1 %const_float32_4_500000_20 %const_float32_5_500000_21
-OpReturnValue %_55
+%func_EQFloat32_55 = OpFunction %type_bool_1 None %type_func_ret_bool_2
+%block_entry_EQFloat32_56 = OpLabel
+%_57 = OpFOrdEqual %type_bool_1 %const_float32_4_500000_23 %const_float32_5_500000_24
+OpReturnValue %_57
 OpFunctionEnd
-%func_NEBool_56 = OpFunction %type_bool_1 None %type_func_ret_bool_2
-%block_NEBool_57 = OpLabel
-%_58 = OpLogicalNotEqual %type_bool_1 %const_const_bool_true_5 %const_const_bool_false_6
-OpReturnValue %_58
+%func_EQBool_59 = OpFunction %type_bool_1 None %type_func_ret_bool_2
+%block_entry_EQBool_60 = OpLabel
+%_61 = OpLogicalEqual %type_bool_1 %const_const_bool_true_5 %const_const_bool_false_6
+OpReturnValue %_61
 OpFunctionEnd
-%func_AddInt_60 = OpFunction %type_int32_13 None %type_func_ret_int32_59
-%block_AddInt_61 = OpLabel
-%_62 = OpIAdd %type_int32_13 %const_int32_2_14 %const_int32_3_15
-OpReturnValue %_62
+%func_NEInt_63 = OpFunction %type_bool_1 None %type_func_ret_bool_2
+%block_entry_NEInt_64 = OpLabel
+%_65 = OpINotEqual %type_bool_1 %const_int32_2_16 %const_int32_3_17
+OpReturnValue %_65
 OpFunctionEnd
-%func_AddFloat32_64 = OpFunction %type_float32_19 None %type_func_ret_float32_63
-%block_AddFloat32_65 = OpLabel
-%_66 = OpFAdd %type_float32_19 %const_float32_4_500000_20 %const_float32_5_500000_21
-OpReturnValue %_66
-OpFunctionEnd
-%func_SubInt_67 = OpFunction %type_int32_13 None %type_func_ret_int32_59
-%block_SubInt_68 = OpLabel
-%_69 = OpISub %type_int32_13 %const_int32_2_14 %const_int32_3_15
+%func_NEFloat32_67 = OpFunction %type_bool_1 None %type_func_ret_bool_2
+%block_entry_NEFloat32_68 = OpLabel
+%_69 = OpFOrdNotEqual %type_bool_1 %const_float32_4_500000_23 %const_float32_5_500000_24
 OpReturnValue %_69
 OpFunctionEnd
-%func_SubFloat32_70 = OpFunction %type_float32_19 None %type_func_ret_float32_63
-%block_SubFloat32_71 = OpLabel
-%_72 = OpFSub %type_float32_19 %const_float32_4_500000_20 %const_float32_5_500000_21
-OpReturnValue %_72
+%func_NEBool_71 = OpFunction %type_bool_1 None %type_func_ret_bool_2
+%block_entry_NEBool_72 = OpLabel
+%_73 = OpLogicalNotEqual %type_bool_1 %const_const_bool_true_5 %const_const_bool_false_6
+OpReturnValue %_73
 OpFunctionEnd
-%func_XorInt_73 = OpFunction %type_int32_13 None %type_func_ret_int32_59
-%block_XorInt_74 = OpLabel
-%_75 = OpBitwiseXor %type_int32_13 %const_int32_2_14 %const_int32_3_15
-OpReturnValue %_75
-OpFunctionEnd
-%func_OrInt_76 = OpFunction %type_int32_13 None %type_func_ret_int32_59
-%block_OrInt_77 = OpLabel
-%_78 = OpBitwiseOr %type_int32_13 %const_int32_2_14 %const_int32_3_15
+%func_AddInt_76 = OpFunction %type_int32_15 None %type_func_ret_int32_75
+%block_entry_AddInt_77 = OpLabel
+%_78 = OpIAdd %type_int32_15 %const_int32_2_16 %const_int32_3_17
 OpReturnValue %_78
 OpFunctionEnd
-%func_MulInt_79 = OpFunction %type_int32_13 None %type_func_ret_int32_59
-%block_MulInt_80 = OpLabel
-%_81 = OpIMul %type_int32_13 %const_int32_2_14 %const_int32_3_15
-OpReturnValue %_81
+%func_AddFloat32_81 = OpFunction %type_float32_22 None %type_func_ret_float32_80
+%block_entry_AddFloat32_82 = OpLabel
+%_83 = OpFAdd %type_float32_22 %const_float32_4_500000_23 %const_float32_5_500000_24
+OpReturnValue %_83
 OpFunctionEnd
-%func_MulFloat32_82 = OpFunction %type_float32_19 None %type_func_ret_float32_63
-%block_MulFloat32_83 = OpLabel
-%_84 = OpFMul %type_float32_19 %const_float32_4_500000_20 %const_float32_5_500000_21
-OpReturnValue %_84
-OpFunctionEnd
-%func_DivInt_85 = OpFunction %type_int32_13 None %type_func_ret_int32_59
-%block_DivInt_86 = OpLabel
-%_87 = OpSDiv %type_int32_13 %const_int32_2_14 %const_int32_3_15
+%func_SubInt_85 = OpFunction %type_int32_15 None %type_func_ret_int32_75
+%block_entry_SubInt_86 = OpLabel
+%_87 = OpISub %type_int32_15 %const_int32_2_16 %const_int32_3_17
 OpReturnValue %_87
 OpFunctionEnd
-%func_DivFloat32_88 = OpFunction %type_float32_19 None %type_func_ret_float32_63
-%block_DivFloat32_89 = OpLabel
-%_90 = OpFDiv %type_float32_19 %const_float32_4_500000_20 %const_float32_5_500000_21
-OpReturnValue %_90
+%func_SubFloat32_89 = OpFunction %type_float32_22 None %type_func_ret_float32_80
+%block_entry_SubFloat32_90 = OpLabel
+%_91 = OpFSub %type_float32_22 %const_float32_4_500000_23 %const_float32_5_500000_24
+OpReturnValue %_91
 OpFunctionEnd
-%func_ModInt_91 = OpFunction %type_int32_13 None %type_func_ret_int32_59
-%block_ModInt_92 = OpLabel
-%_93 = OpSRem %type_int32_13 %const_int32_2_14 %const_int32_3_15
-OpReturnValue %_93
+%func_XorInt_93 = OpFunction %type_int32_15 None %type_func_ret_int32_75
+%block_entry_XorInt_94 = OpLabel
+%_95 = OpBitwiseXor %type_int32_15 %const_int32_2_16 %const_int32_3_17
+OpReturnValue %_95
 OpFunctionEnd
-%func_AndInt_94 = OpFunction %type_int32_13 None %type_func_ret_int32_59
-%block_AndInt_95 = OpLabel
-%_96 = OpBitwiseAnd %type_int32_13 %const_int32_2_14 %const_int32_3_15
-OpReturnValue %_96
-OpFunctionEnd
-%func_AndNotInt_97 = OpFunction %type_int32_13 None %type_func_ret_int32_59
-%block_AndNotInt_98 = OpLabel
-%_100 = OpNot %type_int32_13 %const_int32_3_15
-%_99 = OpBitwiseAnd %type_int32_13 %const_int32_2_14 %_100
+%func_OrInt_97 = OpFunction %type_int32_15 None %type_func_ret_int32_75
+%block_entry_OrInt_98 = OpLabel
+%_99 = OpBitwiseOr %type_int32_15 %const_int32_2_16 %const_int32_3_17
 OpReturnValue %_99
 OpFunctionEnd
-%func_ShlInt_101 = OpFunction %type_int32_13 None %type_func_ret_int32_59
-%block_ShlInt_102 = OpLabel
-%_103 = OpShiftLeftLogical %type_int32_13 %const_int32_2_14 %const_int32_3_15
+%func_MulInt_101 = OpFunction %type_int32_15 None %type_func_ret_int32_75
+%block_entry_MulInt_102 = OpLabel
+%_103 = OpIMul %type_int32_15 %const_int32_2_16 %const_int32_3_17
 OpReturnValue %_103
 OpFunctionEnd
-%func_ShrInt_104 = OpFunction %type_int32_13 None %type_func_ret_int32_59
-%block_ShrInt_105 = OpLabel
-%_106 = OpShiftRightArithmetic %type_int32_13 %const_int32_2_14 %const_int32_3_15
-OpReturnValue %_106
+%func_MulFloat32_105 = OpFunction %type_float32_22 None %type_func_ret_float32_80
+%block_entry_MulFloat32_106 = OpLabel
+%_107 = OpFMul %type_float32_22 %const_float32_4_500000_23 %const_float32_5_500000_24
+OpReturnValue %_107
 OpFunctionEnd
+%func_DivInt_109 = OpFunction %type_int32_15 None %type_func_ret_int32_75
+%block_entry_DivInt_110 = OpLabel
+%_111 = OpSDiv %type_int32_15 %const_int32_2_16 %const_int32_3_17
+OpReturnValue %_111
+OpFunctionEnd
+%func_DivFloat32_113 = OpFunction %type_float32_22 None %type_func_ret_float32_80
+%block_entry_DivFloat32_114 = OpLabel
+%_115 = OpFDiv %type_float32_22 %const_float32_4_500000_23 %const_float32_5_500000_24
+OpReturnValue %_115
+OpFunctionEnd
+%func_ModInt_117 = OpFunction %type_int32_15 None %type_func_ret_int32_75
+%block_entry_ModInt_118 = OpLabel
+%_119 = OpSRem %type_int32_15 %const_int32_2_16 %const_int32_3_17
+OpReturnValue %_119
+OpFunctionEnd
+%func_AndInt_121 = OpFunction %type_int32_15 None %type_func_ret_int32_75
+%block_entry_AndInt_122 = OpLabel
+%_123 = OpBitwiseAnd %type_int32_15 %const_int32_2_16 %const_int32_3_17
+OpReturnValue %_123
+OpFunctionEnd
+%func_AndNotInt_125 = OpFunction %type_int32_15 None %type_func_ret_int32_75
+%block_entry_AndNotInt_126 = OpLabel
+%_128 = OpNot %type_int32_15 %const_int32_3_17
+%_127 = OpBitwiseAnd %type_int32_15 %const_int32_2_16 %_128
+OpReturnValue %_127
+OpFunctionEnd
+%func_ShlInt_130 = OpFunction %type_int32_15 None %type_func_ret_int32_75
+%block_entry_ShlInt_131 = OpLabel
+%_132 = OpShiftLeftLogical %type_int32_15 %const_int32_2_16 %const_int32_3_17
+OpReturnValue %_132
+OpFunctionEnd
+%func_ShrInt_134 = OpFunction %type_int32_15 None %type_func_ret_int32_75
+%block_entry_ShrInt_135 = OpLabel
+%_136 = OpShiftRightArithmetic %type_int32_15 %const_int32_2_16 %const_int32_3_17
+OpReturnValue %_136
+OpFunctionEnd
+

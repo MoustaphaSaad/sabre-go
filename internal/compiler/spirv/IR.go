@@ -2,6 +2,7 @@ package spirv
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 )
 
@@ -108,6 +109,22 @@ func (m *Module) GetObject(id ID) Object {
 		return m.Objects[index]
 	}
 	return nil
+}
+
+func (m *Module) RemoveObjects(ids []ID) {
+	for _, id := range ids {
+		m.Objects[m.objectsByID[id]] = nil
+	}
+
+	m.Objects = slices.DeleteFunc(m.Objects, func(obj Object) bool {
+		return obj == nil
+	})
+
+	newObjectsByID := make(map[ID]int, len(m.Objects))
+	for i, obj := range m.Objects {
+		newObjectsByID[obj.ID()] = i
+	}
+	m.objectsByID = newObjectsByID
 }
 
 func (m *Module) addObject(obj Object) {

@@ -5,6 +5,7 @@ OpMemoryModel Logical GLSL450
 %type_func_ret_float32_2 = OpTypeFunction %type_float32_1
 %const_float32_1_500000_5 = OpConstant %type_float32_1 1.5
 %func_main_3 = OpFunction %type_float32_1 None %type_func_ret_float32_2
-%block_main_4 = OpLabel
+%block_entry_main_4 = OpLabel
 OpReturnValue %const_float32_1_500000_5
 OpFunctionEnd
+
