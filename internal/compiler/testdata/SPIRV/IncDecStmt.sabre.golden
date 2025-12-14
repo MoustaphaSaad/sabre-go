@@ -1,0 +1,30 @@
+OpCapability Shader
+OpCapability Linkage
+OpMemoryModel Logical GLSL450
+%type_void_1 = OpTypeVoid
+%type_func_ret_void_2 = OpTypeFunction %type_void_1
+%type_int32_5 = OpTypeInt 32 1
+%type_ptr_int32_7_6 = OpTypePointer Function %type_int32_5
+%type_float32_13 = OpTypeFloat 32
+%type_ptr_float32_7_14 = OpTypePointer Function %type_float32_13
+%const_int32_1_8 = OpConstant %type_int32_5 1
+%const_float32_1_500000_16 = OpConstant %type_float32_13 1.5
+%const_float32_1_000000_17 = OpConstant %type_float32_13 1
+%func_main_3 = OpFunction %type_void_1 None %type_func_ret_void_2
+%block_entry_main_4 = OpLabel
+%y_7 = OpVariable %type_ptr_int32_7_6 Function %const_int32_1_8
+%z_15 = OpVariable %type_ptr_float32_7_14 Function %const_float32_1_500000_16
+%_9 = OpLoad %type_int32_5 %y_7
+%_10 = OpIAdd %type_int32_5 %_9 %const_int32_1_8
+OpStore %y_7 %_10
+%_11 = OpLoad %type_int32_5 %y_7
+%_12 = OpISub %type_int32_5 %_11 %const_int32_1_8
+OpStore %y_7 %_12
+%_18 = OpLoad %type_float32_13 %z_15
+%_19 = OpFAdd %type_float32_13 %_18 %const_float32_1_000000_17
+OpStore %z_15 %_19
+%_20 = OpLoad %type_float32_13 %z_15
+%_21 = OpFSub %type_float32_13 %_20 %const_float32_1_000000_17
+OpStore %z_15 %_21
+OpReturn
+OpFunctionEnd
