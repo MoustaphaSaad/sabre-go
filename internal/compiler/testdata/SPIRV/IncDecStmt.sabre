@@ -1,0 +1,11 @@
+package main
+
+func main() {
+	var y = 1
+	y++
+	y--
+
+	var z float32 = 1.5
+	z++
+	z--
+}
