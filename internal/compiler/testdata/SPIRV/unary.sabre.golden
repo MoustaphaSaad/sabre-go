@@ -1,41 +1,41 @@
-OpCapability Shader
-OpCapability Linkage
-OpMemoryModel Logical GLSL450
-%type_float32_1 = OpTypeFloat 32
-%type_func_ret_float32_2 = OpTypeFunction %type_float32_1
-%type_int32_12 = OpTypeInt 32 1
-%type_func_ret_int32_13 = OpTypeFunction %type_int32_12
-%type_bool_23 = OpTypeBool
-%type_func_ret_bool_24 = OpTypeFunction %type_bool_23
-%const_float32_5_000000_5 = OpConstant %type_float32_1 5
-%const_int32_5_16 = OpConstant %type_int32_12 5
-%const_const_bool_true_27 = OpConstantTrue %type_bool_23
-%func_plusFloat32_3 = OpFunction %type_float32_1 None %type_func_ret_float32_2
-%block_entry_plusFloat32_4 = OpLabel
-OpReturnValue %const_float32_5_000000_5
-OpFunctionEnd
-%func_minusFloat32_8 = OpFunction %type_float32_1 None %type_func_ret_float32_2
+                              OpCapability Shader
+                              OpCapability Linkage
+                              OpMemoryModel Logical GLSL450
+            %type_float32_1 = OpTypeFloat 32
+   %type_func_ret_float32_2 = OpTypeFunction %type_float32_1
+             %type_int32_12 = OpTypeInt 32 1
+    %type_func_ret_int32_13 = OpTypeFunction %type_int32_12
+              %type_bool_23 = OpTypeBool
+     %type_func_ret_bool_24 = OpTypeFunction %type_bool_23
+  %const_float32_5_000000_5 = OpConstant %type_float32_1 5
+          %const_int32_5_16 = OpConstant %type_int32_12 5
+  %const_const_bool_true_27 = OpConstantTrue %type_bool_23
+        %func_plusFloat32_3 = OpFunction %type_float32_1 None %type_func_ret_float32_2
+ %block_entry_plusFloat32_4 = OpLabel
+                              OpReturnValue %const_float32_5_000000_5
+                              OpFunctionEnd
+       %func_minusFloat32_8 = OpFunction %type_float32_1 None %type_func_ret_float32_2
 %block_entry_minusFloat32_9 = OpLabel
-%_10 = OpFNegate %type_float32_1 %const_float32_5_000000_5
-OpReturnValue %_10
-OpFunctionEnd
-%func_plusInt_14 = OpFunction %type_int32_12 None %type_func_ret_int32_13
-%block_entry_plusInt_15 = OpLabel
-OpReturnValue %const_int32_5_16
-OpFunctionEnd
-%func_minusInt_19 = OpFunction %type_int32_12 None %type_func_ret_int32_13
-%block_entry_minusInt_20 = OpLabel
-%_21 = OpSNegate %type_int32_12 %const_int32_5_16
-OpReturnValue %_21
-OpFunctionEnd
-%func_not_25 = OpFunction %type_bool_23 None %type_func_ret_bool_24
-%block_entry_not_26 = OpLabel
-%_28 = OpLogicalNot %type_bool_23 %const_const_bool_true_27
-OpReturnValue %_28
-OpFunctionEnd
-%func_xor_30 = OpFunction %type_int32_12 None %type_func_ret_int32_13
-%block_entry_xor_31 = OpLabel
-%_32 = OpNot %type_int32_12 %const_int32_5_16
-OpReturnValue %_32
-OpFunctionEnd
+                       %_10 = OpFNegate %type_float32_1 %const_float32_5_000000_5
+                              OpReturnValue %_10
+                              OpFunctionEnd
+           %func_plusInt_14 = OpFunction %type_int32_12 None %type_func_ret_int32_13
+    %block_entry_plusInt_15 = OpLabel
+                              OpReturnValue %const_int32_5_16
+                              OpFunctionEnd
+          %func_minusInt_19 = OpFunction %type_int32_12 None %type_func_ret_int32_13
+   %block_entry_minusInt_20 = OpLabel
+                       %_21 = OpSNegate %type_int32_12 %const_int32_5_16
+                              OpReturnValue %_21
+                              OpFunctionEnd
+               %func_not_25 = OpFunction %type_bool_23 None %type_func_ret_bool_24
+        %block_entry_not_26 = OpLabel
+                       %_28 = OpLogicalNot %type_bool_23 %const_const_bool_true_27
+                              OpReturnValue %_28
+                              OpFunctionEnd
+               %func_xor_30 = OpFunction %type_int32_12 None %type_func_ret_int32_13
+        %block_entry_xor_31 = OpLabel
+                       %_32 = OpNot %type_int32_12 %const_int32_5_16
+                              OpReturnValue %_32
+                              OpFunctionEnd
 
