@@ -291,6 +291,12 @@ func (tp *TextPrinter) emitInstruction(inst Instruction) {
 		tp.emit(OpStore, tp.nameOfByID(i.Pointer), tp.nameOfByID(i.Object))
 	case *UnreachableInstruction:
 		tp.emit(OpUnreachable)
+	case *SelectionMergeInstruction:
+		tp.emit(OpSelectionMerge, tp.nameOfByID(i.MergeBlock), i.Control)
+	case *BranchConditional:
+		tp.emit(OpBranchConditional, tp.nameOfByID(i.Condition), tp.nameOfByID(i.TrueLabel), tp.nameOfByID(i.FalseLabel))
+	case *Branch:
+		tp.emit(OpBranch, tp.nameOfByID(i.TargetLabel))
 	default:
 		panic(fmt.Sprintf("unsupported instruction: %T", inst))
 	}

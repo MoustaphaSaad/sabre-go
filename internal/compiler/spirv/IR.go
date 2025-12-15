@@ -392,6 +392,14 @@ func (b *Block) Push(instr Instruction) {
 	b.Instructions = append(b.Instructions, instr)
 }
 
+func (b *Block) IsTerminated() bool {
+	if len(b.Instructions) == 0 {
+		return false
+	}
+
+	return b.Instructions[len(b.Instructions)-1].Opcode().IsTerminator()
+}
+
 type Variable struct {
 	BaseObject
 	Type         *PtrType
@@ -938,4 +946,31 @@ type UnreachableInstruction struct{}
 
 func (r *UnreachableInstruction) Opcode() Opcode {
 	return OpUnreachable
+}
+
+type SelectionMergeInstruction struct {
+	MergeBlock ID
+	Control    SelectionControl
+}
+
+func (i *SelectionMergeInstruction) Opcode() Opcode {
+	return OpSelectionMerge
+}
+
+type BranchConditional struct {
+	Condition  ID
+	TrueLabel  ID
+	FalseLabel ID
+}
+
+func (i *BranchConditional) Opcode() Opcode {
+	return OpBranchConditional
+}
+
+type Branch struct {
+	TargetLabel ID
+}
+
+func (i *Branch) Opcode() Opcode {
+	return OpBranch
 }

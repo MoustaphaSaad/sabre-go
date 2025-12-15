@@ -824,6 +824,8 @@ func (ir *IREmitter) emitStatement(stmt Stmt) {
 		ir.emitDeclStmt(s)
 	case *BlockStmt:
 		ir.emitBlockStmt(s)
+	case *IfStmt:
+		ir.emitIfStmt(s)
 	default:
 		panic("unsupported statement")
 	}
@@ -976,5 +978,53 @@ func (ir *IREmitter) emitVarDecl(d *GenericDecl, sc spirv.StorageClass) {
 func (ir *IREmitter) emitBlockStmt(block *BlockStmt) {
 	for _, s := range block.Stmts {
 		ir.emitStatement(s)
+	}
+}
+
+func (ir *IREmitter) emitIfStmt(ifStmt *IfStmt) {
+	if ifStmt.Init != nil {
+		ir.emitStatement(ifStmt.Init)
+	}
+
+	cond := ir.emitExpression(ifStmt.Cond)
+
+	block := ir.currentBlock()
+	fn := block.Function
+
+	trueBlock := fn.NewBlock("true_block")
+	falseBlock := fn.NewBlock("false_block")
+	mergeBlock := fn.NewBlock("if_merge")
+	block.Push(&spirv.SelectionMergeInstruction{
+		MergeBlock: mergeBlock.ID(),
+		Control:    spirv.SelectionControlNone,
+	})
+
+	block.Push(&spirv.BranchConditional{
+		Condition:  cond.ID(),
+		TrueLabel:  trueBlock.ID(),
+		FalseLabel: falseBlock.ID(),
+	})
+	ir.leaveBlock()
+
+	ir.enterBlock(trueBlock)
+	ir.emitStatement(ifStmt.Body)
+	ir.branchToMergeBlockIfNeeded(trueBlock, mergeBlock)
+	ir.leaveBlock()
+
+	ir.enterBlock(falseBlock)
+	if ifStmt.Else != nil {
+		ir.emitStatement(ifStmt.Else)
+	}
+	ir.branchToMergeBlockIfNeeded(falseBlock, mergeBlock)
+	ir.leaveBlock()
+
+	// continue emitting code in merge block
+	ir.enterBlock(mergeBlock)
+}
+func (ir *IREmitter) branchToMergeBlockIfNeeded(currentBlock, mergeBlock *spirv.Block) {
+	if !currentBlock.IsTerminated() {
+		currentBlock.Push(&spirv.Branch{
+			TargetLabel: mergeBlock.ID(),
+		})
 	}
 }

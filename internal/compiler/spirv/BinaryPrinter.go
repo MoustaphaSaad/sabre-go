@@ -196,6 +196,12 @@ func (bp *BinaryPrinter) emitInstruction(inst Instruction) {
 		bp.emitOp(Word(OpStore), Word(i.Pointer), Word(i.Object))
 	case *UnreachableInstruction:
 		bp.emitOp(Word(OpUnreachable))
+	case *SelectionMergeInstruction:
+		bp.emitOp(Word(OpSelectionMerge), Word(i.MergeBlock), Word(i.Control))
+	case *BranchConditional:
+		bp.emitOp(Word(OpBranchConditional), Word(i.Condition), Word(i.TrueLabel), Word(i.FalseLabel))
+	case *Branch:
+		bp.emitOp(Word(OpBranch), Word(i.TargetLabel))
 	default:
 		panic("unsupported instruction")
 	}

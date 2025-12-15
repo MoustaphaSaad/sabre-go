@@ -8,7 +8,8 @@ import (
 
 func RewriteIR(mod *spirv.Module) {
 	PassPullLocalVarsToFuncEntry(mod)
-	PassRemoveEmptyBlocks(mod)
+	// TODO: only remove unreferenced blocks
+	// PassRemoveEmptyBlocks(mod)
 	PassTerminateBlocks(mod)
 }
 
@@ -45,25 +46,13 @@ func terminateBlocksForVoidFuncs(fn *spirv.Function) {
 	_, isVoid := fn.Type.ReturnType.(*spirv.VoidType)
 
 	for _, bb := range fn.Blocks {
-		if !isBlockTerminated(bb) {
+		if !bb.IsTerminated() {
 			if isVoid {
 				bb.Push(&spirv.ReturnInstruction{})
 			} else {
 				bb.Push(&spirv.UnreachableInstruction{})
 			}
 		}
-	}
-}
-func isBlockTerminated(bb *spirv.Block) bool {
-	if len(bb.Instructions) == 0 {
-		return false
-	}
-
-	switch bb.Instructions[len(bb.Instructions)-1].(type) {
-	case *spirv.ReturnInstruction, *spirv.ReturnValueInstruction:
-		return true
-	default:
-		return false
 	}
 }
 

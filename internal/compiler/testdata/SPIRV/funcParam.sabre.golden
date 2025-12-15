@@ -16,6 +16,8 @@
                                                 %b_8 = OpFunctionParameter %type_bool_3
                    %block_entry_testWithNamesIntX_10 = OpLabel
                                                        OpReturnValue %x_5
+                         %block_testWithNamesIntX_11 = OpLabel
+                                                       OpUnreachable
                                                        OpFunctionEnd
                         %func_testWithNamesFloatY_17 = OpFunction %type_float32_2 None %type_func_int32_float32_float32_bool_ret_float32_12
                                                %x_13 = OpFunctionParameter %type_int32_1
@@ -24,6 +26,8 @@
                                                %b_16 = OpFunctionParameter %type_bool_3
                  %block_entry_testWithNamesFloatY_18 = OpLabel
                                                        OpReturnValue %y_14
+                       %block_testWithNamesFloatY_19 = OpLabel
+                                                       OpUnreachable
                                                        OpFunctionEnd
                         %func_testWithNamesFloatZ_24 = OpFunction %type_float32_2 None %type_func_int32_float32_float32_bool_ret_float32_12
                                                %x_20 = OpFunctionParameter %type_int32_1
@@ -32,6 +36,8 @@
                                                %b_23 = OpFunctionParameter %type_bool_3
                  %block_entry_testWithNamesFloatZ_25 = OpLabel
                                                        OpReturnValue %z_22
+                       %block_testWithNamesFloatZ_26 = OpLabel
+                                                       OpUnreachable
                                                        OpFunctionEnd
                          %func_testWithNamesBoolB_32 = OpFunction %type_bool_3 None %type_func_int32_float32_float32_bool_ret_bool_27
                                                %x_28 = OpFunctionParameter %type_int32_1
@@ -40,6 +46,8 @@
                                                %b_31 = OpFunctionParameter %type_bool_3
                   %block_entry_testWithNamesBoolB_33 = OpLabel
                                                        OpReturnValue %b_31
+                        %block_testWithNamesBoolB_34 = OpLabel
+                                                       OpUnreachable
                                                        OpFunctionEnd
                            %func_testWithoutNames_40 = OpFunction %type_void_35 None %type_func_int32_float32_bool_ret_void_36
                                    %UnnamedParam0_37 = OpFunctionParameter %type_int32_1
