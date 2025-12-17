@@ -824,6 +824,8 @@ func (ir *IREmitter) emitStatement(stmt Stmt) {
 		ir.emitDeclStmt(s)
 	case *BlockStmt:
 		ir.emitBlockStmt(s)
+	case *AssignStmt:
+		ir.emitAssignStmt(s)
 	default:
 		panic("unsupported statement")
 	}
@@ -976,5 +978,52 @@ func (ir *IREmitter) emitVarDecl(d *GenericDecl, sc spirv.StorageClass) {
 func (ir *IREmitter) emitBlockStmt(block *BlockStmt) {
 	for _, s := range block.Stmts {
 		ir.emitStatement(s)
+	}
+}
+
+func (ir *IREmitter) emitAssignStmt(s *AssignStmt) {
+	switch s.Operator.Kind() {
+	case TokenColonAssign:
+		// TODO: Collapse with emitVarDecl (they are very similar)
+		for i, lhsExpr := range s.LHS {
+			symbol := ir.unit.semanticInfo.SymbolOfIdentifier(lhsExpr.(*IdentifierExpr)).(*VarSymbol)
+			tav := ir.unit.semanticInfo.TypeOf(symbol)
+			spirvType := ir.emitType(tav.Type)
+			ptrType := ir.module.InternPtr(spirvType, spirv.StorageClassFunction)
+			variable := ir.module.NewVariable(symbol.Name(), ptrType, spirv.StorageClassFunction)
+
+			var initValueID spirv.ID
+			if initTAV := symbol.InitTypeAndValue; initTAV != nil && initTAV.Mode == AddressModeConstant {
+				initValueID = ir.emitConstantValue(initTAV).ID()
+			}
+
+			block := ir.currentBlock()
+			block.Push(&spirv.VariableInstruction{
+				ResultType:   variable.Type.ID(),
+				ResultID:     variable.ID(),
+				StorageClass: variable.StorageClass,
+				Initializer:  initValueID,
+			})
+
+			ir.setObjectOfSymbol(symbol, variable)
+
+			if s.RHS != nil {
+				if i < len(s.RHS) {
+					switch rhsExpr := s.RHS[i].(type) {
+					case *LiteralExpr:
+					case *IdentifierExpr:
+					default:
+						block.Push(&spirv.StoreInstruction{
+							Pointer: variable.ID(),
+							Object:  ir.emitExpression(rhsExpr).ID(),
+						})
+					}
+				} else {
+					panic("variable initialization from tuple types is not supported yet")
+				}
+			}
+		}
+	default:
+		panic("unsupported assignment operator")
 	}
 }
