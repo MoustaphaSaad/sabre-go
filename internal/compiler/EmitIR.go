@@ -127,6 +127,42 @@ func (ir *IREmitter) emitFunc(sym *FuncSymbol) spirv.Object {
 	return spirvFunction
 }
 
+func (ir *IREmitter) emitVar(symbol *VarSymbol, sc spirv.StorageClass, initExpr Expr) spirv.Object {
+	tav := ir.unit.semanticInfo.TypeOf(symbol)
+	spirvType := ir.emitType(tav.Type)
+	ptrType := ir.module.InternPtr(spirvType, sc)
+	variable := ir.module.NewVariable(symbol.Name(), ptrType, sc)
+
+	var initValueID spirv.ID
+	if initTAV := symbol.InitTypeAndValue; initTAV != nil && initTAV.Mode == AddressModeConstant {
+		initValueID = ir.emitConstantValue(initTAV).ID()
+	}
+
+	block := ir.currentBlock()
+	block.Push(&spirv.VariableInstruction{
+		ResultType:   variable.Type.ID(),
+		ResultID:     variable.ID(),
+		StorageClass: variable.StorageClass,
+		Initializer:  initValueID,
+	})
+
+	ir.setObjectOfSymbol(symbol, variable)
+
+	if initExpr != nil {
+		switch rhsExpr := initExpr.(type) {
+		case *LiteralExpr:
+		case *IdentifierExpr:
+		default:
+			block.Push(&spirv.StoreInstruction{
+				Pointer: variable.ID(),
+				Object:  ir.emitExpression(rhsExpr).ID(),
+			})
+		}
+	}
+
+	return variable
+}
+
 func (ir *IREmitter) emitExpression(expr Expr) spirv.Object {
 	switch e := expr.(type) {
 	case *LiteralExpr:
@@ -932,45 +968,20 @@ func (ir *IREmitter) emitVarDecl(d *GenericDecl, sc spirv.StorageClass) {
 		v := spec.(*ValueSpec)
 		for i, name := range v.LHS {
 			symbol := ir.unit.semanticInfo.SymbolOfIdentifier(name).(*VarSymbol)
-			tav := ir.unit.semanticInfo.TypeOf(symbol)
-			spirvType := ir.emitType(tav.Type)
-			ptrType := ir.module.InternPtr(spirvType, sc)
-			variable := ir.module.NewVariable(symbol.Name(), ptrType, sc)
-
-			var initValueID spirv.ID
-			if initTAV := symbol.InitTypeAndValue; initTAV != nil && initTAV.Mode == AddressModeConstant {
-				initValueID = ir.emitConstantValue(initTAV).ID()
-			}
-
-			block := ir.currentBlock()
-			block.Push(&spirv.VariableInstruction{
-				ResultType:   variable.Type.ID(),
-				ResultID:     variable.ID(),
-				StorageClass: variable.StorageClass,
-				Initializer:  initValueID,
-			})
-
-			ir.setObjectOfSymbol(symbol, variable)
-
-			if i != symbol.ExprIndex {
-				panic(fmt.Sprintf("LHS index %v mismatches ExprIndex %v", i, symbol.ExprIndex))
-			}
-
+			var initExpr Expr = nil
 			if v.RHS != nil {
 				if i < len(v.RHS) {
-					switch rhsExpr := v.RHS[i].(type) {
-					case *LiteralExpr:
-					case *IdentifierExpr:
-					default:
-						block.Push(&spirv.StoreInstruction{
-							Pointer: variable.ID(),
-							Object:  ir.emitExpression(rhsExpr).ID(),
-						})
-					}
+					initExpr = v.RHS[i]
 				} else {
 					panic("variable initialization from tuple types is not supported yet")
 				}
 			}
+
+			if i != symbol.ExprIndex && symbol.ExprIndex != -1 {
+				panic(fmt.Sprintf("LHS index %v mismatches ExprIndex %v", i, symbol.ExprIndex))
+			}
+
+			ir.emitVar(symbol, sc, initExpr)
 		}
 	}
 }
@@ -984,43 +995,145 @@ func (ir *IREmitter) emitBlockStmt(block *BlockStmt) {
 func (ir *IREmitter) emitAssignStmt(s *AssignStmt) {
 	switch s.Operator.Kind() {
 	case TokenColonAssign:
-		// TODO: Collapse with emitVarDecl (they are very similar)
 		for i, lhsExpr := range s.LHS {
 			symbol := ir.unit.semanticInfo.SymbolOfIdentifier(lhsExpr.(*IdentifierExpr)).(*VarSymbol)
-			tav := ir.unit.semanticInfo.TypeOf(symbol)
-			spirvType := ir.emitType(tav.Type)
-			ptrType := ir.module.InternPtr(spirvType, spirv.StorageClassFunction)
-			variable := ir.module.NewVariable(symbol.Name(), ptrType, spirv.StorageClassFunction)
 
-			var initValueID spirv.ID
-			if initTAV := symbol.InitTypeAndValue; initTAV != nil && initTAV.Mode == AddressModeConstant {
-				initValueID = ir.emitConstantValue(initTAV).ID()
-			}
-
-			block := ir.currentBlock()
-			block.Push(&spirv.VariableInstruction{
-				ResultType:   variable.Type.ID(),
-				ResultID:     variable.ID(),
-				StorageClass: variable.StorageClass,
-				Initializer:  initValueID,
-			})
-
-			ir.setObjectOfSymbol(symbol, variable)
-
+			var initExpr Expr = nil
 			if s.RHS != nil {
 				if i < len(s.RHS) {
-					switch rhsExpr := s.RHS[i].(type) {
-					case *LiteralExpr:
-					case *IdentifierExpr:
-					default:
-						block.Push(&spirv.StoreInstruction{
-							Pointer: variable.ID(),
-							Object:  ir.emitExpression(rhsExpr).ID(),
-						})
-					}
+					initExpr = s.RHS[i]
 				} else {
 					panic("variable initialization from tuple types is not supported yet")
 				}
+			}
+
+			ir.emitVar(symbol, spirv.StorageClassFunction, initExpr)
+		}
+	case TokenAssign:
+		for i, lhsExpr := range s.LHS {
+			symbol := ir.unit.semanticInfo.SymbolOfIdentifier(lhsExpr.(*IdentifierExpr)).(*VarSymbol)
+			obj := ir.objectOfSymbol(symbol)
+			block := ir.currentBlock()
+			block.Push(&spirv.StoreInstruction{
+				Pointer: obj.ID(),
+				Object:  ir.emitExpression(s.RHS[i]).ID(),
+			})
+		}
+	case TokenAddAssign, TokenSubAssign, TokenMulAssign, TokenDivAssign:
+		// TODO: Floating point, Unsigned and collapse with emitBinaryExpr
+		for i, lhsExpr := range s.LHS {
+			symbol := ir.unit.semanticInfo.SymbolOfIdentifier(lhsExpr.(*IdentifierExpr)).(*VarSymbol)
+			obj := ir.objectOfSymbol(symbol)
+			loadedValue := ir.module.NewValue(obj.(*spirv.PtrType).To)
+			block := ir.currentBlock()
+			block.Push(&spirv.LoadInstruction{
+				ResultType: loadedValue.Type.ID(),
+				ResultID:   loadedValue.ID(),
+				Pointer:    obj.ID(),
+			})
+			rhsValue := ir.emitExpression(s.RHS[i])
+			resultValue := ir.module.NewValue(loadedValue.Type)
+			switch s.Operator.Kind() {
+			case TokenAddAssign:
+				block.Push(&spirv.IAddInstruction{
+					ResultType: resultValue.Type.ID(),
+					ResultID:   resultValue.ID(),
+					Operand1:   loadedValue.ID(),
+					Operand2:   rhsValue.ID(),
+				})
+			case TokenSubAssign:
+				block.Push(&spirv.ISubInstruction{
+					ResultType: resultValue.Type.ID(),
+					ResultID:   resultValue.ID(),
+					Operand1:   loadedValue.ID(),
+					Operand2:   rhsValue.ID(),
+				})
+			case TokenMulAssign:
+				block.Push(&spirv.IMulInstruction{
+					ResultType: resultValue.Type.ID(),
+					ResultID:   resultValue.ID(),
+					Operand1:   loadedValue.ID(),
+					Operand2:   rhsValue.ID(),
+				})
+			case TokenDivAssign:
+				block.Push(&spirv.SDivInstruction{
+					ResultType: resultValue.Type.ID(),
+					ResultID:   resultValue.ID(),
+					Operand1:   loadedValue.ID(),
+					Operand2:   rhsValue.ID(),
+				})
+			default:
+				panic("unsupported assignment operator")
+			}
+			block.Push(&spirv.StoreInstruction{
+				Pointer: obj.ID(),
+				Object:  resultValue.ID(),
+			})
+		}
+	case TokenAndAssign, TokenAndNotAssign, TokenOrAssign, TokenXorAssign, TokenShlAssign, TokenShrAssign:
+		for i, lhsExpr := range s.LHS {
+			symbol := ir.unit.semanticInfo.SymbolOfIdentifier(lhsExpr.(*IdentifierExpr)).(*VarSymbol)
+			obj := ir.objectOfSymbol(symbol)
+			loadedValue := ir.module.NewValue(obj.(*spirv.PtrType).To)
+			block := ir.currentBlock()
+			block.Push(&spirv.LoadInstruction{
+				ResultType: loadedValue.Type.ID(),
+				ResultID:   loadedValue.ID(),
+				Pointer:    obj.ID(),
+			})
+			rhsValue := ir.emitExpression(s.RHS[i])
+			resultValue := ir.module.NewValue(loadedValue.Type)
+			switch s.Operator.Kind() {
+			case TokenAndAssign:
+				block.Push(&spirv.BitwiseAndInstruction{
+					ResultType: resultValue.Type.ID(),
+					ResultID:   resultValue.ID(),
+					Operand1:   loadedValue.ID(),
+					Operand2:   rhsValue.ID(),
+				})
+			case TokenAndNotAssign:
+				notRhs := ir.module.NewValue(loadedValue.Type)
+				block.Push(&spirv.NotInstruction{
+					ResultType: notRhs.Type.ID(),
+					ResultID:   notRhs.ID(),
+					Operand:    rhsValue.ID(),
+				})
+				block.Push(&spirv.BitwiseAndInstruction{
+					ResultType: resultValue.Type.ID(),
+					ResultID:   resultValue.ID(),
+					Operand1:   loadedValue.ID(),
+					Operand2:   notRhs.ID(),
+				})
+			case TokenOrAssign:
+				block.Push(&spirv.BitwiseOrInstruction{
+					ResultType: resultValue.Type.ID(),
+					ResultID:   resultValue.ID(),
+					Operand1:   loadedValue.ID(),
+					Operand2:   rhsValue.ID(),
+				})
+			case TokenXorAssign:
+				block.Push(&spirv.BitwiseXorInstruction{
+					ResultType: resultValue.Type.ID(),
+					ResultID:   resultValue.ID(),
+					Operand1:   loadedValue.ID(),
+					Operand2:   rhsValue.ID(),
+				})
+			case TokenShlAssign:
+				block.Push(&spirv.ShiftLeftLogicalInstruction{
+					ResultType: resultValue.Type.ID(),
+					ResultID:   resultValue.ID(),
+					Base:       loadedValue.ID(),
+					Shift:      rhsValue.ID(),
+				})
+			case TokenShrAssign:
+				block.Push(&spirv.ShiftRightArithmeticInstruction{
+					ResultType: resultValue.Type.ID(),
+					ResultID:   resultValue.ID(),
+					Base:       loadedValue.ID(),
+					Shift:      rhsValue.ID(),
+				})
+			default:
+				panic("unsupported assignment operator")
 			}
 		}
 	default:
