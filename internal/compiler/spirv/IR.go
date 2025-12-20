@@ -400,6 +400,19 @@ func (b *Block) IsTerminated() bool {
 	return b.Instructions[len(b.Instructions)-1].Opcode().IsTerminator()
 }
 
+func (b *Block) SuccessorIDs() (res []ID) {
+	if len(b.Instructions) == 0 {
+		return
+	}
+	res = b.Instructions[len(b.Instructions)-1].SuccessorIDs()
+	if len(b.Instructions) > 1 {
+		if selectionMerge, ok := b.Instructions[len(b.Instructions)-2].(*SelectionMergeInstruction); ok {
+			res = append(res, selectionMerge.SuccessorIDs()...)
+		}
+	}
+	return
+}
+
 type Variable struct {
 	BaseObject
 	Type         *PtrType
@@ -409,9 +422,17 @@ type Variable struct {
 // Instruction represents a single SPIR-V instruction with an opcode.
 type Instruction interface {
 	Opcode() Opcode
+	SuccessorIDs() []ID
+}
+
+type DefaultInstruction struct{}
+
+func (DefaultInstruction) SuccessorIDs() []ID {
+	return nil
 }
 
 type ConstantTrueInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 }
@@ -421,6 +442,7 @@ func (i *ConstantTrueInstruction) Opcode() Opcode {
 }
 
 type ConstantFalseInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 }
@@ -429,13 +451,16 @@ func (i *ConstantFalseInstruction) Opcode() Opcode {
 	return OpConstantFalse
 }
 
-type ReturnInstruction struct{}
+type ReturnInstruction struct {
+	DefaultInstruction
+}
 
 func (r *ReturnInstruction) Opcode() Opcode {
 	return OpReturn
 }
 
 type ReturnValueInstruction struct {
+	DefaultInstruction
 	Value ID
 }
 
@@ -444,6 +469,7 @@ func (r *ReturnValueInstruction) Opcode() Opcode {
 }
 
 type SNegateInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Operand    ID
@@ -454,6 +480,7 @@ func (i *SNegateInstruction) Opcode() Opcode {
 }
 
 type FNegateInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Operand    ID
@@ -464,6 +491,7 @@ func (i *FNegateInstruction) Opcode() Opcode {
 }
 
 type LogicalOrInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Operand1   ID
@@ -475,6 +503,7 @@ func (i *LogicalOrInstruction) Opcode() Opcode {
 }
 
 type LogicalAndInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Operand1   ID
@@ -486,6 +515,7 @@ func (i *LogicalAndInstruction) Opcode() Opcode {
 }
 
 type LogicalNotInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Operand    ID
@@ -496,6 +526,7 @@ func (i *LogicalNotInstruction) Opcode() Opcode {
 }
 
 type LogicalEqualInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Operand1   ID
@@ -507,6 +538,7 @@ func (i *LogicalEqualInstruction) Opcode() Opcode {
 }
 
 type LogicalNotEqualInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Operand1   ID
@@ -518,6 +550,7 @@ func (i *LogicalNotEqualInstruction) Opcode() Opcode {
 }
 
 type UGreaterThanInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Operand1   ID
@@ -529,6 +562,7 @@ func (i *UGreaterThanInstruction) Opcode() Opcode {
 }
 
 type SGreaterThanInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Operand1   ID
@@ -540,6 +574,7 @@ func (i *SGreaterThanInstruction) Opcode() Opcode {
 }
 
 type ULessThanInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Operand1   ID
@@ -551,6 +586,7 @@ func (i *ULessThanInstruction) Opcode() Opcode {
 }
 
 type SLessThanInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Operand1   ID
@@ -562,6 +598,7 @@ func (i *SLessThanInstruction) Opcode() Opcode {
 }
 
 type ULessThanEqualInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Operand1   ID
@@ -573,6 +610,7 @@ func (i *ULessThanEqualInstruction) Opcode() Opcode {
 }
 
 type SLessThanEqualInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Operand1   ID
@@ -584,6 +622,7 @@ func (i *SLessThanEqualInstruction) Opcode() Opcode {
 }
 
 type FOrdLessThanInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Operand1   ID
@@ -595,6 +634,7 @@ func (i *FOrdLessThanInstruction) Opcode() Opcode {
 }
 
 type FOrdGreaterThanInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Operand1   ID
@@ -606,6 +646,7 @@ func (i *FOrdGreaterThanInstruction) Opcode() Opcode {
 }
 
 type FOrdLessThanEqualInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Operand1   ID
@@ -617,6 +658,7 @@ func (i *FOrdLessThanEqualInstruction) Opcode() Opcode {
 }
 
 type UGreaterThanEqualInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Operand1   ID
@@ -628,6 +670,7 @@ func (i *UGreaterThanEqualInstruction) Opcode() Opcode {
 }
 
 type SGreaterThanEqualInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Operand1   ID
@@ -639,6 +682,7 @@ func (i *SGreaterThanEqualInstruction) Opcode() Opcode {
 }
 
 type FOrdGreaterThanEqualInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Operand1   ID
@@ -650,6 +694,7 @@ func (i *FOrdGreaterThanEqualInstruction) Opcode() Opcode {
 }
 
 type IEqualInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Operand1   ID
@@ -661,6 +706,7 @@ func (i *IEqualInstruction) Opcode() Opcode {
 }
 
 type FOrdEqualInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Operand1   ID
@@ -672,6 +718,7 @@ func (i *FOrdEqualInstruction) Opcode() Opcode {
 }
 
 type INotEqualInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Operand1   ID
@@ -683,6 +730,7 @@ func (i *INotEqualInstruction) Opcode() Opcode {
 }
 
 type FOrdNotEqualInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Operand1   ID
@@ -694,6 +742,7 @@ func (i *FOrdNotEqualInstruction) Opcode() Opcode {
 }
 
 type IAddInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Operand1   ID
@@ -705,6 +754,7 @@ func (i *IAddInstruction) Opcode() Opcode {
 }
 
 type FAddInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Operand1   ID
@@ -716,6 +766,7 @@ func (i *FAddInstruction) Opcode() Opcode {
 }
 
 type ISubInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Operand1   ID
@@ -727,6 +778,7 @@ func (i *ISubInstruction) Opcode() Opcode {
 }
 
 type FSubInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Operand1   ID
@@ -738,6 +790,7 @@ func (i *FSubInstruction) Opcode() Opcode {
 }
 
 type IMulInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Operand1   ID
@@ -749,6 +802,7 @@ func (i *IMulInstruction) Opcode() Opcode {
 }
 
 type FMulInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Operand1   ID
@@ -760,6 +814,7 @@ func (i *FMulInstruction) Opcode() Opcode {
 }
 
 type UDivInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Operand1   ID
@@ -771,6 +826,7 @@ func (i *UDivInstruction) Opcode() Opcode {
 }
 
 type SDivInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Operand1   ID
@@ -782,6 +838,7 @@ func (i *SDivInstruction) Opcode() Opcode {
 }
 
 type FDivInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Operand1   ID
@@ -793,6 +850,7 @@ func (i *FDivInstruction) Opcode() Opcode {
 }
 
 type UModInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Operand1   ID
@@ -804,6 +862,7 @@ func (i *UModInstruction) Opcode() Opcode {
 }
 
 type SRemInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Operand1   ID
@@ -815,6 +874,7 @@ func (i *SRemInstruction) Opcode() Opcode {
 }
 
 type FRemInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Operand1   ID
@@ -826,6 +886,7 @@ func (i *FRemInstruction) Opcode() Opcode {
 }
 
 type BitwiseXorInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Operand1   ID
@@ -837,6 +898,7 @@ func (i *BitwiseXorInstruction) Opcode() Opcode {
 }
 
 type BitwiseOrInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Operand1   ID
@@ -848,6 +910,7 @@ func (i *BitwiseOrInstruction) Opcode() Opcode {
 }
 
 type BitwiseAndInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Operand1   ID
@@ -859,6 +922,7 @@ func (i *BitwiseAndInstruction) Opcode() Opcode {
 }
 
 type NotInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Operand    ID
@@ -869,6 +933,7 @@ func (i *NotInstruction) Opcode() Opcode {
 }
 
 type ShiftLeftLogicalInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Base       ID
@@ -880,6 +945,7 @@ func (i *ShiftLeftLogicalInstruction) Opcode() Opcode {
 }
 
 type ShiftRightLogicalInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Base       ID
@@ -891,6 +957,7 @@ func (i *ShiftRightLogicalInstruction) Opcode() Opcode {
 }
 
 type ShiftRightArithmeticInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Base       ID
@@ -902,6 +969,7 @@ func (i *ShiftRightArithmeticInstruction) Opcode() Opcode {
 }
 
 type FunctionCallInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	FunctionID ID
@@ -913,6 +981,7 @@ func (i *FunctionCallInstruction) Opcode() Opcode {
 }
 
 type VariableInstruction struct {
+	DefaultInstruction
 	ResultType   ID
 	ResultID     ID
 	StorageClass StorageClass
@@ -924,6 +993,7 @@ func (i *VariableInstruction) Opcode() Opcode {
 }
 
 type LoadInstruction struct {
+	DefaultInstruction
 	ResultType ID
 	ResultID   ID
 	Pointer    ID
@@ -934,6 +1004,7 @@ func (i *LoadInstruction) Opcode() Opcode {
 }
 
 type StoreInstruction struct {
+	DefaultInstruction
 	Pointer ID
 	Object  ID
 }
@@ -942,13 +1013,16 @@ func (i *StoreInstruction) Opcode() Opcode {
 	return OpStore
 }
 
-type UnreachableInstruction struct{}
+type UnreachableInstruction struct {
+	DefaultInstruction
+}
 
 func (r *UnreachableInstruction) Opcode() Opcode {
 	return OpUnreachable
 }
 
 type SelectionMergeInstruction struct {
+	DefaultInstruction
 	MergeBlock ID
 	Control    SelectionControl
 }
@@ -956,8 +1030,12 @@ type SelectionMergeInstruction struct {
 func (i *SelectionMergeInstruction) Opcode() Opcode {
 	return OpSelectionMerge
 }
+func (i *SelectionMergeInstruction) SuccessorIDs() []ID {
+	return []ID{i.MergeBlock}
+}
 
 type BranchConditional struct {
+	DefaultInstruction
 	Condition  ID
 	TrueLabel  ID
 	FalseLabel ID
@@ -966,6 +1044,9 @@ type BranchConditional struct {
 func (i *BranchConditional) Opcode() Opcode {
 	return OpBranchConditional
 }
+func (i *BranchConditional) SuccessorIDs() []ID {
+	return []ID{i.TrueLabel, i.FalseLabel}
+}
 
 type Branch struct {
 	TargetLabel ID
@@ -973,4 +1054,7 @@ type Branch struct {
 
 func (i *Branch) Opcode() Opcode {
 	return OpBranch
+}
+func (i *Branch) SuccessorIDs() []ID {
+	return []ID{i.TargetLabel}
 }

@@ -19,10 +19,6 @@
                                       OpBranch %block_if_merge_9
                   %block_if_merge_9 = OpLabel
                                       OpReturnValue %const_int32_2_12
-             %block_simpleIfStmt_11 = OpLabel
-                                      OpUnreachable
-             %block_simpleIfStmt_13 = OpLabel
-                                      OpUnreachable
                                       OpFunctionEnd
             %func_ifStmtWithElse_15 = OpFunction %type_int32_1 None %type_func_bool_ret_int32_3
                               %a_14 = OpFunctionParameter %type_bool_2
@@ -34,10 +30,6 @@
               %block_false_block_18 = OpLabel
                                       OpReturnValue %const_int32_2_12
                  %block_if_merge_19 = OpLabel
-                                      OpUnreachable
-           %block_ifStmtWithElse_20 = OpLabel
-                                      OpUnreachable
-           %block_ifStmtWithElse_21 = OpLabel
                                       OpUnreachable
                                       OpFunctionEnd
        %func_ifStmtWithEmptyElse_23 = OpFunction %type_int32_1 None %type_func_bool_ret_int32_3
@@ -51,10 +43,6 @@
                                       OpBranch %block_if_merge_27
                  %block_if_merge_27 = OpLabel
                                       OpReturnValue %const_int32_2_12
-      %block_ifStmtWithEmptyElse_28 = OpLabel
-                                      OpUnreachable
-      %block_ifStmtWithEmptyElse_29 = OpLabel
-                                      OpUnreachable
                                       OpFunctionEnd
           %func_ifStmtWithElseIf_33 = OpFunction %type_int32_1 None %type_func_bool_bool_ret_int32_30
                               %a_31 = OpFunctionParameter %type_bool_2
@@ -69,16 +57,11 @@
                                       OpBranchConditional %b_32 %block_true_block_39 %block_false_block_40
                  %block_if_merge_37 = OpLabel
                                       OpUnreachable
-         %block_ifStmtWithElseIf_38 = OpLabel
-                                      OpUnreachable
                %block_true_block_39 = OpLabel
                                       OpReturnValue %const_int32_2_12
               %block_false_block_40 = OpLabel
                                       OpReturnValue %const_int32_3_43
                  %block_if_merge_41 = OpLabel
                                       OpUnreachable
-         %block_ifStmtWithElseIf_42 = OpLabel
-                                      OpUnreachable
-         %block_ifStmtWithElseIf_44 = OpLabel
-                                      OpUnreachable
                                       OpFunctionEnd
+

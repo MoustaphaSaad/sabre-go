@@ -20,8 +20,6 @@
              %func_getInt_13 = OpFunction %type_int32_5 None %type_func_ret_int32_12
       %block_entry_getInt_14 = OpLabel
                                OpReturnValue %const_int32_1_8
-            %block_getInt_15 = OpLabel
-                               OpUnreachable
                                OpFunctionEnd
        %func_varAfterExpr_16 = OpFunction %type_void_1 None %type_func_ret_void_2
 %block_entry_varAfterExpr_17 = OpLabel

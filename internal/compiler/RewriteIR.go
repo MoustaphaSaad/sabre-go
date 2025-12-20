@@ -8,8 +8,7 @@ import (
 
 func RewriteIR(mod *spirv.Module) {
 	PassPullLocalVarsToFuncEntry(mod)
-	// TODO: only remove unreferenced blocks
-	// PassRemoveEmptyBlocks(mod)
+	PassRemoveUnreachableBlocks(mod)
 	PassTerminateBlocks(mod)
 }
 
@@ -56,38 +55,30 @@ func terminateBlocksForVoidFuncs(fn *spirv.Function) {
 	}
 }
 
-func PassRemoveEmptyBlocks(mod *spirv.Module) {
-	var removedBBs []*spirv.Block
+func PassRemoveUnreachableBlocks(mod *spirv.Module) {
+	var removedBBs []spirv.ID
 	for _, obj := range mod.Objects {
 		if fn, ok := obj.(*spirv.Function); ok {
-			removedBBs = removeEmptyBlocks(fn)
+			removedBBs = removeUnreachableBlocks(fn)
 		}
 	}
 
-	objs := make([]spirv.ID, len(removedBBs))
-	for i := range removedBBs {
-		objs[i] = removedBBs[i].ID()
-	}
-	mod.RemoveObjects(objs)
+	mod.RemoveObjects(removedBBs)
 }
-func removeEmptyBlocks(fn *spirv.Function) (res []*spirv.Block) {
+func removeUnreachableBlocks(fn *spirv.Function) (res []spirv.ID) {
 	// skip functions with only the entry block
 	if len(fn.Blocks) <= 1 {
 		return
 	}
 
-	// remove all empty blocks except for entry block
-	entryBlock := fn.Blocks[0]
+	cfg := spirv.BuildCFG(fn)
+	reachable := cfg.ReachableBlocks()
 	fn.Blocks = slices.DeleteFunc(fn.Blocks, func(bb *spirv.Block) bool {
-		if bb == entryBlock {
+		if reachable[bb] {
 			return false
 		}
-
-		if len(bb.Instructions) == 0 {
-			res = append(res, bb)
-			return true
-		}
-		return false
+		res = append(res, bb.ID())
+		return true
 	})
 	return
 }
