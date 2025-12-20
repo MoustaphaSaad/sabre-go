@@ -67,7 +67,10 @@ const (
 	OpBitwiseXor           Opcode = 198
 	OpBitwiseAnd           Opcode = 199
 	OpNot                  Opcode = 200
+	OpSelectionMerge       Opcode = 247
 	OpLabel                Opcode = 248
+	OpBranch               Opcode = 249
+	OpBranchConditional    Opcode = 250
 	OpReturn               Opcode = 253
 	OpReturnValue          Opcode = 254
 	OpUnreachable          Opcode = 255
@@ -203,9 +206,23 @@ func (op Opcode) String() string {
 		return "OpReturnValue"
 	case OpUnreachable:
 		return "OpUnreachable"
+	case OpSelectionMerge:
+		return "OpSelectionMerge"
+	case OpBranchConditional:
+		return "OpBranchConditional"
+	case OpBranch:
+		return "OpBranch"
 	default:
 		panic("unknown opcode")
 	}
+}
+
+func (op Opcode) IsTerminator() bool {
+	return op == OpBranch ||
+		op == OpBranchConditional ||
+		op == OpReturn ||
+		op == OpReturnValue ||
+		op == OpUnreachable
 }
 
 // Capability represents capabilities a module can declare it uses.
@@ -596,4 +613,27 @@ func (v FunctionControl) String() string {
 		flags = append(flags, "Const")
 	}
 	return strings.Join(flags, "|")
+}
+
+type SelectionControl int
+
+const (
+	SelectionControlNone SelectionControl = 0
+	// Performance hint. Strong request to optimize away the control flow for this selection.
+	SelectionControlFlatten SelectionControl = 1
+	// Performance hint. Strong request to keep this selection as control flow.
+	SelectionControlDontFlatten SelectionControl = 2
+)
+
+func (v SelectionControl) String() string {
+	switch v {
+	case SelectionControlNone:
+		return "None"
+	case SelectionControlFlatten:
+		return "Flatten"
+	case SelectionControlDontFlatten:
+		return "DontFlatten"
+	default:
+		panic("unknown selection control")
+	}
 }
