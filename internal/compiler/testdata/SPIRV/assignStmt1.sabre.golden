@@ -1,0 +1,88 @@
+                                      OpCapability Shader
+                                      OpCapability Linkage
+                                      OpMemoryModel Logical GLSL450
+                       %type_void_1 = OpTypeVoid
+              %type_func_ret_void_2 = OpTypeFunction %type_void_1
+                      %type_int32_5 = OpTypeInt 32 1
+                %type_ptr_int32_7_6 = OpTypePointer Function %type_int32_5
+                   %type_float32_17 = OpTypeFloat 32
+             %type_ptr_float32_7_18 = OpTypePointer Function %type_float32_17
+                   %const_int32_1_8 = OpConstant %type_int32_5 1
+                  %const_int32_2_16 = OpConstant %type_int32_5 2
+         %const_float32_1_500000_20 = OpConstant %type_float32_17 1.5
+         %const_float32_3_500000_21 = OpConstant %type_float32_17 3.5
+         %const_float32_2_500000_35 = OpConstant %type_float32_17 2.5
+         %const_float32_3_000000_40 = OpConstant %type_float32_17 3
+                %func_colonAssign_3 = OpFunction %type_void_1 None %type_func_ret_void_2
+         %block_entry_colonAssign_4 = OpLabel
+                               %x_7 = OpVariable %type_ptr_int32_7_6 Function %const_int32_1_8
+                                      OpReturn
+                                      OpFunctionEnd
+        %func_multipleColonAssign_9 = OpFunction %type_void_1 None %type_func_ret_void_2
+%block_entry_multipleColonAssign_10 = OpLabel
+                              %x_11 = OpVariable %type_ptr_int32_7_6 Function %const_int32_1_8
+                              %y_12 = OpVariable %type_ptr_int32_7_6 Function %const_int32_1_8
+                                      OpReturn
+                                      OpFunctionEnd
+                    %func_assign_13 = OpFunction %type_void_1 None %type_func_ret_void_2
+             %block_entry_assign_14 = OpLabel
+                              %x_15 = OpVariable %type_ptr_int32_7_6 Function %const_int32_1_8
+                              %y_19 = OpVariable %type_ptr_float32_7_18 Function %const_float32_1_500000_20
+                                      OpStore %x_15 %const_int32_2_16
+                                      OpStore %y_19 %const_float32_3_500000_21
+                                      OpReturn
+                                      OpFunctionEnd
+          %func_arithmeticAssign_22 = OpFunction %type_void_1 None %type_func_ret_void_2
+   %block_entry_arithmeticAssign_23 = OpLabel
+                              %x_24 = OpVariable %type_ptr_int32_7_6 Function %const_int32_1_8
+                              %y_33 = OpVariable %type_ptr_float32_7_18 Function %const_float32_1_500000_20
+                               %_25 = OpLoad %type_int32_5 %x_24
+                               %_26 = OpIAdd %type_int32_5 %_25 %const_int32_2_16
+                                      OpStore %x_24 %_26
+                               %_27 = OpLoad %type_int32_5 %x_24
+                               %_28 = OpISub %type_int32_5 %_27 %const_int32_2_16
+                                      OpStore %x_24 %_28
+                               %_29 = OpLoad %type_int32_5 %x_24
+                               %_30 = OpIMul %type_int32_5 %_29 %const_int32_2_16
+                                      OpStore %x_24 %_30
+                               %_31 = OpLoad %type_int32_5 %x_24
+                               %_32 = OpSDiv %type_int32_5 %_31 %const_int32_2_16
+                                      OpStore %x_24 %_32
+                               %_34 = OpLoad %type_float32_17 %y_33
+                               %_36 = OpFAdd %type_float32_17 %_34 %const_float32_2_500000_35
+                                      OpStore %y_33 %_36
+                               %_37 = OpLoad %type_float32_17 %y_33
+                               %_38 = OpFSub %type_float32_17 %_37 %const_float32_2_500000_35
+                                      OpStore %y_33 %_38
+                               %_39 = OpLoad %type_float32_17 %y_33
+                               %_41 = OpFMul %type_float32_17 %_39 %const_float32_3_000000_40
+                                      OpStore %y_33 %_41
+                               %_42 = OpLoad %type_float32_17 %y_33
+                               %_43 = OpFDiv %type_float32_17 %_42 %const_float32_3_000000_40
+                                      OpStore %y_33 %_43
+                                      OpReturn
+                                      OpFunctionEnd
+             %func_bitwiseAssign_44 = OpFunction %type_void_1 None %type_func_ret_void_2
+      %block_entry_bitwiseAssign_45 = OpLabel
+                              %x_46 = OpVariable %type_ptr_int32_7_6 Function %const_int32_1_8
+                               %_47 = OpLoad %type_int32_5 %x_46
+                               %_48 = OpBitwiseAnd %type_int32_5 %_47 %const_int32_1_8
+                                      OpStore %x_46 %_48
+                               %_49 = OpLoad %type_int32_5 %x_46
+                               %_51 = OpNot %type_int32_5 %const_int32_1_8
+                               %_50 = OpBitwiseAnd %type_int32_5 %_49 %_51
+                                      OpStore %x_46 %_50
+                               %_52 = OpLoad %type_int32_5 %x_46
+                               %_53 = OpBitwiseOr %type_int32_5 %_52 %const_int32_1_8
+                                      OpStore %x_46 %_53
+                               %_54 = OpLoad %type_int32_5 %x_46
+                               %_55 = OpBitwiseXor %type_int32_5 %_54 %const_int32_1_8
+                                      OpStore %x_46 %_55
+                               %_56 = OpLoad %type_int32_5 %x_46
+                               %_57 = OpShiftRightArithmetic %type_int32_5 %_56 %const_int32_1_8
+                                      OpStore %x_46 %_57
+                               %_58 = OpLoad %type_int32_5 %x_46
+                               %_59 = OpShiftLeftLogical %type_int32_5 %_58 %const_int32_1_8
+                                      OpStore %x_46 %_59
+                                      OpReturn
+                                      OpFunctionEnd
