@@ -19,7 +19,5 @@
        %func_doubleReturn_13 = OpFunction %type_int32_5 None %type_func_ret_int32_6
 %block_entry_doubleReturn_14 = OpLabel
                                OpReturnValue %const_int32_1_9
-      %block_doubleReturn_15 = OpLabel
-                               OpReturnValue %const_int32_2_10
                                OpFunctionEnd
 
