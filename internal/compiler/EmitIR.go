@@ -1019,12 +1019,13 @@ func (ir *IREmitter) emitAssignStmt(s *AssignStmt) {
 				Object:  ir.emitExpression(s.RHS[i]).ID(),
 			})
 		}
-	case TokenAddAssign, TokenSubAssign, TokenMulAssign, TokenDivAssign:
-		// TODO: Floating point, Unsigned and collapse with emitBinaryExpr
+	case TokenAddAssign, TokenSubAssign, TokenMulAssign, TokenDivAssign, TokenAndAssign,
+		TokenAndNotAssign, TokenOrAssign, TokenXorAssign, TokenShlAssign, TokenShrAssign:
 		for i, lhsExpr := range s.LHS {
 			symbol := ir.unit.semanticInfo.SymbolOfIdentifier(lhsExpr.(*IdentifierExpr)).(*VarSymbol)
 			obj := ir.objectOfSymbol(symbol)
-			loadedValue := ir.module.NewValue(obj.(*spirv.PtrType).To)
+			t := obj.(*spirv.Variable).Type.To
+			loadedValue := ir.module.NewValue(t)
 			block := ir.currentBlock()
 			block.Push(&spirv.LoadInstruction{
 				ResultType: loadedValue.Type.ID(),
@@ -1035,55 +1036,73 @@ func (ir *IREmitter) emitAssignStmt(s *AssignStmt) {
 			resultValue := ir.module.NewValue(loadedValue.Type)
 			switch s.Operator.Kind() {
 			case TokenAddAssign:
-				block.Push(&spirv.IAddInstruction{
-					ResultType: resultValue.Type.ID(),
-					ResultID:   resultValue.ID(),
-					Operand1:   loadedValue.ID(),
-					Operand2:   rhsValue.ID(),
-				})
+				switch t.(type) {
+				case *spirv.IntType:
+					block.Push(&spirv.IAddInstruction{
+						ResultType: resultValue.Type.ID(),
+						ResultID:   resultValue.ID(),
+						Operand1:   loadedValue.ID(),
+						Operand2:   rhsValue.ID(),
+					})
+				case *spirv.FloatType:
+					block.Push(&spirv.FAddInstruction{
+						ResultType: resultValue.Type.ID(),
+						ResultID:   resultValue.ID(),
+						Operand1:   loadedValue.ID(),
+						Operand2:   rhsValue.ID(),
+					})
+				}
 			case TokenSubAssign:
-				block.Push(&spirv.ISubInstruction{
-					ResultType: resultValue.Type.ID(),
-					ResultID:   resultValue.ID(),
-					Operand1:   loadedValue.ID(),
-					Operand2:   rhsValue.ID(),
-				})
+				switch t.(type) {
+				case *spirv.IntType:
+					block.Push(&spirv.ISubInstruction{
+						ResultType: resultValue.Type.ID(),
+						ResultID:   resultValue.ID(),
+						Operand1:   loadedValue.ID(),
+						Operand2:   rhsValue.ID(),
+					})
+				case *spirv.FloatType:
+					block.Push(&spirv.FSubInstruction{
+						ResultType: resultValue.Type.ID(),
+						ResultID:   resultValue.ID(),
+						Operand1:   loadedValue.ID(),
+						Operand2:   rhsValue.ID(),
+					})
+				}
 			case TokenMulAssign:
-				block.Push(&spirv.IMulInstruction{
-					ResultType: resultValue.Type.ID(),
-					ResultID:   resultValue.ID(),
-					Operand1:   loadedValue.ID(),
-					Operand2:   rhsValue.ID(),
-				})
+				switch t.(type) {
+				case *spirv.IntType:
+					block.Push(&spirv.IMulInstruction{
+						ResultType: resultValue.Type.ID(),
+						ResultID:   resultValue.ID(),
+						Operand1:   loadedValue.ID(),
+						Operand2:   rhsValue.ID(),
+					})
+				case *spirv.FloatType:
+					block.Push(&spirv.FMulInstruction{
+						ResultType: resultValue.Type.ID(),
+						ResultID:   resultValue.ID(),
+						Operand1:   loadedValue.ID(),
+						Operand2:   rhsValue.ID(),
+					})
+				}
 			case TokenDivAssign:
-				block.Push(&spirv.SDivInstruction{
-					ResultType: resultValue.Type.ID(),
-					ResultID:   resultValue.ID(),
-					Operand1:   loadedValue.ID(),
-					Operand2:   rhsValue.ID(),
-				})
-			default:
-				panic("unsupported assignment operator")
-			}
-			block.Push(&spirv.StoreInstruction{
-				Pointer: obj.ID(),
-				Object:  resultValue.ID(),
-			})
-		}
-	case TokenAndAssign, TokenAndNotAssign, TokenOrAssign, TokenXorAssign, TokenShlAssign, TokenShrAssign:
-		for i, lhsExpr := range s.LHS {
-			symbol := ir.unit.semanticInfo.SymbolOfIdentifier(lhsExpr.(*IdentifierExpr)).(*VarSymbol)
-			obj := ir.objectOfSymbol(symbol)
-			loadedValue := ir.module.NewValue(obj.(*spirv.PtrType).To)
-			block := ir.currentBlock()
-			block.Push(&spirv.LoadInstruction{
-				ResultType: loadedValue.Type.ID(),
-				ResultID:   loadedValue.ID(),
-				Pointer:    obj.ID(),
-			})
-			rhsValue := ir.emitExpression(s.RHS[i])
-			resultValue := ir.module.NewValue(loadedValue.Type)
-			switch s.Operator.Kind() {
+				switch t.(type) {
+				case *spirv.IntType:
+					block.Push(&spirv.SDivInstruction{
+						ResultType: resultValue.Type.ID(),
+						ResultID:   resultValue.ID(),
+						Operand1:   loadedValue.ID(),
+						Operand2:   rhsValue.ID(),
+					})
+				case *spirv.FloatType:
+					block.Push(&spirv.FDivInstruction{
+						ResultType: resultValue.Type.ID(),
+						ResultID:   resultValue.ID(),
+						Operand1:   loadedValue.ID(),
+						Operand2:   rhsValue.ID(),
+					})
+				}
 			case TokenAndAssign:
 				block.Push(&spirv.BitwiseAndInstruction{
 					ResultType: resultValue.Type.ID(),
@@ -1132,9 +1151,11 @@ func (ir *IREmitter) emitAssignStmt(s *AssignStmt) {
 					Base:       loadedValue.ID(),
 					Shift:      rhsValue.ID(),
 				})
-			default:
-				panic("unsupported assignment operator")
 			}
+			block.Push(&spirv.StoreInstruction{
+				Pointer: obj.ID(),
+				Object:  resultValue.ID(),
+			})
 		}
 	default:
 		panic("unsupported assignment operator")

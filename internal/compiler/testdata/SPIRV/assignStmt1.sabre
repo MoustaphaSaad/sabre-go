@@ -1,5 +1,41 @@
 package main
 
-func main() {
+func colonAssign() {
 	x := 1
+}
+
+func multipleColonAssign() {
+	x, y := 1, 1
+}
+
+func assign() {
+	x := 1
+	x = 2
+
+	y := 1.5
+	y = 3.5
+}
+
+func arithmeticAssign() {
+	x := 1
+	x += 2
+	x -= 2
+	x *= 2
+	x /= 2
+
+	y := 1.5
+	y += 2.5
+	y -= 2.5
+	y *= 3.0
+	y /= 3.0
+}
+
+func bitwiseAssign() {
+	x := 1
+	x &= 1
+	x &^= 1
+	x |= 1
+	x ^= 1
+	x >>= 1
+	x <<= 1
 }
