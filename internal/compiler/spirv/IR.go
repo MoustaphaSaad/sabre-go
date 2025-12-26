@@ -406,8 +406,11 @@ func (b *Block) SuccessorIDs() (res []ID) {
 	}
 	res = b.Instructions[len(b.Instructions)-1].SuccessorIDs()
 	if len(b.Instructions) > 1 {
-		if selectionMerge, ok := b.Instructions[len(b.Instructions)-2].(*SelectionMergeInstruction); ok {
-			res = append(res, selectionMerge.SuccessorIDs()...)
+		switch merge := b.Instructions[len(b.Instructions)-2].(type) {
+		case *SelectionMergeInstruction:
+			res = append(res, merge.SuccessorIDs()...)
+		case *LoopMergeInstruction:
+			res = append(res, merge.SuccessorIDs()...)
 		}
 	}
 	return
@@ -1057,4 +1060,18 @@ func (i *Branch) Opcode() Opcode {
 }
 func (i *Branch) SuccessorIDs() []ID {
 	return []ID{i.TargetLabel}
+}
+
+type LoopMergeInstruction struct {
+	DefaultInstruction
+	MergeBlock    ID
+	ContinueBlock ID
+	Control       LoopControl
+}
+
+func (i *LoopMergeInstruction) Opcode() Opcode {
+	return OpLoopMerge
+}
+func (i *LoopMergeInstruction) SuccessorIDs() []ID {
+	return []ID{i.MergeBlock, i.ContinueBlock}
 }

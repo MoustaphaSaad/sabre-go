@@ -1,0 +1,48 @@
+package main
+
+func simpleFor() int {
+	n := 0
+	for i := 0; i < 10; i++ {
+		n += i
+	}
+	return n
+}
+
+func forNoInit() int {
+	i, n := 0, 0
+	for ; i < 10; i++ {
+		n += i
+	}
+	return n
+}
+
+func forNoPost(start, end int) int {
+	n := 0
+	for i := start; i < end; {
+		n += i
+		i++
+	}
+	return n
+}
+
+func forNoCond(start, end int) int {
+	n := 0
+	for i := start; ; i++ {
+		if i >= end {
+			break
+		}
+		n += i
+	}
+	return n
+}
+
+func forWithContinue(start, end int) int {
+	n := 0
+	for i := start; i < end; i++ {
+		if i%2 == 0 {
+			continue
+		}
+		n += i
+	}
+	return n
+}
