@@ -209,7 +209,22 @@ func (ir *IREmitter) emitIdentifierExpr(e *IdentifierExpr) spirv.Object {
 		panic(fmt.Sprintf("unable to find symbol for identifier: %v", e.Token.Value()))
 	}
 
-	return ir.objectOfSymbol(symbol)
+	obj := ir.objectOfSymbol(symbol)
+
+	if variable, ok := obj.(*spirv.Variable); ok {
+		tav := ir.unit.semanticInfo.TypeOf(e)
+		resultType := ir.emitType(tav.Type)
+		loadedValue := ir.module.NewValue(resultType)
+		block := ir.currentBlock()
+		block.Push(&spirv.LoadInstruction{
+			ResultType: resultType.ID(),
+			ResultID:   loadedValue.ID(),
+			Pointer:    variable.ID(),
+		})
+		return loadedValue
+	}
+
+	return obj
 }
 
 func (ir *IREmitter) emitUnaryExpr(e *UnaryExpr) spirv.Object {
@@ -1147,12 +1162,25 @@ func (ir *IREmitter) emitAssignStmt(s *AssignStmt) {
 					Shift:      rhsValue.ID(),
 				})
 			case TokenShrAssign:
-				block.Push(&spirv.ShiftRightArithmeticInstruction{
-					ResultType: resultValue.Type.ID(),
-					ResultID:   resultValue.ID(),
-					Base:       loadedValue.ID(),
-					Shift:      rhsValue.ID(),
-				})
+				if tt, ok := t.(*spirv.IntType); ok {
+					if tt.IsSigned {
+						block.Push(&spirv.ShiftRightArithmeticInstruction{
+							ResultType: resultValue.Type.ID(),
+							ResultID:   resultValue.ID(),
+							Base:       loadedValue.ID(),
+							Shift:      rhsValue.ID(),
+						})
+					} else {
+						block.Push(&spirv.ShiftRightLogicalInstruction{
+							ResultType: resultValue.Type.ID(),
+							ResultID:   resultValue.ID(),
+							Base:       loadedValue.ID(),
+							Shift:      rhsValue.ID(),
+						})
+					}
+				} else {
+					panic("unsupported type for shift right assignment")
+				}
 			}
 			block.Push(&spirv.StoreInstruction{
 				Pointer: obj.ID(),
