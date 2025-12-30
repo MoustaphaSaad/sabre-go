@@ -1470,6 +1470,7 @@ func (checker *Checker) resolveAssignStmt(s *AssignStmt) {
 			v.SetResolveState(ResolveStateResolved)
 			checker.unit.semanticInfo.SetTypeOf(v, &TypeAndValue{Mode: AddressModeVariable, Type: rhsTypes[i].Type})
 			checker.addSymbol(v)
+			checker.unit.semanticInfo.SetSymbolOfIdentifier(lhs.(*IdentifierExpr), v)
 		}
 	case TokenAssign:
 		rhsTypes, rhsSourceRanges := checker.resolveAndUnpackTypesFromExprList(s.RHS)
