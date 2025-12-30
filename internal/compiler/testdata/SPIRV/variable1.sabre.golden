@@ -1,33 +1,39 @@
-                               OpCapability Shader
-                               OpCapability Linkage
-                               OpMemoryModel Logical GLSL450
-                %type_void_1 = OpTypeVoid
-       %type_func_ret_void_2 = OpTypeFunction %type_void_1
-               %type_int32_5 = OpTypeInt 32 1
-         %type_ptr_int32_7_6 = OpTypePointer Function %type_int32_5
-     %type_func_ret_int32_12 = OpTypeFunction %type_int32_5
-            %const_int32_1_8 = OpConstant %type_int32_5 1
-           %func_varNoType_3 = OpFunction %type_void_1 None %type_func_ret_void_2
-    %block_entry_varNoType_4 = OpLabel
-                        %x_7 = OpVariable %type_ptr_int32_7_6 Function %const_int32_1_8
-                               OpReturn
-                               OpFunctionEnd
-           %func_varNoInit_9 = OpFunction %type_void_1 None %type_func_ret_void_2
-   %block_entry_varNoInit_10 = OpLabel
-                       %x_11 = OpVariable %type_ptr_int32_7_6 Function
-                               OpReturn
-                               OpFunctionEnd
-             %func_getInt_13 = OpFunction %type_int32_5 None %type_func_ret_int32_12
-      %block_entry_getInt_14 = OpLabel
-                               OpReturnValue %const_int32_1_8
-                               OpFunctionEnd
-       %func_varAfterExpr_16 = OpFunction %type_void_1 None %type_func_ret_void_2
-%block_entry_varAfterExpr_17 = OpLabel
-                       %y_19 = OpVariable %type_ptr_int32_7_6 Function %const_int32_1_8
-                       %z_20 = OpVariable %type_ptr_int32_7_6 Function
-                        %_18 = OpFunctionCall %type_void_1 %func_varNoType_3
-                        %_21 = OpFunctionCall %type_int32_5 %func_getInt_13
-                               OpStore %z_20 %_21
-                               OpReturn
-                               OpFunctionEnd
+                                          OpCapability Shader
+                                          OpCapability Linkage
+                                          OpMemoryModel Logical GLSL450
+                           %type_void_1 = OpTypeVoid
+                  %type_func_ret_void_2 = OpTypeFunction %type_void_1
+                          %type_int32_5 = OpTypeInt 32 1
+                    %type_ptr_int32_7_6 = OpTypePointer Function %type_int32_5
+                %type_func_ret_int32_12 = OpTypeFunction %type_int32_5
+                       %const_int32_1_8 = OpConstant %type_int32_5 1
+                      %const_int32_3_25 = OpConstant %type_int32_5 3
+                      %func_varNoType_3 = OpFunction %type_void_1 None %type_func_ret_void_2
+               %block_entry_varNoType_4 = OpLabel
+                                   %x_7 = OpVariable %type_ptr_int32_7_6 Function %const_int32_1_8
+                                          OpReturn
+                                          OpFunctionEnd
+                      %func_varNoInit_9 = OpFunction %type_void_1 None %type_func_ret_void_2
+              %block_entry_varNoInit_10 = OpLabel
+                                  %x_11 = OpVariable %type_ptr_int32_7_6 Function
+                                          OpReturn
+                                          OpFunctionEnd
+                        %func_getInt_13 = OpFunction %type_int32_5 None %type_func_ret_int32_12
+                 %block_entry_getInt_14 = OpLabel
+                                          OpReturnValue %const_int32_1_8
+                                          OpFunctionEnd
+                  %func_varAfterExpr_16 = OpFunction %type_void_1 None %type_func_ret_void_2
+           %block_entry_varAfterExpr_17 = OpLabel
+                                  %y_19 = OpVariable %type_ptr_int32_7_6 Function %const_int32_1_8
+                                  %z_20 = OpVariable %type_ptr_int32_7_6 Function
+                                   %_18 = OpFunctionCall %type_void_1 %func_varNoType_3
+                                   %_21 = OpFunctionCall %type_int32_5 %func_getInt_13
+                                          OpStore %z_20 %_21
+                                          OpReturn
+                                          OpFunctionEnd
+       %func_varInitedWithBinaryExpr_22 = OpFunction %type_void_1 None %type_func_ret_void_2
+%block_entry_varInitedWithBinaryExpr_23 = OpLabel
+                                  %x_24 = OpVariable %type_ptr_int32_7_6 Function %const_int32_3_25
+                                          OpReturn
+                                          OpFunctionEnd
 

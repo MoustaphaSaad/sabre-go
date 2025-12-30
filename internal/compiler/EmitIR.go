@@ -148,16 +148,11 @@ func (ir *IREmitter) emitVar(symbol *VarSymbol, sc spirv.StorageClass, initExpr 
 
 	ir.setObjectOfSymbol(symbol, variable)
 
-	if initExpr != nil {
-		switch rhsExpr := initExpr.(type) {
-		case *LiteralExpr:
-		case *IdentifierExpr:
-		default:
-			block.Push(&spirv.StoreInstruction{
-				Pointer: variable.ID(),
-				Object:  ir.emitExpression(rhsExpr).ID(),
-			})
-		}
+	if initValueID == 0 && initExpr != nil {
+		block.Push(&spirv.StoreInstruction{
+			Pointer: variable.ID(),
+			Object:  ir.emitExpression(initExpr).ID(),
+		})
 	}
 
 	return variable

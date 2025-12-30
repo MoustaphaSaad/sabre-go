@@ -39,3 +39,8 @@ func bitwiseAssign() {
 	x >>= 1
 	x <<= 1
 }
+
+func assignBinaryExpr(x int) {
+    y := 1 + 2
+    z := x + 1
+}

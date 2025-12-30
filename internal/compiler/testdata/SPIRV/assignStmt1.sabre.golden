@@ -7,12 +7,14 @@
                 %type_ptr_int32_7_6 = OpTypePointer Function %type_int32_5
                    %type_float32_17 = OpTypeFloat 32
              %type_ptr_float32_7_18 = OpTypePointer Function %type_float32_17
+       %type_func_int32_ret_void_60 = OpTypeFunction %type_void_1 %type_int32_5
                    %const_int32_1_8 = OpConstant %type_int32_5 1
                   %const_int32_2_16 = OpConstant %type_int32_5 2
          %const_float32_1_500000_20 = OpConstant %type_float32_17 1.5
          %const_float32_3_500000_21 = OpConstant %type_float32_17 3.5
          %const_float32_2_500000_35 = OpConstant %type_float32_17 2.5
          %const_float32_3_000000_40 = OpConstant %type_float32_17 3
+                  %const_int32_3_65 = OpConstant %type_int32_5 3
                 %func_colonAssign_3 = OpFunction %type_void_1 None %type_func_ret_void_2
          %block_entry_colonAssign_4 = OpLabel
                                %x_7 = OpVariable %type_ptr_int32_7_6 Function %const_int32_1_8
@@ -86,3 +88,13 @@
                                       OpStore %x_46 %_59
                                       OpReturn
                                       OpFunctionEnd
+          %func_assignBinaryExpr_62 = OpFunction %type_void_1 None %type_func_int32_ret_void_60
+                              %x_61 = OpFunctionParameter %type_int32_5
+   %block_entry_assignBinaryExpr_63 = OpLabel
+                              %y_64 = OpVariable %type_ptr_int32_7_6 Function %const_int32_3_65
+                              %z_66 = OpVariable %type_ptr_int32_7_6 Function
+                               %_67 = OpIAdd %type_int32_5 %x_61 %const_int32_1_8
+                                      OpStore %z_66 %_67
+                                      OpReturn
+                                      OpFunctionEnd
+

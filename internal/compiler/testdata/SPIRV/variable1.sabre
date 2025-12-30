@@ -17,3 +17,7 @@ func varAfterExpr() {
 func getInt() int {
 	return 1
 }
+
+func varInitedWithBinaryExpr() {
+	var x = 1 + 2
+}
