@@ -21,6 +21,9 @@
                                %_16 = OpSLessThan %type_bool_15 %_13 %const_int32_10_14
                                       OpLoopMerge %block_forMerge_12 %block_forContinue_11 None
                                       OpBranchConditional %_16 %block_forBody_10 %block_forMerge_12
+                 %block_forMerge_12 = OpLabel
+                               %_23 = OpLoad %type_int32_1 %n_6
+                                      OpReturnValue %_23
                   %block_forBody_10 = OpLabel
                                %_17 = OpLoad %type_int32_1 %n_6
                                %_18 = OpLoad %type_int32_1 %i_8
@@ -32,9 +35,6 @@
                                %_22 = OpIAdd %type_int32_1 %_21 %const_int32_1_20
                                       OpStore %i_8 %_22
                                       OpBranch %block_forHeader_9
-                 %block_forMerge_12 = OpLabel
-                               %_23 = OpLoad %type_int32_1 %n_6
-                                      OpReturnValue %_23
                                       OpFunctionEnd
                  %func_forNoInit_25 = OpFunction %type_int32_1 None %type_func_ret_int32_2
           %block_entry_forNoInit_26 = OpLabel
@@ -46,6 +46,9 @@
                                %_34 = OpSLessThan %type_bool_15 %_33 %const_int32_10_14
                                       OpLoopMerge %block_forMerge_32 %block_forContinue_31 None
                                       OpBranchConditional %_34 %block_forBody_30 %block_forMerge_32
+                 %block_forMerge_32 = OpLabel
+                               %_40 = OpLoad %type_int32_1 %n_28
+                                      OpReturnValue %_40
                   %block_forBody_30 = OpLabel
                                %_35 = OpLoad %type_int32_1 %n_28
                                %_36 = OpLoad %type_int32_1 %i_27
@@ -57,9 +60,6 @@
                                %_39 = OpIAdd %type_int32_1 %_38 %const_int32_1_20
                                       OpStore %i_27 %_39
                                       OpBranch %block_forHeader_29
-                 %block_forMerge_32 = OpLabel
-                               %_40 = OpLoad %type_int32_1 %n_28
-                                      OpReturnValue %_40
                                       OpFunctionEnd
                  %func_forNoPost_45 = OpFunction %type_int32_1 None %type_func_int32_int32_ret_int32_42
                           %start_43 = OpFunctionParameter %type_int32_1
@@ -74,6 +74,9 @@
                                %_54 = OpSLessThan %type_bool_15 %_53 %end_44
                                       OpLoopMerge %block_forMerge_52 %block_forContinue_51 None
                                       OpBranchConditional %_54 %block_forBody_50 %block_forMerge_52
+                 %block_forMerge_52 = OpLabel
+                               %_60 = OpLoad %type_int32_1 %n_47
+                                      OpReturnValue %_60
                   %block_forBody_50 = OpLabel
                                %_55 = OpLoad %type_int32_1 %n_47
                                %_56 = OpLoad %type_int32_1 %i_48
@@ -85,9 +88,6 @@
                                       OpBranch %block_forContinue_51
               %block_forContinue_51 = OpLabel
                                       OpBranch %block_forHeader_49
-                 %block_forMerge_52 = OpLabel
-                               %_60 = OpLoad %type_int32_1 %n_47
-                                      OpReturnValue %_60
                                       OpFunctionEnd
                  %func_forNoCond_64 = OpFunction %type_int32_1 None %type_func_int32_int32_ret_int32_42
                           %start_62 = OpFunctionParameter %type_int32_1
@@ -105,16 +105,6 @@
                                %_74 = OpSGreaterThanEqual %type_bool_15 %_73 %end_63
                                       OpSelectionMerge %block_if_merge_77 None
                                       OpBranchConditional %_74 %block_true_block_75 %block_false_block_76
-              %block_forContinue_70 = OpLabel
-                               %_82 = OpLoad %type_int32_1 %i_67
-                               %_83 = OpIAdd %type_int32_1 %_82 %const_int32_1_20
-                                      OpStore %i_67 %_83
-                                      OpBranch %block_forHeader_68
-                 %block_forMerge_71 = OpLabel
-                               %_84 = OpLoad %type_int32_1 %n_66
-                                      OpReturnValue %_84
-               %block_true_block_75 = OpLabel
-                                      OpBranch %block_forMerge_71
               %block_false_block_76 = OpLabel
                                       OpBranch %block_if_merge_77
                  %block_if_merge_77 = OpLabel
@@ -123,6 +113,16 @@
                                %_81 = OpIAdd %type_int32_1 %_79 %_80
                                       OpStore %n_66 %_81
                                       OpBranch %block_forContinue_70
+              %block_forContinue_70 = OpLabel
+                               %_82 = OpLoad %type_int32_1 %i_67
+                               %_83 = OpIAdd %type_int32_1 %_82 %const_int32_1_20
+                                      OpStore %i_67 %_83
+                                      OpBranch %block_forHeader_68
+               %block_true_block_75 = OpLabel
+                                      OpBranch %block_forMerge_71
+                 %block_forMerge_71 = OpLabel
+                               %_84 = OpLoad %type_int32_1 %n_66
+                                      OpReturnValue %_84
                                       OpFunctionEnd
            %func_forWithContinue_88 = OpFunction %type_int32_1 None %type_func_int32_int32_ret_int32_42
                           %start_86 = OpFunctionParameter %type_int32_1
@@ -137,22 +137,15 @@
                                %_97 = OpSLessThan %type_bool_15 %_96 %end_87
                                       OpLoopMerge %block_forMerge_95 %block_forContinue_94 None
                                       OpBranchConditional %_97 %block_forBody_93 %block_forMerge_95
+                 %block_forMerge_95 = OpLabel
+                              %_111 = OpLoad %type_int32_1 %n_90
+                                      OpReturnValue %_111
                   %block_forBody_93 = OpLabel
                                %_98 = OpLoad %type_int32_1 %i_91
                               %_100 = OpSRem %type_int32_1 %_98 %const_int32_2_99
                               %_101 = OpIEqual %type_bool_15 %_100 %const_int32_0_7
                                       OpSelectionMerge %block_if_merge_104 None
                                       OpBranchConditional %_101 %block_true_block_102 %block_false_block_103
-              %block_forContinue_94 = OpLabel
-                              %_109 = OpLoad %type_int32_1 %i_91
-                              %_110 = OpIAdd %type_int32_1 %_109 %const_int32_1_20
-                                      OpStore %i_91 %_110
-                                      OpBranch %block_forHeader_92
-                 %block_forMerge_95 = OpLabel
-                              %_111 = OpLoad %type_int32_1 %n_90
-                                      OpReturnValue %_111
-              %block_true_block_102 = OpLabel
-                                      OpBranch %block_forContinue_94
              %block_false_block_103 = OpLabel
                                       OpBranch %block_if_merge_104
                 %block_if_merge_104 = OpLabel
@@ -161,4 +154,12 @@
                               %_108 = OpIAdd %type_int32_1 %_106 %_107
                                       OpStore %n_90 %_108
                                       OpBranch %block_forContinue_94
+              %block_true_block_102 = OpLabel
+                                      OpBranch %block_forContinue_94
+              %block_forContinue_94 = OpLabel
+                              %_109 = OpLoad %type_int32_1 %i_91
+                              %_110 = OpIAdd %type_int32_1 %_109 %const_int32_1_20
+                                      OpStore %i_91 %_110
+                                      OpBranch %block_forHeader_92
                                       OpFunctionEnd
+
