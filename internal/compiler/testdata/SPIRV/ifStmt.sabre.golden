@@ -13,36 +13,36 @@
         %block_entry_simpleIfStmt_6 = OpLabel
                                       OpSelectionMerge %block_if_merge_9 None
                                       OpBranchConditional %a_4 %block_true_block_7 %block_false_block_8
-                %block_true_block_7 = OpLabel
-                                      OpReturnValue %const_int32_1_10
                %block_false_block_8 = OpLabel
                                       OpBranch %block_if_merge_9
                   %block_if_merge_9 = OpLabel
                                       OpReturnValue %const_int32_2_12
+                %block_true_block_7 = OpLabel
+                                      OpReturnValue %const_int32_1_10
                                       OpFunctionEnd
             %func_ifStmtWithElse_15 = OpFunction %type_int32_1 None %type_func_bool_ret_int32_3
                               %a_14 = OpFunctionParameter %type_bool_2
      %block_entry_ifStmtWithElse_16 = OpLabel
                                       OpSelectionMerge %block_if_merge_19 None
                                       OpBranchConditional %a_14 %block_true_block_17 %block_false_block_18
-               %block_true_block_17 = OpLabel
-                                      OpReturnValue %const_int32_1_10
-              %block_false_block_18 = OpLabel
-                                      OpReturnValue %const_int32_2_12
                  %block_if_merge_19 = OpLabel
                                       OpUnreachable
+              %block_false_block_18 = OpLabel
+                                      OpReturnValue %const_int32_2_12
+               %block_true_block_17 = OpLabel
+                                      OpReturnValue %const_int32_1_10
                                       OpFunctionEnd
        %func_ifStmtWithEmptyElse_23 = OpFunction %type_int32_1 None %type_func_bool_ret_int32_3
                               %a_22 = OpFunctionParameter %type_bool_2
 %block_entry_ifStmtWithEmptyElse_24 = OpLabel
                                       OpSelectionMerge %block_if_merge_27 None
                                       OpBranchConditional %a_22 %block_true_block_25 %block_false_block_26
-               %block_true_block_25 = OpLabel
-                                      OpReturnValue %const_int32_1_10
               %block_false_block_26 = OpLabel
                                       OpBranch %block_if_merge_27
                  %block_if_merge_27 = OpLabel
                                       OpReturnValue %const_int32_2_12
+               %block_true_block_25 = OpLabel
+                                      OpReturnValue %const_int32_1_10
                                       OpFunctionEnd
           %func_ifStmtWithElseIf_33 = OpFunction %type_int32_1 None %type_func_bool_bool_ret_int32_30
                               %a_31 = OpFunctionParameter %type_bool_2
@@ -50,18 +50,18 @@
    %block_entry_ifStmtWithElseIf_34 = OpLabel
                                       OpSelectionMerge %block_if_merge_37 None
                                       OpBranchConditional %a_31 %block_true_block_35 %block_false_block_36
-               %block_true_block_35 = OpLabel
-                                      OpReturnValue %const_int32_1_10
+                 %block_if_merge_37 = OpLabel
+                                      OpUnreachable
               %block_false_block_36 = OpLabel
                                       OpSelectionMerge %block_if_merge_41 None
                                       OpBranchConditional %b_32 %block_true_block_39 %block_false_block_40
-                 %block_if_merge_37 = OpLabel
-                                      OpUnreachable
-               %block_true_block_39 = OpLabel
-                                      OpReturnValue %const_int32_2_12
-              %block_false_block_40 = OpLabel
-                                      OpReturnValue %const_int32_3_43
                  %block_if_merge_41 = OpLabel
                                       OpUnreachable
+              %block_false_block_40 = OpLabel
+                                      OpReturnValue %const_int32_3_43
+               %block_true_block_39 = OpLabel
+                                      OpReturnValue %const_int32_2_12
+               %block_true_block_35 = OpLabel
+                                      OpReturnValue %const_int32_1_10
                                       OpFunctionEnd
 

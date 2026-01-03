@@ -8,7 +8,7 @@ import (
 
 func RewriteIR(mod *spirv.Module) {
 	PassPullLocalVarsToFuncEntry(mod)
-	PassRemoveUnreachableBlocks(mod)
+	PassRemoveUnreachableAndSortBlocks(mod)
 	PassTerminateBlocks(mod)
 }
 
@@ -55,17 +55,17 @@ func terminateBlocksForVoidFuncs(fn *spirv.Function) {
 	}
 }
 
-func PassRemoveUnreachableBlocks(mod *spirv.Module) {
+func PassRemoveUnreachableAndSortBlocks(mod *spirv.Module) {
 	var removedBBs []spirv.ID
 	for _, obj := range mod.Objects {
 		if fn, ok := obj.(*spirv.Function); ok {
-			removedBBs = removeUnreachableBlocks(fn)
+			removedBBs = removeUnreachableAndSortBlocks(fn)
 		}
 	}
 
 	mod.RemoveObjects(removedBBs)
 }
-func removeUnreachableBlocks(fn *spirv.Function) (res []spirv.ID) {
+func removeUnreachableAndSortBlocks(fn *spirv.Function) (res []spirv.ID) {
 	// skip functions with only the entry block
 	if len(fn.Blocks) <= 1 {
 		return
@@ -80,5 +80,9 @@ func removeUnreachableBlocks(fn *spirv.Function) (res []spirv.ID) {
 		res = append(res, bb.ID())
 		return true
 	})
+
+	domInfo := spirv.BuildDomInfo(cfg)
+	fn.Blocks = domInfo.SortBlocks()
+
 	return
 }

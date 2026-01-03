@@ -297,6 +297,8 @@ func (tp *TextPrinter) emitInstruction(inst Instruction) {
 		tp.emit(OpBranchConditional, tp.nameOfByID(i.Condition), tp.nameOfByID(i.TrueLabel), tp.nameOfByID(i.FalseLabel))
 	case *Branch:
 		tp.emit(OpBranch, tp.nameOfByID(i.TargetLabel))
+	case *LoopMergeInstruction:
+		tp.emit(OpLoopMerge, tp.nameOfByID(i.MergeBlock), tp.nameOfByID(i.ContinueBlock), i.Control)
 	default:
 		panic(fmt.Sprintf("unsupported instruction: %T", inst))
 	}

@@ -67,6 +67,7 @@ const (
 	OpBitwiseXor           Opcode = 198
 	OpBitwiseAnd           Opcode = 199
 	OpNot                  Opcode = 200
+	OpLoopMerge            Opcode = 246
 	OpSelectionMerge       Opcode = 247
 	OpLabel                Opcode = 248
 	OpBranch               Opcode = 249
@@ -212,6 +213,8 @@ func (op Opcode) String() string {
 		return "OpBranchConditional"
 	case OpBranch:
 		return "OpBranch"
+	case OpLoopMerge:
+		return "OpLoopMerge"
 	default:
 		panic("unknown opcode")
 	}
@@ -635,5 +638,26 @@ func (v SelectionControl) String() string {
 		return "DontFlatten"
 	default:
 		panic("unknown selection control")
+	}
+}
+
+type LoopControl int
+
+const (
+	LoopControlNone       LoopControl = 0
+	LoopControlUnroll     LoopControl = 1
+	LoopControlDontUnroll LoopControl = 2
+)
+
+func (v LoopControl) String() string {
+	switch v {
+	case LoopControlNone:
+		return "None"
+	case LoopControlUnroll:
+		return "Unroll"
+	case LoopControlDontUnroll:
+		return "DontUnroll"
+	default:
+		panic("unknown loop control")
 	}
 }

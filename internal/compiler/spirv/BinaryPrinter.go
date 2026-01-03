@@ -202,6 +202,8 @@ func (bp *BinaryPrinter) emitInstruction(inst Instruction) {
 		bp.emitOp(Word(OpBranchConditional), Word(i.Condition), Word(i.TrueLabel), Word(i.FalseLabel))
 	case *Branch:
 		bp.emitOp(Word(OpBranch), Word(i.TargetLabel))
+	case *LoopMergeInstruction:
+		bp.emitOp(Word(OpLoopMerge), Word(i.MergeBlock), Word(i.ContinueBlock), Word(i.Control))
 	default:
 		panic("unsupported instruction")
 	}

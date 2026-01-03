@@ -12,6 +12,11 @@ type IREmitter struct {
 	module         *spirv.Module
 	objectBySymbol map[Symbol]spirv.Object
 	blockStack     []*spirv.Block
+	loopStack      []loopContext
+}
+
+type loopContext struct {
+	mergeblock, continueBlock *spirv.Block
 }
 
 func NewIREmitter(u *Unit) *IREmitter {
@@ -21,6 +26,7 @@ func NewIREmitter(u *Unit) *IREmitter {
 		module:         spirv.NewModule(spirv.AddressingModelLogical, spirv.MemoryModelGLSL450),
 		objectBySymbol: make(map[Symbol]spirv.Object),
 		blockStack:     make([]*spirv.Block, 0),
+		loopStack:      make([]loopContext, 0),
 	}
 }
 
@@ -39,6 +45,23 @@ func (ir *IREmitter) currentBlock() *spirv.Block {
 		return ir.blockStack[len(ir.blockStack)-1]
 	}
 	return nil
+}
+
+func (ir *IREmitter) enterLoop(lc loopContext) {
+	ir.loopStack = append(ir.loopStack, lc)
+}
+
+func (ir *IREmitter) leaveLoop() {
+	if len(ir.loopStack) > 0 {
+		ir.loopStack = ir.loopStack[:len(ir.loopStack)-1]
+	}
+}
+
+func (ir *IREmitter) currentLoop() loopContext {
+	if len(ir.loopStack) == 0 {
+		return loopContext{}
+	}
+	return ir.loopStack[len(ir.loopStack)-1]
 }
 
 func (ir *IREmitter) objectOfSymbol(sym Symbol) spirv.Object {
@@ -874,6 +897,12 @@ func (ir *IREmitter) emitStatement(stmt Stmt) {
 		ir.emitAssignStmt(s)
 	case *IfStmt:
 		ir.emitIfStmt(s)
+	case *ForStmt:
+		ir.emitForStmt(s)
+	case *BreakStmt:
+		ir.emitBreakStmt(s)
+	case *ContinueStmt:
+		ir.emitContinueStmt(s)
 	default:
 		panic("unsupported statement")
 	}
@@ -1233,4 +1262,99 @@ func (ir *IREmitter) branchToMergeBlockIfNeeded(currentBlock, mergeBlock *spirv.
 			TargetLabel: mergeBlock.ID(),
 		})
 	}
+}
+
+func (ir *IREmitter) emitForStmt(forStmt *ForStmt) {
+	// Init
+	if forStmt.Init != nil {
+		ir.emitStatement(forStmt.Init)
+	}
+
+	currentBlock := ir.currentBlock()
+	fn := currentBlock.Function
+
+	forHeader := fn.NewBlock("forHeader")
+	forBody := fn.NewBlock("forBody")
+	forContinue := fn.NewBlock("forContinue")
+	forMerge := fn.NewBlock("forMerge")
+
+	// isolate forHeader into its own block because
+	// all back edges must branch to a loop header, with each loop header
+	// having exactly one back edge branching to it
+	currentBlock.Push(&spirv.Branch{
+		TargetLabel: forHeader.ID(),
+	})
+	ir.leaveBlock()
+
+	// for header
+	ir.enterBlock(forHeader)
+	var cond spirv.Object
+	if forStmt.Cond != nil {
+		cond = ir.emitExpression(forStmt.Cond)
+	} else {
+		cond = ir.module.InternBoolConstant(true, ir.module.InternBool())
+	}
+
+	forHeader.Push(&spirv.LoopMergeInstruction{
+		MergeBlock:    forMerge.ID(),
+		ContinueBlock: forContinue.ID(),
+		Control:       spirv.LoopControlNone,
+	})
+	forHeader.Push(&spirv.BranchConditional{
+		Condition:  cond.ID(),
+		TrueLabel:  forBody.ID(),
+		FalseLabel: forMerge.ID(),
+	})
+	ir.leaveBlock()
+
+	// for body
+	ir.enterBlock(forBody)
+	ir.enterLoop(loopContext{mergeblock: forMerge, continueBlock: forContinue})
+	ir.emitStatement(forStmt.Body)
+	// Note: we have to use ir.currentBlock because the for loop body might change
+	// the current block to a new one
+	ir.branchToMergeBlockIfNeeded(ir.currentBlock(), forContinue)
+	ir.leaveLoop()
+	ir.leaveBlock()
+
+	// for continue
+	ir.enterBlock(forContinue)
+	if forStmt.Post != nil {
+		ir.emitStatement(forStmt.Post)
+	}
+	// the only backedge to the loop header
+	forContinue.Push(&spirv.Branch{
+		TargetLabel: forHeader.ID(),
+	})
+	ir.leaveBlock()
+
+	ir.enterBlock(forMerge)
+}
+
+func (ir *IREmitter) emitBreakStmt(s *BreakStmt) {
+	if s.IsLabeled() {
+		panic("labeled break statement is not supported yet")
+	}
+
+	loop := ir.currentLoop()
+	block := ir.currentBlock()
+	block.Push(&spirv.Branch{TargetLabel: loop.mergeblock.ID()})
+	ir.leaveBlock()
+
+	newBlock := block.Function.NewBlock("after_break")
+	ir.enterBlock(newBlock)
+}
+
+func (ir *IREmitter) emitContinueStmt(s *ContinueStmt) {
+	if s.IsLabeled() {
+		panic("labeled continue statement is not supported yet")
+	}
+
+	loop := ir.currentLoop()
+	block := ir.currentBlock()
+	block.Push(&spirv.Branch{TargetLabel: loop.continueBlock.ID()})
+	ir.leaveBlock()
+
+	newBlock := block.Function.NewBlock("after_continue")
+	ir.enterBlock(newBlock)
 }
