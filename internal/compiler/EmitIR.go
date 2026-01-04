@@ -1051,13 +1051,17 @@ func (ir *IREmitter) emitAssignStmt(s *AssignStmt) {
 			ir.emitVar(symbol, spirv.StorageClassFunction, initExpr)
 		}
 	case TokenAssign:
+		var rhsValues []spirv.Object
+		for _, rhsExpr := range s.RHS {
+			rhsValues = append(rhsValues, ir.emitExpression(rhsExpr))
+		}
 		for i, lhsExpr := range s.LHS {
 			symbol := ir.unit.semanticInfo.SymbolOfIdentifier(lhsExpr.(*IdentifierExpr)).(*VarSymbol)
 			obj := ir.objectOfSymbol(symbol)
 			block := ir.currentBlock()
 			block.Push(&spirv.StoreInstruction{
 				Pointer: obj.ID(),
-				Object:  ir.emitExpression(s.RHS[i]).ID(),
+				Object:  rhsValues[i].ID(),
 			})
 		}
 	case TokenAddAssign, TokenSubAssign, TokenMulAssign, TokenDivAssign, TokenAndAssign,
