@@ -1116,7 +1116,10 @@ func (checker *Checker) resolveFuncTypeExpr(e *FuncTypeExpr) *TypeAndValue {
 				for _, name := range field.Names {
 					v := NewVarSymbol(name.Token, nil, name.SourceRange(), -1, -1, nil)
 					v.SetResolveState(ResolveStateResolved)
-					checker.unit.semanticInfo.SetTypeOf(v, fieldType)
+					checker.unit.semanticInfo.SetTypeOf(v, &TypeAndValue{
+						Mode: AddressModeVariable,
+						Type: fieldType.Type,
+					})
 					checker.addSymbol(v)
 					checker.unit.semanticInfo.SetSymbolOfIdentifier(name, v)
 					types = append(types, fieldType.Type)
