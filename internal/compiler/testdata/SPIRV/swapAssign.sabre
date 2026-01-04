@@ -1,0 +1,6 @@
+package main
+
+func foo() {
+	x, y := 1, 2
+	x, y = y, x
+}
