@@ -1527,7 +1527,7 @@ func (ir *IREmitter) emitBreakStmt(s *BreakStmt) {
 	ir.enterBlock(newBlock)
 }
 
-func (ir *IREmitter) emitFallthroughStmt(s *FallthroughStmt) {
+func (ir *IREmitter) emitFallthroughStmt(*FallthroughStmt) {
 	switchCtx := ir.currentSwitch()
 	if switchCtx.nextCaseBlock == nil {
 		panic("fallthrough statement not in switch or is in last case")
