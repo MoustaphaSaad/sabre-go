@@ -98,12 +98,6 @@ func (ir *IREmitter) currentSwitch() switchContext {
 	return ir.switchStack[len(ir.switchStack)-1]
 }
 
-func (ir *IREmitter) updateSwitchContext(sc switchContext) {
-	if len(ir.switchStack) > 0 {
-		ir.switchStack[len(ir.switchStack)-1] = sc
-	}
-}
-
 func (ir *IREmitter) objectOfSymbol(sym Symbol) spirv.Object {
 	if obj, ok := ir.objectBySymbol[sym]; ok {
 		return obj
