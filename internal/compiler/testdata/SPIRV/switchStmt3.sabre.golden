@@ -1,0 +1,26 @@
+                            OpCapability Shader
+                            OpCapability Linkage
+                            OpMemoryModel Logical GLSL450
+             %type_void_1 = OpTypeVoid
+    %type_func_ret_void_2 = OpTypeFunction %type_void_1
+             %type_bool_5 = OpTypeBool
+       %type_ptr_bool_7_6 = OpTypePointer Function %type_bool_5
+           %type_int32_10 = OpTypeInt 32 1
+%const_const_bool_false_8 = OpConstantFalse %type_bool_5
+        %const_int32_1_11 = OpConstant %type_int32_10 1
+        %const_int32_0_12 = OpConstant %type_int32_10 0
+             %func_main_3 = OpFunction %type_void_1 None %type_func_ret_void_2
+      %block_entry_main_4 = OpLabel
+                     %b_7 = OpVariable %type_ptr_bool_7_6 Function %const_const_bool_false_8
+                      %_9 = OpLoad %type_bool_5 %b_7
+                     %_13 = OpSelect %type_int32_10 %_9 %const_int32_1_11 %const_int32_0_12
+                            OpSelectionMerge %block_switch_merge_14 None
+                            OpSwitch %_13 %block_switch_merge_14 1 %block_case_block_15 0 %block_case_block_16
+     %block_case_block_16 = OpLabel
+                            OpBranch %block_switch_merge_14
+     %block_case_block_15 = OpLabel
+                            OpBranch %block_switch_merge_14
+   %block_switch_merge_14 = OpLabel
+                            OpReturn
+                            OpFunctionEnd
+

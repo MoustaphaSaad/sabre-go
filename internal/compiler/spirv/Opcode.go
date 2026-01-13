@@ -44,6 +44,7 @@ const (
 	OpLogicalOr            Opcode = 166
 	OpLogicalAnd           Opcode = 167
 	OpLogicalNot           Opcode = 168
+	OpSelect               Opcode = 169
 	OpIEqual               Opcode = 170
 	OpINotEqual            Opcode = 171
 	OpUGreaterThan         Opcode = 172
@@ -72,6 +73,7 @@ const (
 	OpLabel                Opcode = 248
 	OpBranch               Opcode = 249
 	OpBranchConditional    Opcode = 250
+	OpSwitch               Opcode = 251
 	OpReturn               Opcode = 253
 	OpReturnValue          Opcode = 254
 	OpUnreachable          Opcode = 255
@@ -153,6 +155,8 @@ func (op Opcode) String() string {
 		return "OpLogicalAnd"
 	case OpLogicalNot:
 		return "OpLogicalNot"
+	case OpSelect:
+		return "OpSelect"
 	case OpIEqual:
 		return "OpIEqual"
 	case OpINotEqual:
@@ -211,6 +215,8 @@ func (op Opcode) String() string {
 		return "OpSelectionMerge"
 	case OpBranchConditional:
 		return "OpBranchConditional"
+	case OpSwitch:
+		return "OpSwitch"
 	case OpBranch:
 		return "OpBranch"
 	case OpLoopMerge:
@@ -223,6 +229,7 @@ func (op Opcode) String() string {
 func (op Opcode) IsTerminator() bool {
 	return op == OpBranch ||
 		op == OpBranchConditional ||
+		op == OpSwitch ||
 		op == OpReturn ||
 		op == OpReturnValue ||
 		op == OpUnreachable

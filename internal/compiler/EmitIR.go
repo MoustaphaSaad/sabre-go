@@ -8,25 +8,34 @@ import (
 )
 
 type IREmitter struct {
-	unit           *Unit
-	module         *spirv.Module
-	objectBySymbol map[Symbol]spirv.Object
-	blockStack     []*spirv.Block
-	loopStack      []loopContext
+	unit            *Unit
+	module          *spirv.Module
+	objectBySymbol  map[Symbol]spirv.Object
+	blockStack      []*spirv.Block
+	loopStack       []loopContext
+	switchStack     []switchContext
+	mergeBlockStack []*spirv.Block
 }
 
 type loopContext struct {
 	mergeblock, continueBlock *spirv.Block
 }
 
+type switchContext struct {
+	mergeBlock    *spirv.Block
+	nextCaseBlock *spirv.Block
+}
+
 func NewIREmitter(u *Unit) *IREmitter {
 	return &IREmitter{
 		unit: u,
 		// we set the addressing and memory model to default values for now
-		module:         spirv.NewModule(spirv.AddressingModelLogical, spirv.MemoryModelGLSL450),
-		objectBySymbol: make(map[Symbol]spirv.Object),
-		blockStack:     make([]*spirv.Block, 0),
-		loopStack:      make([]loopContext, 0),
+		module:          spirv.NewModule(spirv.AddressingModelLogical, spirv.MemoryModelGLSL450),
+		objectBySymbol:  make(map[Symbol]spirv.Object),
+		blockStack:      make([]*spirv.Block, 0),
+		loopStack:       make([]loopContext, 0),
+		switchStack:     make([]switchContext, 0),
+		mergeBlockStack: make([]*spirv.Block, 0),
 	}
 }
 
@@ -49,11 +58,15 @@ func (ir *IREmitter) currentBlock() *spirv.Block {
 
 func (ir *IREmitter) enterLoop(lc loopContext) {
 	ir.loopStack = append(ir.loopStack, lc)
+	ir.mergeBlockStack = append(ir.mergeBlockStack, lc.mergeblock)
 }
 
 func (ir *IREmitter) leaveLoop() {
 	if len(ir.loopStack) > 0 {
 		ir.loopStack = ir.loopStack[:len(ir.loopStack)-1]
+	}
+	if len(ir.mergeBlockStack) > 0 {
+		ir.mergeBlockStack = ir.mergeBlockStack[:len(ir.mergeBlockStack)-1]
 	}
 }
 
@@ -62,6 +75,27 @@ func (ir *IREmitter) currentLoop() loopContext {
 		return loopContext{}
 	}
 	return ir.loopStack[len(ir.loopStack)-1]
+}
+
+func (ir *IREmitter) enterSwitch(sc switchContext) {
+	ir.switchStack = append(ir.switchStack, sc)
+	ir.mergeBlockStack = append(ir.mergeBlockStack, sc.mergeBlock)
+}
+
+func (ir *IREmitter) leaveSwitch() {
+	if len(ir.switchStack) > 0 {
+		ir.switchStack = ir.switchStack[:len(ir.switchStack)-1]
+	}
+	if len(ir.mergeBlockStack) > 0 {
+		ir.mergeBlockStack = ir.mergeBlockStack[:len(ir.mergeBlockStack)-1]
+	}
+}
+
+func (ir *IREmitter) currentSwitch() switchContext {
+	if len(ir.switchStack) == 0 {
+		return switchContext{}
+	}
+	return ir.switchStack[len(ir.switchStack)-1]
 }
 
 func (ir *IREmitter) objectOfSymbol(sym Symbol) spirv.Object {
@@ -897,10 +931,14 @@ func (ir *IREmitter) emitStatement(stmt Stmt) {
 		ir.emitAssignStmt(s)
 	case *IfStmt:
 		ir.emitIfStmt(s)
+	case *SwitchStmt:
+		ir.emitSwitchStmt(s)
 	case *ForStmt:
 		ir.emitForStmt(s)
 	case *BreakStmt:
 		ir.emitBreakStmt(s)
+	case *FallthroughStmt:
+		ir.emitFallthroughStmt(s)
 	case *ContinueStmt:
 		ir.emitContinueStmt(s)
 	default:
@@ -1260,6 +1298,129 @@ func (ir *IREmitter) emitIfStmt(ifStmt *IfStmt) {
 	// continue emitting code in merge block
 	ir.enterBlock(mergeBlock)
 }
+
+func (ir *IREmitter) emitSwitchStmt(switchStmt *SwitchStmt) {
+	if switchStmt.Init != nil {
+		ir.emitStatement(switchStmt.Init)
+	}
+
+	var selector spirv.Object
+	if switchStmt.Tag != nil {
+		selector = ir.emitExpression(switchStmt.Tag)
+	} else {
+		selector = ir.module.InternBoolConstant(true, ir.module.InternBool())
+	}
+
+	// OpSwitch requires an integer selector, not boolean
+	// Convert boolean to int32 if needed
+	if selectorValue, ok := selector.(spirv.Value); ok {
+		if _, isBool := selectorValue.GetType().(*spirv.BoolType); isBool {
+			currentBlock := ir.currentBlock()
+			int32Type := ir.module.InternInt(32, true)
+			oneConst := ir.module.InternIntConstant(1, int32Type)
+			zeroConst := ir.module.InternIntConstant(0, int32Type)
+			intSelector := ir.module.NewValue(int32Type)
+			currentBlock.Push(&spirv.SelectInstruction{
+				ResultType: int32Type.ID(),
+				ResultID:   intSelector.ID(),
+				Condition:  selector.ID(),
+				Object1:    oneConst.ID(),
+				Object2:    zeroConst.ID(),
+			})
+			selector = intSelector
+		}
+	}
+
+	currentBlock := ir.currentBlock()
+	fn := currentBlock.Function
+
+	mergeBlock := fn.NewBlock("switch_merge")
+
+	currentBlock.Push(&spirv.SelectionMergeInstruction{
+		MergeBlock: mergeBlock.ID(),
+		Control:    spirv.SelectionControlNone,
+	})
+
+	var caseBlocks []*spirv.Block
+	var caseLiterals []int64
+	var caseLabels []spirv.ID
+	var defaultBlock *spirv.Block
+
+	for _, stmt := range switchStmt.Body.Stmts {
+		caseStmt := stmt.(*SwitchCaseStmt)
+		caseBlock := fn.NewBlock("case_block")
+		caseBlocks = append(caseBlocks, caseBlock)
+
+		if len(caseStmt.LHS) == 0 {
+			defaultBlock = caseBlock
+		} else {
+			for _, expr := range caseStmt.LHS {
+				tav := ir.unit.semanticInfo.TypeOf(expr)
+				var literalValue int64
+				if tav.Mode == AddressModeConstant && tav.Value != nil {
+					switch tav.Type.(type) {
+					case *BoolType:
+						if constant.BoolVal(tav.Value) {
+							literalValue = 1
+						} else {
+							literalValue = 0
+						}
+					case *IntType:
+						literalValue, _ = constant.Int64Val(tav.Value)
+					default:
+						panic(fmt.Sprintf("switch case type '%v' not supported", tav.Type))
+					}
+				} else {
+					panic("switch case must be constant")
+				}
+				caseLiterals = append(caseLiterals, literalValue)
+				caseLabels = append(caseLabels, caseBlock.ID())
+			}
+		}
+	}
+
+	if defaultBlock == nil {
+		defaultBlock = mergeBlock
+	}
+
+	currentBlock.Push(&spirv.SwitchInstruction{
+		Selector: selector.ID(),
+		Default:  defaultBlock.ID(),
+		Literals: caseLiterals,
+		Labels:   caseLabels,
+	})
+	ir.leaveBlock()
+
+	for i, stmt := range switchStmt.Body.Stmts {
+		caseStmt := stmt.(*SwitchCaseStmt)
+		caseBlock := caseBlocks[i]
+
+		// Set up next case block for fallthrough
+		var nextCase *spirv.Block
+		if i+1 < len(caseBlocks) {
+			nextCase = caseBlocks[i+1]
+		}
+		ir.enterSwitch(switchContext{
+			mergeBlock:    mergeBlock,
+			nextCaseBlock: nextCase,
+		})
+
+		ir.enterBlock(caseBlock)
+
+		for _, bodyStmt := range caseStmt.RHS {
+			ir.emitStatement(bodyStmt)
+		}
+
+		// If case didn't end with return/fallthrough, branch to merge
+		ir.branchToMergeBlockIfNeeded(ir.currentBlock(), mergeBlock)
+
+		ir.leaveBlock()
+		ir.leaveSwitch()
+	}
+
+	ir.enterBlock(mergeBlock)
+}
+
 func (ir *IREmitter) branchToMergeBlockIfNeeded(currentBlock, mergeBlock *spirv.Block) {
 	if !currentBlock.IsTerminated() {
 		currentBlock.Push(&spirv.Branch{
@@ -1340,12 +1501,32 @@ func (ir *IREmitter) emitBreakStmt(s *BreakStmt) {
 		panic("labeled break statement is not supported yet")
 	}
 
-	loop := ir.currentLoop()
-	block := ir.currentBlock()
-	block.Push(&spirv.Branch{TargetLabel: loop.mergeblock.ID()})
-	ir.leaveBlock()
+	if len(ir.mergeBlockStack) == 0 {
+		panic("break statement not in loop or switch")
+	}
 
+	block := ir.currentBlock()
+
+	// Break from the innermost loop or switch
+	innermost := ir.mergeBlockStack[len(ir.mergeBlockStack)-1]
+	block.Push(&spirv.Branch{TargetLabel: innermost.ID()})
+
+	ir.leaveBlock()
 	newBlock := block.Function.NewBlock("after_break")
+	ir.enterBlock(newBlock)
+}
+
+func (ir *IREmitter) emitFallthroughStmt(*FallthroughStmt) {
+	switchCtx := ir.currentSwitch()
+	if switchCtx.nextCaseBlock == nil {
+		panic("fallthrough statement not in switch or is in last case")
+	}
+
+	block := ir.currentBlock()
+	block.Push(&spirv.Branch{TargetLabel: switchCtx.nextCaseBlock.ID()})
+
+	ir.leaveBlock()
+	newBlock := block.Function.NewBlock("after_fallthrough")
 	ir.enterBlock(newBlock)
 }
 

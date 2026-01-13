@@ -1,0 +1,9 @@
+package main
+
+func main() {
+	b := false
+	switch b {
+	case true:
+	case false:
+	}
+}

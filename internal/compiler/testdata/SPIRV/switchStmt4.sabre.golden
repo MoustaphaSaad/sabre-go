@@ -1,0 +1,37 @@
+                         OpCapability Shader
+                         OpCapability Linkage
+                         OpMemoryModel Logical GLSL450
+         %type_int32_1 = OpTypeInt 32 1
+%type_func_ret_int32_2 = OpTypeFunction %type_int32_1
+   %type_ptr_int32_7_8 = OpTypePointer Function %type_int32_1
+         %type_bool_17 = OpTypeBool
+      %const_int32_1_5 = OpConstant %type_int32_1 1
+     %const_int32_0_10 = OpConstant %type_int32_1 0
+    %const_int32_10_16 = OpConstant %type_int32_1 10
+    %const_int32_42_22 = OpConstant %type_int32_1 42
+    %const_int32_69_24 = OpConstant %type_int32_1 69
+           %func_foo_3 = OpFunction %type_int32_1 None %type_func_ret_int32_2
+    %block_entry_foo_4 = OpLabel
+                  %i_9 = OpVariable %type_ptr_int32_7_8 Function %const_int32_0_10
+                         OpSelectionMerge %block_switch_merge_6 None
+                         OpSwitch %const_int32_1_5 %block_switch_merge_6 1 %block_case_block_7
+   %block_case_block_7 = OpLabel
+                         OpBranch %block_forHeader_11
+   %block_forHeader_11 = OpLabel
+                  %_15 = OpLoad %type_int32_1 %i_9
+                  %_18 = OpSLessThan %type_bool_17 %_15 %const_int32_10_16
+                         OpLoopMerge %block_forMerge_14 %block_forContinue_13 None
+                         OpBranchConditional %_18 %block_forBody_12 %block_forMerge_14
+ %block_forContinue_13 = OpLabel
+                  %_20 = OpLoad %type_int32_1 %i_9
+                  %_21 = OpIAdd %type_int32_1 %_20 %const_int32_1_5
+                         OpStore %i_9 %_21
+                         OpBranch %block_forHeader_11
+     %block_forBody_12 = OpLabel
+                         OpBranch %block_forMerge_14
+    %block_forMerge_14 = OpLabel
+                         OpReturnValue %const_int32_42_22
+ %block_switch_merge_6 = OpLabel
+                         OpReturnValue %const_int32_69_24
+                         OpFunctionEnd
+

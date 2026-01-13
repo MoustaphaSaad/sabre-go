@@ -101,6 +101,8 @@ func (bp *BinaryPrinter) emitInstruction(inst Instruction) {
 		bp.emitOp(Word(OpLogicalAnd), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
 	case *LogicalNotInstruction:
 		bp.emitOp(Word(OpLogicalNot), Word(i.ResultType), Word(i.ResultID), Word(i.Operand))
+	case *SelectInstruction:
+		bp.emitOp(Word(OpSelect), Word(i.ResultType), Word(i.ResultID), Word(i.Condition), Word(i.Object1), Word(i.Object2))
 	case *LogicalEqualInstruction:
 		bp.emitOp(Word(OpLogicalEqual), Word(i.ResultType), Word(i.ResultID), Word(i.Operand1), Word(i.Operand2))
 	case *LogicalNotEqualInstruction:
@@ -200,6 +202,15 @@ func (bp *BinaryPrinter) emitInstruction(inst Instruction) {
 		bp.emitOp(Word(OpSelectionMerge), Word(i.MergeBlock), Word(i.Control))
 	case *BranchConditional:
 		bp.emitOp(Word(OpBranchConditional), Word(i.Condition), Word(i.TrueLabel), Word(i.FalseLabel))
+	case *SwitchInstruction:
+		words := make([]Word, 0, 2+len(i.Literals)*2)
+		words = append(words, Word(i.Selector))
+		words = append(words, Word(i.Default))
+		for idx := 0; idx < len(i.Literals); idx++ {
+			words = append(words, Word(i.Literals[idx]))
+			words = append(words, Word(i.Labels[idx]))
+		}
+		bp.emitOp(Word(OpSwitch), words...)
 	case *Branch:
 		bp.emitOp(Word(OpBranch), Word(i.TargetLabel))
 	case *LoopMergeInstruction:

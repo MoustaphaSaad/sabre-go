@@ -157,6 +157,9 @@ func (tp *TextPrinter) emitInstruction(inst Instruction) {
 	case *LogicalNotInstruction:
 		resultObj := tp.module.GetObject(i.ResultID)
 		tp.emitWithObject(resultObj, OpLogicalNot, tp.nameOfByID(i.ResultType), tp.nameOfByID(i.Operand))
+	case *SelectInstruction:
+		resultObj := tp.module.GetObject(i.ResultID)
+		tp.emitWithObject(resultObj, OpSelect, tp.nameOfByID(i.ResultType), tp.nameOfByID(i.Condition), tp.nameOfByID(i.Object1), tp.nameOfByID(i.Object2))
 	case *LogicalEqualInstruction:
 		resultObj := tp.module.GetObject(i.ResultID)
 		tp.emitWithObject(resultObj, OpLogicalEqual, tp.nameOfByID(i.ResultType), tp.nameOfByID(i.Operand1), tp.nameOfByID(i.Operand2))
@@ -295,6 +298,12 @@ func (tp *TextPrinter) emitInstruction(inst Instruction) {
 		tp.emit(OpSelectionMerge, tp.nameOfByID(i.MergeBlock), i.Control)
 	case *BranchConditional:
 		tp.emit(OpBranchConditional, tp.nameOfByID(i.Condition), tp.nameOfByID(i.TrueLabel), tp.nameOfByID(i.FalseLabel))
+	case *SwitchInstruction:
+		args := []any{tp.nameOfByID(i.Selector), tp.nameOfByID(i.Default)}
+		for j := 0; j < len(i.Literals); j++ {
+			args = append(args, i.Literals[j], tp.nameOfByID(i.Labels[j]))
+		}
+		tp.emit(OpSwitch, args...)
 	case *Branch:
 		tp.emit(OpBranch, tp.nameOfByID(i.TargetLabel))
 	case *LoopMergeInstruction:
