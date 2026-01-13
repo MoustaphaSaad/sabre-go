@@ -8,12 +8,13 @@ import (
 )
 
 type IREmitter struct {
-	unit           *Unit
-	module         *spirv.Module
-	objectBySymbol map[Symbol]spirv.Object
-	blockStack     []*spirv.Block
-	loopStack      []loopContext
-	switchStack    []switchContext
+	unit            *Unit
+	module          *spirv.Module
+	objectBySymbol  map[Symbol]spirv.Object
+	blockStack      []*spirv.Block
+	loopStack       []loopContext
+	switchStack     []switchContext
+	mergeBlockStack []*spirv.Block
 }
 
 type loopContext struct {
@@ -32,11 +33,12 @@ func NewIREmitter(u *Unit) *IREmitter {
 	return &IREmitter{
 		unit: u,
 		// we set the addressing and memory model to default values for now
-		module:         spirv.NewModule(spirv.AddressingModelLogical, spirv.MemoryModelGLSL450),
-		objectBySymbol: make(map[Symbol]spirv.Object),
-		blockStack:     make([]*spirv.Block, 0),
-		loopStack:      make([]loopContext, 0),
-		switchStack:    make([]switchContext, 0),
+		module:          spirv.NewModule(spirv.AddressingModelLogical, spirv.MemoryModelGLSL450),
+		objectBySymbol:  make(map[Symbol]spirv.Object),
+		blockStack:      make([]*spirv.Block, 0),
+		loopStack:       make([]loopContext, 0),
+		switchStack:     make([]switchContext, 0),
+		mergeBlockStack: make([]*spirv.Block, 0),
 	}
 }
 
@@ -59,11 +61,15 @@ func (ir *IREmitter) currentBlock() *spirv.Block {
 
 func (ir *IREmitter) enterLoop(lc loopContext) {
 	ir.loopStack = append(ir.loopStack, lc)
+	ir.mergeBlockStack = append(ir.mergeBlockStack, lc.mergeblock)
 }
 
 func (ir *IREmitter) leaveLoop() {
 	if len(ir.loopStack) > 0 {
 		ir.loopStack = ir.loopStack[:len(ir.loopStack)-1]
+	}
+	if len(ir.mergeBlockStack) > 0 {
+		ir.mergeBlockStack = ir.mergeBlockStack[:len(ir.mergeBlockStack)-1]
 	}
 }
 
@@ -76,11 +82,15 @@ func (ir *IREmitter) currentLoop() loopContext {
 
 func (ir *IREmitter) enterSwitch(sc switchContext) {
 	ir.switchStack = append(ir.switchStack, sc)
+	ir.mergeBlockStack = append(ir.mergeBlockStack, sc.mergeBlock)
 }
 
 func (ir *IREmitter) leaveSwitch() {
 	if len(ir.switchStack) > 0 {
 		ir.switchStack = ir.switchStack[:len(ir.switchStack)-1]
+	}
+	if len(ir.mergeBlockStack) > 0 {
+		ir.mergeBlockStack = ir.mergeBlockStack[:len(ir.mergeBlockStack)-1]
 	}
 }
 
@@ -1509,18 +1519,15 @@ func (ir *IREmitter) emitBreakStmt(s *BreakStmt) {
 		panic("labeled break statement is not supported yet")
 	}
 
-	block := ir.currentBlock()
-
-	// Check if we're in a switch first, then check for loop
-	if len(ir.switchStack) > 0 {
-		switchCtx := ir.currentSwitch()
-		block.Push(&spirv.Branch{TargetLabel: switchCtx.mergeBlock.ID()})
-	} else if len(ir.loopStack) > 0 {
-		loop := ir.currentLoop()
-		block.Push(&spirv.Branch{TargetLabel: loop.mergeblock.ID()})
-	} else {
+	if len(ir.mergeBlockStack) == 0 {
 		panic("break statement not in loop or switch")
 	}
+
+	block := ir.currentBlock()
+
+	// Break from the innermost loop or switch
+	innermost := ir.mergeBlockStack[len(ir.mergeBlockStack)-1]
+	block.Push(&spirv.Branch{TargetLabel: innermost.ID()})
 
 	ir.leaveBlock()
 	newBlock := block.Function.NewBlock("after_break")
