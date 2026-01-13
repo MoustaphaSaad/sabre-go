@@ -22,11 +22,8 @@ type loopContext struct {
 }
 
 type switchContext struct {
-	mergeBlock     *spirv.Block
-	defaultBlock   *spirv.Block
-	nextCaseBlock  *spirv.Block
-	hasFallthrough bool
-	caseBlocks     []*spirv.Block
+	mergeBlock    *spirv.Block
+	nextCaseBlock *spirv.Block
 }
 
 func NewIREmitter(u *Unit) *IREmitter {
@@ -1400,27 +1397,19 @@ func (ir *IREmitter) emitSwitchStmt(switchStmt *SwitchStmt) {
 	})
 	ir.leaveBlock()
 
-	ir.enterSwitch(switchContext{
-		mergeBlock:     mergeBlock,
-		defaultBlock:   defaultBlock,
-		caseBlocks:     caseBlocks,
-		hasFallthrough: false,
-	})
-	defer ir.leaveSwitch()
-
 	for i, stmt := range switchStmt.Body.Stmts {
 		caseStmt := stmt.(*SwitchCaseStmt)
 		caseBlock := caseBlocks[i]
 
+		// Set up next case block for fallthrough
 		var nextCase *spirv.Block
 		if i+1 < len(caseBlocks) {
 			nextCase = caseBlocks[i+1]
 		}
-
-		ctx := ir.currentSwitch()
-		ctx.nextCaseBlock = nextCase
-		ctx.hasFallthrough = false
-		ir.updateSwitchContext(ctx)
+		ir.enterSwitch(switchContext{
+			mergeBlock:    mergeBlock,
+			nextCaseBlock: nextCase,
+		})
 
 		ir.enterBlock(caseBlock)
 
@@ -1428,12 +1417,11 @@ func (ir *IREmitter) emitSwitchStmt(switchStmt *SwitchStmt) {
 			ir.emitStatement(bodyStmt)
 		}
 
-		ctx = ir.currentSwitch()
-		if !ctx.hasFallthrough {
-			ir.branchToMergeBlockIfNeeded(ir.currentBlock(), mergeBlock)
-		}
+		// If case didn't end with return/fallthrough, branch to merge
+		ir.branchToMergeBlockIfNeeded(ir.currentBlock(), mergeBlock)
 
 		ir.leaveBlock()
+		ir.leaveSwitch()
 	}
 
 	ir.enterBlock(mergeBlock)
@@ -1542,10 +1530,6 @@ func (ir *IREmitter) emitFallthroughStmt(*FallthroughStmt) {
 
 	block := ir.currentBlock()
 	block.Push(&spirv.Branch{TargetLabel: switchCtx.nextCaseBlock.ID()})
-
-	// Mark that we have a fallthrough so the case doesn't branch to merge
-	switchCtx.hasFallthrough = true
-	ir.updateSwitchContext(switchCtx)
 
 	ir.leaveBlock()
 	newBlock := block.Function.NewBlock("after_fallthrough")
