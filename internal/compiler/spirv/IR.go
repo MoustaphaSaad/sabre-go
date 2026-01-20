@@ -528,6 +528,19 @@ func (i *LogicalNotInstruction) Opcode() Opcode {
 	return OpLogicalNot
 }
 
+type SelectInstruction struct {
+	DefaultInstruction
+	ResultType ID
+	ResultID   ID
+	Condition  ID
+	Object1    ID
+	Object2    ID
+}
+
+func (i *SelectInstruction) Opcode() Opcode {
+	return OpSelect
+}
+
 type LogicalEqualInstruction struct {
 	DefaultInstruction
 	ResultType ID
@@ -1074,4 +1087,21 @@ func (i *LoopMergeInstruction) Opcode() Opcode {
 }
 func (i *LoopMergeInstruction) SuccessorIDs() []ID {
 	return []ID{i.MergeBlock, i.ContinueBlock}
+}
+
+type SwitchInstruction struct {
+	DefaultInstruction
+	Selector ID
+	Default  ID
+	Literals []int64
+	Labels   []ID
+}
+
+func (i *SwitchInstruction) Opcode() Opcode {
+	return OpSwitch
+}
+func (i *SwitchInstruction) SuccessorIDs() []ID {
+	result := []ID{i.Default}
+	result = append(result, i.Labels...)
+	return result
 }
