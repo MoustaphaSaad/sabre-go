@@ -8,34 +8,26 @@ import (
 )
 
 type IREmitter struct {
-	unit            *Unit
-	module          *spirv.Module
-	objectBySymbol  map[Symbol]spirv.Object
-	blockStack      []*spirv.Block
-	loopStack       []loopContext
-	switchStack     []switchContext
-	mergeBlockStack []*spirv.Block
+	unit             *Unit
+	module           *spirv.Module
+	objectBySymbol   map[Symbol]spirv.Object
+	blockStack       []*spirv.Block
+	controlFlowStack []controlFlowContext
 }
 
-type loopContext struct {
-	mergeblock, continueBlock *spirv.Block
-}
-
-type switchContext struct {
-	mergeBlock    *spirv.Block
-	nextCaseBlock *spirv.Block
+type controlFlowContext struct {
+	mergeBlock  *spirv.Block
+	branchBlock *spirv.Block
 }
 
 func NewIREmitter(u *Unit) *IREmitter {
 	return &IREmitter{
 		unit: u,
 		// we set the addressing and memory model to default values for now
-		module:          spirv.NewModule(spirv.AddressingModelLogical, spirv.MemoryModelGLSL450),
-		objectBySymbol:  make(map[Symbol]spirv.Object),
-		blockStack:      make([]*spirv.Block, 0),
-		loopStack:       make([]loopContext, 0),
-		switchStack:     make([]switchContext, 0),
-		mergeBlockStack: make([]*spirv.Block, 0),
+		module:           spirv.NewModule(spirv.AddressingModelLogical, spirv.MemoryModelGLSL450),
+		objectBySymbol:   make(map[Symbol]spirv.Object),
+		blockStack:       make([]*spirv.Block, 0),
+		controlFlowStack: []controlFlowContext{},
 	}
 }
 
@@ -56,46 +48,21 @@ func (ir *IREmitter) currentBlock() *spirv.Block {
 	return nil
 }
 
-func (ir *IREmitter) enterLoop(lc loopContext) {
-	ir.loopStack = append(ir.loopStack, lc)
-	ir.mergeBlockStack = append(ir.mergeBlockStack, lc.mergeblock)
+func (ir *IREmitter) enterControlFlow(controlFlowCtx controlFlowContext) {
+	ir.controlFlowStack = append(ir.controlFlowStack, controlFlowCtx)
 }
 
-func (ir *IREmitter) leaveLoop() {
-	if len(ir.loopStack) > 0 {
-		ir.loopStack = ir.loopStack[:len(ir.loopStack)-1]
-	}
-	if len(ir.mergeBlockStack) > 0 {
-		ir.mergeBlockStack = ir.mergeBlockStack[:len(ir.mergeBlockStack)-1]
+func (ir *IREmitter) leaveControlFlow() {
+	if len(ir.controlFlowStack) > 0 {
+		ir.controlFlowStack = ir.controlFlowStack[:len(ir.controlFlowStack)-1]
 	}
 }
 
-func (ir *IREmitter) currentLoop() loopContext {
-	if len(ir.loopStack) == 0 {
-		return loopContext{}
+func (ir *IREmitter) currentControlFlow() controlFlowContext {
+	if len(ir.controlFlowStack) == 0 {
+		return controlFlowContext{}
 	}
-	return ir.loopStack[len(ir.loopStack)-1]
-}
-
-func (ir *IREmitter) enterSwitch(sc switchContext) {
-	ir.switchStack = append(ir.switchStack, sc)
-	ir.mergeBlockStack = append(ir.mergeBlockStack, sc.mergeBlock)
-}
-
-func (ir *IREmitter) leaveSwitch() {
-	if len(ir.switchStack) > 0 {
-		ir.switchStack = ir.switchStack[:len(ir.switchStack)-1]
-	}
-	if len(ir.mergeBlockStack) > 0 {
-		ir.mergeBlockStack = ir.mergeBlockStack[:len(ir.mergeBlockStack)-1]
-	}
-}
-
-func (ir *IREmitter) currentSwitch() switchContext {
-	if len(ir.switchStack) == 0 {
-		return switchContext{}
-	}
-	return ir.switchStack[len(ir.switchStack)-1]
+	return ir.controlFlowStack[len(ir.controlFlowStack)-1]
 }
 
 func (ir *IREmitter) objectOfSymbol(sym Symbol) spirv.Object {
@@ -1285,14 +1252,14 @@ func (ir *IREmitter) emitIfStmt(ifStmt *IfStmt) {
 
 	ir.enterBlock(trueBlock)
 	ir.emitStatement(ifStmt.Body)
-	ir.branchToMergeBlockIfNeeded(trueBlock, mergeBlock)
+	ir.branchToBlockIfNotTerminated(trueBlock, mergeBlock)
 	ir.leaveBlock()
 
 	ir.enterBlock(falseBlock)
 	if ifStmt.Else != nil {
 		ir.emitStatement(ifStmt.Else)
 	}
-	ir.branchToMergeBlockIfNeeded(falseBlock, mergeBlock)
+	ir.branchToBlockIfNotTerminated(falseBlock, mergeBlock)
 	ir.leaveBlock()
 
 	// continue emitting code in merge block
@@ -1400,9 +1367,9 @@ func (ir *IREmitter) emitSwitchStmt(switchStmt *SwitchStmt) {
 		if i+1 < len(caseBlocks) {
 			nextCase = caseBlocks[i+1]
 		}
-		ir.enterSwitch(switchContext{
-			mergeBlock:    mergeBlock,
-			nextCaseBlock: nextCase,
+		ir.enterControlFlow(controlFlowContext{
+			mergeBlock:  mergeBlock,
+			branchBlock: nextCase,
 		})
 
 		ir.enterBlock(caseBlock)
@@ -1412,16 +1379,16 @@ func (ir *IREmitter) emitSwitchStmt(switchStmt *SwitchStmt) {
 		}
 
 		// If case didn't end with return/fallthrough, branch to merge
-		ir.branchToMergeBlockIfNeeded(ir.currentBlock(), mergeBlock)
+		ir.branchToBlockIfNotTerminated(ir.currentBlock(), mergeBlock)
 
 		ir.leaveBlock()
-		ir.leaveSwitch()
+		ir.leaveControlFlow()
 	}
 
 	ir.enterBlock(mergeBlock)
 }
 
-func (ir *IREmitter) branchToMergeBlockIfNeeded(currentBlock, mergeBlock *spirv.Block) {
+func (ir *IREmitter) branchToBlockIfNotTerminated(currentBlock, mergeBlock *spirv.Block) {
 	if !currentBlock.IsTerminated() {
 		currentBlock.Push(&spirv.Branch{
 			TargetLabel: mergeBlock.ID(),
@@ -1474,12 +1441,12 @@ func (ir *IREmitter) emitForStmt(forStmt *ForStmt) {
 
 	// for body
 	ir.enterBlock(forBody)
-	ir.enterLoop(loopContext{mergeblock: forMerge, continueBlock: forContinue})
+	ir.enterControlFlow(controlFlowContext{mergeBlock: forMerge, branchBlock: forContinue})
 	ir.emitStatement(forStmt.Body)
 	// Note: we have to use ir.currentBlock because the for loop body might change
 	// the current block to a new one
-	ir.branchToMergeBlockIfNeeded(ir.currentBlock(), forContinue)
-	ir.leaveLoop()
+	ir.branchToBlockIfNotTerminated(ir.currentBlock(), forContinue)
+	ir.leaveControlFlow()
 	ir.leaveBlock()
 
 	// for continue
@@ -1501,14 +1468,14 @@ func (ir *IREmitter) emitBreakStmt(s *BreakStmt) {
 		panic("labeled break statement is not supported yet")
 	}
 
-	if len(ir.mergeBlockStack) == 0 {
+	if len(ir.controlFlowStack) == 0 {
 		panic("break statement not in loop or switch")
 	}
 
 	block := ir.currentBlock()
 
 	// Break from the innermost loop or switch
-	innermost := ir.mergeBlockStack[len(ir.mergeBlockStack)-1]
+	innermost := ir.controlFlowStack[len(ir.controlFlowStack)-1].mergeBlock
 	block.Push(&spirv.Branch{TargetLabel: innermost.ID()})
 
 	ir.leaveBlock()
@@ -1517,13 +1484,13 @@ func (ir *IREmitter) emitBreakStmt(s *BreakStmt) {
 }
 
 func (ir *IREmitter) emitFallthroughStmt(*FallthroughStmt) {
-	switchCtx := ir.currentSwitch()
-	if switchCtx.nextCaseBlock == nil {
+	switchCtx := ir.currentControlFlow()
+	if switchCtx.branchBlock == nil {
 		panic("fallthrough statement not in switch or is in last case")
 	}
 
 	block := ir.currentBlock()
-	block.Push(&spirv.Branch{TargetLabel: switchCtx.nextCaseBlock.ID()})
+	block.Push(&spirv.Branch{TargetLabel: switchCtx.branchBlock.ID()})
 
 	ir.leaveBlock()
 	newBlock := block.Function.NewBlock("after_fallthrough")
@@ -1535,9 +1502,9 @@ func (ir *IREmitter) emitContinueStmt(s *ContinueStmt) {
 		panic("labeled continue statement is not supported yet")
 	}
 
-	loop := ir.currentLoop()
+	loop := ir.currentControlFlow()
 	block := ir.currentBlock()
-	block.Push(&spirv.Branch{TargetLabel: loop.continueBlock.ID()})
+	block.Push(&spirv.Branch{TargetLabel: loop.branchBlock.ID()})
 	ir.leaveBlock()
 
 	newBlock := block.Function.NewBlock("after_continue")
